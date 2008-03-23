@@ -293,38 +293,18 @@ void find_shows() {
 	int err;
 	regex_t preg;
 	size_t len;
-	char erbuf[100], *regex_str, *rss_str;
+	char erbuf[100];
 
 	NODE *current_regex = regex_items;
 	while (current_regex != NULL) {
 		NODE *current_rss_item = rss_items;
-/*		regex_str = malloc(strlen(current_regex->elem.name) + 1);
-		if(!regex_str) {
-			dbg_printf(P_ERROR, "Error: Could not allocate memory for regex_str\n");
-			current_regex = current_regex->pNext;
-			continue;
-		}
-		dbg_printf(P_INFO, "[find_shows] allocated %d bytes for 'regex_str'\n", strlen(current_regex->elem.name) + 1);
-		strcpy(regex_str, current_regex->elem.name);
-		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);*/
 		err = regcomp(&preg, current_regex->elem.name, REG_EXTENDED|REG_ICASE);
 		if(err) {
 			dbg_printf(P_ERROR, "regcomp: Error compiling regular expression: %d\n", err);
 			current_regex = current_regex->pNext;
-			/*free(regex_str);
-			dbg_printf(P_INFO, "[find_shows] freed 'regex_str'\n");*/
 			continue;
 		}
 		while (current_rss_item != NULL) {
-/*			rss_str = malloc(strlen(current_rss_item->elem.name) + 1);
-			if(!rss_str) {
-				dbg_printf(P_ERROR, "Error: Could not allocate memory for rss_str\n");
-				current_rss_item = current_rss_item->pNext;
-				continue;
-			}
-			dbg_printf(P_INFO, "[find_shows] allocated %d bytes for 'rss_str'\n", strlen(current_rss_item->elem.name) + 1);
-			strcpy(rss_str, current_rss_item->elem.name);
-			err = regexec(&preg, rss_str, 0, NULL, 0);*/
 			err = regexec(&preg, current_rss_item->elem.name, 0, NULL, 0);
 			if(err) {
 				len = regerror(err, &preg, erbuf, sizeof(erbuf));
@@ -337,13 +317,9 @@ void find_shows() {
 				dbg_printf(P_MSG, "match: %s\n", current_rss_item->elem.name);
 			}
 			current_rss_item = current_rss_item->pNext;
-			/*free(rss_str);
-			dbg_printf(P_INFO, "[find_shows] freed 'rss_str'\n");*/
 		}
 		current_regex = current_regex->pNext;
 		regfree(&preg);
-/*		free(regex_str);
-		dbg_printf(P_INFO, "[find_shows] freed 'regex_str'\n");*/
 	}
 }
 
