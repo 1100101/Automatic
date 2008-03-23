@@ -25,14 +25,15 @@
 static linked_list rss_items = NULL;
 static linked_list regex_items = NULL;
 
-static int verbose = 2;
-
 enum debug_type {
+	P_ERROR,
 	P_MSG,
 	P_INFO,
-	P_INFO2,
-	P_ERROR
+	P_INFO2
 };
+
+static int verbose = P_MSG;
+
 typedef enum debug_type debug_type;
 
 void dbg_printf(debug_type type, const char *format, ...) {
@@ -326,12 +327,14 @@ void find_shows() {
 void free_nodes(linked_list list) {
 	NODE *current = list;
 	while (current != NULL) {
-		if(current->elem.name)
+		if(current->elem.name) {
 			free(current->elem.name);
 			dbg_printf(P_INFO, "[free_nodes] freed 'elem.name'\n");
-		if(current->elem.url)
+		}
+		if(current->elem.url) {
 			free(current->elem.url);
 			dbg_printf(P_INFO, "[free_nodes] freed 'elem.url'\n");
+		}
 		current = current->pNext;
 	}
 }

@@ -691,7 +691,7 @@ public:
     };
 void * operator new(size_t);
 void * operator new(size_t,const char *,int);
-void * operator new[] (size_t,const char *,int);	// hjc 07/16/02
+void * operator new[] (size_t,const char *,int);	/* hjc 07/16/02 */
 void operator delete(void *);
 #define mwNew new(__FILE__,__LINE__)
 #define mwDelete (mwNCur=1,mwNFile=__FILE__,mwNLine=__LINE__),delete
