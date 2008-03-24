@@ -1,7 +1,6 @@
 #ifndef LIST_H__
 #define LIST_H__
-
-#define MEMWATCH 1
+/* #define MEMWATCH 1 */
 #include "memwatch.h"
 
 typedef struct NODE NODE;

@@ -5,20 +5,20 @@
 #include "list.h"
 
 void insertNode(NODE **ptr_to_head, NODE *newnode) {
-	NODE *p, *prev;
+	NODE /* *p, */ *prev;
 
 	/* link new element into existing list */
 	prev = NULL;
-	p = *ptr_to_head;
+/*	p = *ptr_to_head;
 	assert(newnode != NULL);
-	while (p != NULL) {						/* traverse to the last element */
+	while (p != NULL) {						traverse to the last element
 		prev = p;
 		p = p->pNext;
-	}
+	}*/
 	if (prev == NULL) {						/* insertion at head of list */
-		/*newnode->pNext = *ptr_to_head; */		/* append old list (if any) to new node */
+		newnode->pNext = *ptr_to_head; 		/* append old list (if any) to new node */
 		*ptr_to_head = newnode;				/* new item becomes head of list */
-		newnode->pNext = NULL;
+/* 		newnode->pNext = NULL; */
 	} else {								/* insert between prev and p */
 		prev->pNext = newnode;
 		newnode->pNext = NULL;
@@ -61,8 +61,8 @@ void freeList(NODE **ptr_to_head) {
 	while (*ptr_to_head != NULL) {
 		p = (*ptr_to_head)->pNext;
 		/* release element and check pointer after "free" */
-		/* free(*ptr_to_head); */
-		deleteNode(ptr_to_head, *ptr_to_head);
+		free(*ptr_to_head);
+		/* deleteNode(ptr_to_head, *ptr_to_head); */
 		*ptr_to_head = p;
 	}
 	return;

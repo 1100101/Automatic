@@ -1,4 +1,4 @@
-#define NODAEMON
+/* #define NODAEMON */
 
 #define LOCK_FILE	"/tmp/auto_loader.pid"
 #define LOG_FILE	"/tmp/auto_loader.log"
@@ -30,8 +30,9 @@
 #define MAX_ITEMS 10
 
 void shutdown_daemon(void);
-void cleanup_list(linked_list list);
+void cleanup_list(NODE **list);
 char* getlogtime_str( char * buf, int buflen );
+void freeItem(NODE *item);
 
 static linked_list rss_items = NULL;
 static linked_list regex_items = NULL;
@@ -126,7 +127,7 @@ void extract_feed_items(xmlNodeSetPtr nodes) {
 							len = strlen((char*)textNode);
 							str = malloc(len + 1);
 							if(str) {
-								dbg_printf(P_INFO, "allocated %d bytes for 'str'\n", len+1);
+								dbg_printf(P_INFO2, "allocated %d bytes for 'str'\n", len+1);
 								strcpy(str, (char*)textNode);
 								if(strcmp((char*)child->name, "title") == 0) {
 									item.name = str;
@@ -236,15 +237,15 @@ char* http_getfile(const char *url, int *plength) {
 				if(res < MAX_BUFFER) {
 					content = realloc(content, res);
 					if(!content) {
-						dbg_printf(P_ERROR, "Error: realloc() failed: %s", strerror(errno));
+						dbg_printf(P_ERROR, "Error: realloc() failed: %s\n", strerror(errno));
 					} else {
-						dbg_printf(P_INFO, "reallocated 'content' to %d byte", res);
+						dbg_printf(P_INFO, "reallocated 'data' to %d byte\n", res);
 					}
 					if (plength) {
 						*plength = res;
 					}
 				} else if(res == MAX_BUFFER) {
-					dbg_printf(P_ERROR, "HTTP response larger than %db! Buffer too small", MAX_BUFFER);
+					dbg_printf(P_ERROR, "HTTP response larger than %db! Buffer too small\n", MAX_BUFFER);
 					free(content);
 					dbg_printf(P_INFO, "[http_getfile] freed 'content'\n");
 				} else {
@@ -292,15 +293,17 @@ int parse_config_file(const char *filename) {
 		perror("malloc");
 		return 1;
 	}
+	printf("%s\n", buf);
 	dbg_printf(P_INFO, "[parse_config_file] allocated %d bytes for 'buf'\n", fsize);
 	read_bytes = fread(buf, 1, fsize, f);
+	dbg_printf(P_INFO, "[parse_config_file] buf: %s\n---\n", buf);
 	fclose(f);
 	p = strtok(buf, "\n");
 	while (p) {
 		len = strlen(p);
 		re.name = malloc(len + 1);
 		if(re.name) {
-			dbg_printf(P_INFO, "[parse_config_file] allocated %d bytes for 're.name'\n", len + 1);
+			dbg_printf(P_INFO, "[parse_config_file] allocated %d bytes for '%s'\n", len + 1, p);
 			strcpy(re.name, p);
 			addItem(re, &regex_items);
 		} else {
@@ -313,6 +316,16 @@ int parse_config_file(const char *filename) {
 	return 0;
 }
 
+void print_list(linked_list list) {
+	NODE *cur = list;
+	while(cur != NULL) {
+		if(cur->elem.name != NULL) {
+			dbg_printf(P_INFO, "%s\n", cur->elem.name);
+		}
+		cur = cur->pNext;
+	}
+}
+
 void check_for_downloads() {
 	int err;
 	regex_t preg;
@@ -320,15 +333,18 @@ void check_for_downloads() {
 	char erbuf[100];
 
 	NODE *current_regex = regex_items;
+	print_list(regex_items);
 	while (current_regex != NULL) {
 		NODE *current_rss_item = rss_items;
+		dbg_printf(P_INFO2, "Current regex: %s\n", current_regex->elem.name);
 		err = regcomp(&preg, current_regex->elem.name, REG_EXTENDED|REG_ICASE);
 		if(err) {
-			dbg_printf(P_ERROR, "regcomp: Error compiling regular expression: %d\n", err);
+			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %d\n", err);
 			current_regex = current_regex->pNext;
 			continue;
 		}
 		while (current_rss_item != NULL) {
+			dbg_printf(P_INFO2, "Current rss_item: %s\n", current_rss_item->elem.name);
 			err = regexec(&preg, current_rss_item->elem.name, 0, NULL, 0);
 			if(err) {
 				len = regerror(err, &preg, erbuf, sizeof(erbuf));
@@ -339,6 +355,8 @@ void check_for_downloads() {
 				}
 			} else {
 				dbg_printf(P_MSG, "match: %s\n", current_rss_item->elem.name);
+				/* TODO: need to copy the elem, otherwise we lose name/url */
+				addItem(current_rss_item, &bucket);
 			}
 			current_rss_item = current_rss_item->pNext;
 		}
@@ -347,47 +365,43 @@ void check_for_downloads() {
 	}
 }
 
+void add_to_bucket(list_elem item, NODE **b) {
+	addItem(item, b);
+	if(listCount(*b) > MAX_ITEMS) {
+		dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting head item...\n");
+		freeItem(*b);
+		deleteHead(b);
+	}
+}
 
 void freeItem(NODE *item) {
 	if(item != NULL) {
 		if(item->elem.name) {
 			free(item->elem.name);
+			dbg_printf(P_INFO, "[freeItem] freed 'elem.name'\n");
 		}
 		if(item->elem.url) {
 			free(item->elem.url);
+			dbg_printf(P_INFO, "[freeItem] freed 'elem.url'\n");
 		}
 	}
 }
 
-void add_to_bucket(list_elem item, NODE **b) {
-	addItem(item, b);
-	if(listCount(*b) > MAX_ITEMS) {
-		dbg_printf(P_INFO, "bucket gets too large, deleting head item...\n");
-/*		if((*b)->elem.name) {
-			free((*b)->elem.name);
-		}
-		if((*b)->elem.url) {
-			free((*b)->elem.url);
-		}
-*/		freeItem(*b);
-		deleteHead(b);
-	}
-}
-
-
-void cleanup_list(linked_list list) {
-	NODE *current = list;
+void cleanup_list(NODE **list) {
+	NODE *current = *list;
+	dbg_printf(P_INFO, "[cleanup_list] list size before: %d\n", listCount(*list));
 	while (current != NULL) {
 		freeItem(current);
 		current = current->pNext;
 	}
-	freeList(&list);
+	freeList(list);
+	dbg_printf(P_INFO, "[cleanup_list] list size after: %d\n", listCount(*list));
 }
 
 void do_cleanup(void) {
-	cleanup_list(regex_items);
-	cleanup_list(rss_items);
-	cleanup_list(bucket);
+	cleanup_list(&regex_items);
+	cleanup_list(&rss_items);
+	cleanup_list(&bucket);
 }
 
 void signal_handler(int sig) {
@@ -477,7 +491,7 @@ char* getlogtime_str( char * buf, int buflen ) {
 	gettimeofday( &tv, NULL );
 
 	localtime_r( &now, &now_tm );
-	strftime( tmp, sizeof(tmp), "%D %H:%M:%S", &now_tm );
+	strftime( tmp, sizeof(tmp), "%y/%m/%d %H:%M:%S", &now_tm );
 	/*milliseconds = (int)(tv.tv_usec / 1000);*/
 	snprintf( buf, buflen, "%s", tmp);
 
@@ -489,8 +503,10 @@ int main(int argc, char **argv) {
 	int data_size = 0;
 #ifndef NODAEMON
 	FILE *fp;
-#endif
 	static int interval = 10;
+#else
+	static int interval = 1;
+#endif
 	const char *feed_url = "http://tvrss.net/feed/eztv/";
 	char time_str[64];
 
@@ -520,7 +536,7 @@ int main(int argc, char **argv) {
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------\n", getlogtime_str(time_str, sizeof(time_str)));
 		data = http_getfile(feed_url, &data_size);
 		if(data) {
-			dbg_printf(P_INFO, "size: %d\n", data_size);
+			dbg_printf(P_INFO, "XML size: %d\n", data_size);
 			if(data_size > 0) {
 				parse_xmldata(data, data_size, (xmlChar*)"//item");
 			}
@@ -528,8 +544,8 @@ int main(int argc, char **argv) {
 			dbg_printf(P_INFO, "[main] freed 'data'\n");
 			check_for_downloads();
 		}
-		cleanup_list(rss_items);
- 		sleep(interval * 60);
+		cleanup_list(&rss_items);
+ 		sleep(interval * 10);
 	}
 	return 0;
 }
