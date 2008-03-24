@@ -1,14 +1,14 @@
 #ifndef LIST_H__
 #define LIST_H__
 
-#define MAX_LEN 100
+#define MEMWATCH 1
+#include "memwatch.h"
 
 typedef struct NODE NODE;
 typedef struct list_elem list_elem;
-typedef NODE *linked_list;
+typedef NODE* linked_list;
 
 struct list_elem {
-	/* char name[MAX_LEN]; */
 	char *name;
 	char *url;
 };
@@ -19,10 +19,11 @@ struct NODE {
 };
 
 void addItem(list_elem elem, NODE **head);
-void deleteItem(unsigned int addr, NODE **head);
-list_elem findItem(unsigned int addr, NODE *head);
-int hasItem(unsigned int addr, NODE *head);
-unsigned int listCount(NODE *head);
+list_elem findItem(char *str, NODE *head);
 void freeList(NODE **head);
+int hasItem(unsigned int addr, NODE *head);
+void deleteHead(NODE **ptr_to_head);
+unsigned int listCount(NODE *head);
+
 
 #endif

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "list.h"
 
 void insertNode(NODE **ptr_to_head, NODE *newnode) {
@@ -15,46 +16,40 @@ void insertNode(NODE **ptr_to_head, NODE *newnode) {
 		p = p->pNext;
 	}
 	if (prev == NULL) {						/* insertion at head of list */
-		newnode->pNext = *ptr_to_head; 		/* append old list (if any) to new node */
+		/*newnode->pNext = *ptr_to_head; */		/* append old list (if any) to new node */
 		*ptr_to_head = newnode;				/* new item becomes head of list */
+		newnode->pNext = NULL;
 	} else {								/* insert between prev and p */
-		newnode->pNext = p;
 		prev->pNext = newnode;
+		newnode->pNext = NULL;
 	}
 }
 
-NODE* findNode(unsigned int name, NODE *head) {
-/*	NODE *p = head;
+NODE* findNode(char *str, NODE *head) {
+	NODE *p = head;
 
 	while (p != NULL) {
-		if(p->elem.name == name)
+		if(strcmp(p->elem.url, str) == 0)
 			return p;
 		p = p->pNext;
 	}
-*/	return NULL;
+	return NULL;
 
 }
 
 void deleteNode(NODE **ptr_to_head, NODE *pNode) {
-	NODE *p, *prev;
+	NODE *p, *prev = NULL;
 
-	p = *ptr_to_head;
-	prev = NULL;
-	while (p != NULL) {
-		if (p == pNode)
-			break;
-		prev = p;
-		p = p->pNext;
-	}
-	if(p != NULL) {							/* make sure that a valid p was found */
-											/* 'p' now points to the node to be removed from list */
-											/* 'prev' now pointing to node just ahead of p */
-		if (prev == NULL) {					/* deletion at head of list */
-			*ptr_to_head = p->pNext;
-		} else {
-			prev->pNext = p->pNext;			/* make predecessor point to successor */
+	for (p = *ptr_to_head; p != NULL; prev = p, p = p->pNext) {
+		if (p == pNode) {
+			if (prev == NULL) {				/* deletion at head of list */
+				*ptr_to_head = p->pNext;
+			} else {
+				prev->pNext = p->pNext;		/* make predecessor point to successor */
+			}
+			free(p);								/* release memory */
+			return;
 		}
-		free(p);							/* release memory */
 	}
 }
 
@@ -66,7 +61,8 @@ void freeList(NODE **ptr_to_head) {
 	while (*ptr_to_head != NULL) {
 		p = (*ptr_to_head)->pNext;
 		/* release element and check pointer after "free" */
-		free(*ptr_to_head);
+		/* free(*ptr_to_head); */
+		deleteNode(ptr_to_head, *ptr_to_head);
 		*ptr_to_head = p;
 	}
 	return;
@@ -81,19 +77,16 @@ void addItem(list_elem elem, NODE **head) {
 	insertNode(head, pNode);
 }
 
-int hasItem(unsigned int addr, NODE *head) {
-	if(findNode(addr, head)) {
+int hasURL(char *url, NODE *head) {
+	if(findNode(url, head)) {
 		return 1;
 	} else {
 		return 0;
 	}
 }
 
-void deleteItem(unsigned int addr, NODE **head) {
-	NODE *tmp = findNode(addr, *head);
-	if(tmp != NULL) {
-		deleteNode(head, tmp);
-	}
+void deleteHead(NODE **ptr_to_head) {
+ 	deleteNode(ptr_to_head, *ptr_to_head);
 }
 
 unsigned int listCount(NODE *head) {
