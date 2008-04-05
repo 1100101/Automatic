@@ -29,6 +29,7 @@
 #include "list.h"
 
 #define MAX_BUFFER 128 * 1024   /* max. file size for xml/torrent = 128k */
+#define BUF_SIZE 4096
 #define MSGSIZE_MAX 300
 #define MAX_ITEMS 10
 
@@ -72,7 +73,7 @@ void dbg_printf(debug_type type, const char *format, ...) {
 			break;
 		}
 		case P_INFO: {
-			if(verbose <= 2)
+			if(verbose > 1)
 				print_msg = 1;
 			break;
 		}
@@ -266,6 +267,71 @@ int parse_xmldata(const char* buffer, int size, const xmlChar* xpathExpr) {
 
 char* http_getfile(const char *url, int *plength) {
 	void *ctxt = NULL;
+	char *content = NULL, tmp_buf[BUF_SIZE], *start;
+	int count = 0;
+	size_t read_bytes;
+
+	if (plength) {
+		*plength = 0;
+	}
+
+	if(url)
+		dbg_printf(P_MSG, "url: %s (%dbyte)\n", url, strlen(url));
+
+	xmlNanoHTTPInit();
+	ctxt = xmlNanoHTTPOpen(url, NULL);
+	if(!ctxt) {
+		dbg_printf(P_ERROR, "Could not open HTTP connection\n");
+	} else if(xmlNanoHTTPReturnCode(ctxt) == 200) {
+		content = malloc(MAX_BUFFER);
+		if(!content) {
+			perror("malloc");
+			content = NULL;
+		} else {
+			dbg_printf(P_INFO2, "[http_getfile] allocated %d bytes for 'content'\n", MAX_BUFFER);
+			start = content;
+			read_bytes = 0;
+			while((count = xmlNanoHTTPRead(ctxt, tmp_buf, BUF_SIZE)) > 0) {
+				read_bytes += count;
+				if(read_bytes < MAX_BUFFER) {
+					memcpy(content, tmp_buf, count);
+					content += count;
+				} else {
+					dbg_printf(P_ERROR, "HTTP response larger than %db! Buffer too small\n", MAX_BUFFER);
+					count = -1;
+					break;
+				}
+			}
+			content = start;
+			if(count == 0) {
+				dbg_printf(P_INFO, "Downloaded %d bytes from server\n", read_bytes);
+				if(read_bytes < MAX_BUFFER) {
+					content = realloc(content, read_bytes);
+					if(!content) {
+						dbg_printf(P_ERROR, "Error: realloc() failed: %s\n", strerror(errno));
+					} else {
+						dbg_printf(P_INFO2, "reallocated 'data' to %d byte\n", read_bytes);
+					}
+				}
+				if (plength) {
+					*plength = read_bytes;
+				}
+			} else {
+				dbg_printf(P_ERROR, "xmlNanoHTTPRead failed\n");
+				free(content);
+				dbg_printf(P_INFO2, "[http_getfile] freed 'content'\n");
+			}
+		}
+	} else {
+		dbg_printf(P_ERROR, "Uncaught HTTP response: %d\n", xmlNanoHTTPReturnCode(ctxt));
+	}
+	xmlNanoHTTPClose(ctxt);
+	xmlNanoHTTPCleanup();
+	return content;
+}
+
+/*char* http_getfile(const char *url, int *plength) {
+	void *ctxt = NULL;
 	char *content = NULL;
 	int content_length = 0;
 	int res;
@@ -281,7 +347,6 @@ char* http_getfile(const char *url, int *plength) {
 	} else if(xmlNanoHTTPReturnCode(ctxt) == 200) {
 		content_length = xmlNanoHTTPContentLength(ctxt);
 		if(content_length > 0) {
-			/* malloc is shaky here because the content might be gzipped -> content_length is smaller than the inflated data */
 			content = malloc(MAX_BUFFER);
 			if(!content) {
 				perror("malloc");
@@ -320,9 +385,8 @@ char* http_getfile(const char *url, int *plength) {
 		xmlNanoHTTPClose(ctxt);
 	}
 	xmlNanoHTTPCleanup();
-	/* xmlMemoryDump(); */
 	return content;
-}
+}*/
 
 int parse_config_file(const char *filename) {
 	FILE *f;
@@ -420,12 +484,82 @@ int add_to_bucket(list_elem elem, NODE **b) {
 	return integrity_check;
 }
 
+int random_range(int min, int max) {
+	int b = rand();
+	return (b % (max-min+1))+min;
+}
+
+char *random_string() {
+	char* mychar;
+	unsigned int i, len;
+	char array[16] = "abcdef0987654321";
+	len = random_range(1,10);
+	mychar = malloc(len + 1);
+	for(i = 0; i < len; i++)
+		mychar[i] = array[random_range(0, 15)];
+	mychar[len] = '\0';
+	return mychar;
+}
+
+char *get_filename(char *url) {
+	char *p, fname[MAXPATHLEN], *ret, *tmp_str;
+	int len;
+	if(!url || strlen(url) < 1) {
+		return NULL;
+	}
+	tmp_str = malloc(strlen(url) + 1);
+	strcpy(tmp_str, url);
+	p = strtok(tmp_str, "/");
+	while (p) {
+		len = strlen(p);
+		if(len < MAXPATHLEN)
+			strcpy(fname, p);
+		p = strtok(NULL, "/");
+	}
+	ret = malloc(strlen(fname) + 1);
+	if(ret)
+		strcpy(ret, fname);
+	if(tmp_str)
+		free(tmp_str);
+	return ret;
+}
+
+int is_torrent(const char *str) {
+	if(strstr(str, ".torrent"))
+		return 1;
+	else
+		return 0;
+}
+
+void download_torrent(NODE *item) {
+	char fname[MAXPATHLEN], *tmp_name;
+
+	if(add_to_bucket(item->elem, &bucket) == 1) {
+		dbg_printf(P_MSG, "Found new download: %s (%s)\n", item->elem.name, item->elem.url);
+		tmp_name = get_filename(item->elem.url);
+		if(tmp_name) {
+			strcpy(fname, "/tmp/");
+			strcat(fname, tmp_name);
+			if(!is_torrent(fname)) {
+				strcat(fname, ".torrent");
+			}
+			if(xmlNanoHTTPFetch(item->elem.url, fname, NULL) != 0) {
+				dbg_printf(P_ERROR, "Error downloading torrent file\n");
+			}
+			free(tmp_name);
+		} else {
+			dbg_printf(P_ERROR, "Could not determine filename from URL '%s'\n", item->elem.url);
+		}
+	} else {
+		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s\n", item->elem.name);
+	}
+}
+
 void check_for_downloads() {
 	int err;
 	regex_t preg;
 	size_t len;
 	char erbuf[100];
-
 	NODE *current_regex = regex_items;
 	while (current_regex != NULL) {
 		NODE *current_rss_item = rss_items;
@@ -440,14 +574,7 @@ void check_for_downloads() {
 			dbg_printf(P_INFO2, "Current rss_item: %s\n", current_rss_item->elem.name);
 			err = regexec(&preg, current_rss_item->elem.name, 0, NULL, 0);
 			if(!err && !has_been_downloaded(current_rss_item->elem.url)) {			/* regex matches and it hasn't been downloaded before */
-				if(add_to_bucket(current_rss_item->elem, &bucket) == 1) {
-					dbg_printf(P_MSG, "Found new download: %s\n", current_rss_item->elem.name);
-					if(xmlNanoHTTPFetch(current_rss_item->elem.url, "/tmp/tmp.torrent", NULL) != 0) {
-						dbg_printf(P_ERROR, "Error downloading torrent file\n", current_rss_item->elem.name);
-					}
-				} else {
-					dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s\n", current_rss_item->elem.name);
-				}
+				download_torrent(current_rss_item);
 			} else if(err != REG_NOMATCH && err != 0){
 				len = regerror(err, &preg, erbuf, sizeof(erbuf));
 				dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s\n", erbuf);
@@ -653,6 +780,7 @@ int main(int argc, char **argv) {
 			check_for_downloads();
 		}
 		cleanup_list(&rss_items);
+		dbg_printf( P_MSG, "------ %s: Done! ------\n", getlogtime_str(time_str, sizeof(time_str)));
  		sleep(interval * 60);
 	}
 	return 0;

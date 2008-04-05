@@ -15,3 +15,7 @@ dmalloc:
 	$(CC) $(SRC) -o auto_loader -Wall -g -DDMALLOC -DDMALLOC_FUNC_CHECK -pedantic \
 	`xml2-config --cflags` `xml2-config --libs` \
 	-I/usr/local/include -L/usr/local/lib -ldmalloc
+
+
+test: tmp.c
+	$(CC) -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` $< -o $@
