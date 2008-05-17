@@ -1,5 +1,5 @@
-#define LOCK_FILE  "/ffp/tmp/auto_loader.pid"
-#define LONG_VERSION_STRING "0.1.0"
+#define LOCK_FILE  "/ffp/tmp/automatic.pid"
+#define MEMWATCH 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,13 +20,14 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
-#include "auto_loader.h"
+#include "memwatch.h"
 #include "list.h"
+#include "version.h"
 #include "web.h"
+#include "output.h"
 
 #define MAX_BUFFER 128 * 1024   /* max. file size for xml/torrent = 128k */
 #define BUF_SIZE 4096
-#define MSGSIZE_MAX 300
 #define MAX_ITEMS 10
 #define TIME_STR_SIZE 20
 
@@ -48,69 +49,31 @@ rss_item newItem() {
 	return i;
 }
 
-static int verbose = P_MSG;
-static int gl_debug   = 0;
-static char logfile[MAXPATHLEN]  = "/ffp/tmp/auto_loader.log";
+int verbose = P_MSG;
+int gl_debug   = 0;
+char logfile[MAXPATHLEN]  = "/ffp/tmp/automatic.log";
+static char configfile[MAXPATHLEN]  = "/ffp/etc/automatic.conf";
 
-void dbg_printf(debug_type type, const char *format, ...) {
-	va_list va;
-   char tmp[MSGSIZE_MAX];
-	int print_msg = 0;
-	FILE *fp;
-	switch(type) {
-		case P_ERROR:
-		case P_MSG: {
-			print_msg = 1;
-			break;
-		}
-		case P_INFO: {
-			if(verbose > 1)
-				print_msg = 1;
-			break;
-		}
-		default: {
-			if(verbose > 2)
-				print_msg = 1;
-			break;
-		}
-	}
-	if(print_msg) {
-		va_start(va, format);
-		vsnprintf(tmp, MSGSIZE_MAX, format, va);
-		va_end(va);
-		tmp[MSGSIZE_MAX-1] = '\0';
-		if(gl_debug == 0) {
-			fp = fopen(logfile,"a");
-			if(fp) {
-				fprintf(fp,"%s", tmp);
-				fflush(fp);
-				fclose(fp);
-			}
-		} else {
-			fprintf(stderr, "%s", tmp);
-			fflush(stderr);
-		}
-
-	}
-}
 
 void usage() {
    printf(
-  "usage: auto_loader [-fh] [-v level] [-i minutes] [-l file]\n"
+  "usage: automatic -u url [-fh] [-v level] [-i minutes] [-l file]\n"
   "\n"
-  "auto_loader %s\n"
+  "Automatic %s\n"
   "\n"
+  "  -u --url <url>            Feed address\n"
   "  -f --nodeamon             Run in the foreground and log to stderr\n"
   "  -h --help                 Display this message\n"
   "  -v --verbose <level>      Set output level to <level> (default=1)\n"
   "  -i --interval <min>       Set check interval for RSS feed to <min>\n"
   "  -l --logfile <path>       Place the log file at <path>\n"
+  "  -c --configfile <path>    Path to configuration file\n"
   "\n", LONG_VERSION_STRING );
     exit( 0 );
 }
 
-void readargs( int argc, char ** argv, int * nofork, int * interval, char ** l_file ) {
-    char optstr[] = "fhv:i:l:";
+void readargs( int argc, char ** argv, int * nofork, int * interval, char ** l_file, char ** c_file, char ** url ) {
+    char optstr[] = "fhv:i:l:c:u:";
     struct option longopts[] =
     {
         { "verbose",            required_argument, NULL, 'v' },
@@ -118,6 +81,8 @@ void readargs( int argc, char ** argv, int * nofork, int * interval, char ** l_f
         { "help",               no_argument,       NULL, 'h' },
 		  { "interval",           required_argument, NULL, 'i' },
 		  { "logfile",            required_argument, NULL, 'l' },
+		  { "configfile",         required_argument, NULL, 'c' },
+		  { "url",                required_argument, NULL, 'u' },
         { NULL, 0, NULL, 0 }
     };
     int opt;
@@ -141,6 +106,12 @@ void readargs( int argc, char ** argv, int * nofork, int * interval, char ** l_f
                 break;
             case 'l':
                 *l_file = optarg;
+                break;
+            case 'c':
+                *c_file = optarg;
+                break;
+            case 'u':
+                *url = optarg;
                 break;
             default:
                 usage();
@@ -264,29 +235,27 @@ int parse_config_file(const char *filename) {
 	struct stat fs;
 	size_t fsize, read_bytes;
 	unsigned int len;
-	rss_item re = newItem();
+	rss_item re;
 
 
 	if(stat(filename, &fs) == -1) {
-		perror("Unable to determine file size of config file");
 		return 1;
 	}
 	fsize = fs.st_size;
 	f = fopen(filename, "r");
 	if(f == NULL) {
-		perror("fopen");
 		return 1;
 	}
 
 	buf = malloc(fsize);
 	if(!buf) {
-		perror("malloc");
 		return 1;
 	}
 	dbg_printf(P_INFO2, "[parse_config_file] allocated %d bytes for 'buf'\n", fsize);
 	read_bytes = fread(buf, 1, fsize, f);
 	dbg_printf(P_INFO2, "[parse_config_file] buf:\n%s\n---\n", buf);
 	fclose(f);
+	re = newItem();
 	p = strtok(buf, "\n");
 	while (p) {
 		len = strlen(p);
@@ -327,6 +296,7 @@ int add_to_bucket(rss_item elem, NODE **b) {
 		dbg_printf(P_INFO2, "[add_to_bucket] elem.name: %s\n", elem.name);
 		b_elem.name = malloc(strlen(elem.name) + 1);
 		if(b_elem.name) {
+			dbg_printf(P_INFO2, "[add_to_bucket] allocated %d bytes for '%s'\n", strlen(elem.name) + 1, elem.name);
 			strcpy(b_elem.name, elem.name);
 		} else {
 			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s\n", strerror(errno));
@@ -337,6 +307,7 @@ int add_to_bucket(rss_item elem, NODE **b) {
 		dbg_printf(P_INFO2, "[add_to_bucket] elem.url: %s\n", elem.url);
 		b_elem.url = malloc(strlen(elem.url) + 1);
 		if(b_elem.url) {
+			dbg_printf(P_INFO2, "[add_to_bucket] allocated %d bytes for '%s'\n", strlen(elem.url) + 1, elem.url);
 			strcpy(b_elem.url, elem.url);
 		} else {
 			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s\n", strerror(errno));
@@ -392,6 +363,7 @@ void get_filename(WebData *data, char *file_name) {
 
 	/* Case 1: Use Header field "Content-Disposition" (if available) to get correct filename */
 	tmp = malloc(data->header->size);
+	dbg_printf(P_INFO2, "[get_filename] allocated %d bytes for tmp\n", data->header->size);
 	memcpy(tmp, data->header->data, data->header->size);
 	p = strtok(tmp, "\r\n");
 	if(!content_disp_preg) {
@@ -537,8 +509,10 @@ void do_cleanup(void) {
 	cleanup_list(&regex_items);
 	cleanup_list(&rss_items);
 	cleanup_list(&bucket);
-	regfree(content_disp_preg);
-	free(content_disp_preg);
+	if(content_disp_preg) {
+		regfree(content_disp_preg);
+		free(content_disp_preg);
+	}
 }
 
 void shutdown_daemon() {
@@ -636,6 +610,9 @@ void getlogtime_str(char *buf) {
 	snprintf( buf, strlen(tmp) + 1, "%s", tmp);
 }
 
+
+/* the regular expression for the Content-Disposition HTTP header entry never changes, so we
+   initialize it once on startup and reuse it */
 void init_cd_preg() {
 	int err;
 	char erbuf[100];
@@ -644,7 +621,9 @@ void init_cd_preg() {
 	assert(content_disp_preg == NULL);
 
 	content_disp_preg = malloc(sizeof(regex_t));
+	dbg_printf(P_INFO2, "[init_cd_preg] allocated %d bytes for content_disp_preg\n", sizeof(regex_t));
 	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
+	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
 	if(err) {
 		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
 		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s\n", erbuf);
@@ -655,32 +634,49 @@ int main(int argc, char **argv) {
 	FILE *fp;
 	int nofork = 0;
 	int interval = 10;
-	char *log_file;
-	const char *feed_url = "http://tvrss.net/feed/eztv/";
+	char *log_file = NULL, *conf_file = NULL;
+	/* const char *feed_url = "http://tvrss.net/feed/eztv/"; */
+	char *feed_url = NULL;
 	char time_str[TIME_STR_SIZE];
+	char erbuf[100];
 	WebData *wdata;
 
 	LIBXML_TEST_VERSION
-	readargs(argc, argv, &nofork, &interval, &log_file);
+
+	readargs(argc, argv, &nofork, &interval, &log_file, &conf_file, &feed_url);
+
+	if(feed_url == NULL)  {
+		fprintf(stderr, "\nNo feed URL specified!\n\n");
+		usage();
+		shutdown_daemon();
+	}
 	if(log_file != NULL)
 		strcpy(logfile, log_file);
+	if(conf_file != NULL)
+		strcpy(configfile, conf_file);
 
 	/* clear logfile */
 	fp = fopen(logfile, "w");
 	if(fp == NULL) {
-		fprintf(stderr, "Failed to open logfile '%s': %s\n", logfile, strerror(errno));
+		fprintf(stderr, "[main] Failed to open logfile '%s': %s\n", logfile, strerror(errno));
 		exit(1);
 	} else {
 		fclose(fp);
 	}
-	getlogtime_str(time_str);
-	dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
 	dbg_printf(P_INFO, "check interval: %d min\n", interval);
 	dbg_printf(P_INFO, "verbose level: %d\n", verbose);
 	dbg_printf(P_INFO, "log file: %s\n", nofork ? "stderr" : logfile);
-	if(parse_config_file("test.conf") != 0) {
-		fprintf(stderr, "Error parsing config file: %s\n", strerror(errno));
-		shutdown_daemon();
+	dbg_printf(P_INFO, "config path: %s\n", configfile);
+	dbg_printf(P_INFO, "Feed URL: %s\n", feed_url);
+
+	if(parse_config_file(configfile) != 0) {
+		if(errno == ENOENT) {
+			snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", configfile);
+		} else {
+			snprintf(erbuf, sizeof(erbuf), "%s", strerror(errno));
+		}
+		fprintf(stderr, "Error parsing config file: %s\n", erbuf);
+/* 		shutdown_daemon(); */
 		exit(1);
 	}
 	dbg_printf(P_MSG, "Read %d patterns from config file\n", listCount(regex_items));
@@ -691,9 +687,12 @@ int main(int argc, char **argv) {
 			shutdown_daemon();
 			exit(1);
 		}
+		getlogtime_str(time_str);
+		dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
 	}
 	setup_signals();
 	init_cd_preg();
+
 	while(1) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------\n", time_str);

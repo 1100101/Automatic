@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "list.h"
+#include "output.h"
 
 void insertNode(NODE **ptr_to_head, NODE *newnode) {
 	NODE /* *p, */ *prev;
@@ -72,6 +73,7 @@ void addItem(rss_item elem, NODE **head) {
 	NODE *pNode = (NODE*)malloc(sizeof(NODE));
 	if(pNode == NULL)
 		perror("malloc failed");
+	dbg_printf(P_INFO2, "[addItem] allocated %d bytes for pNode\n", sizeof(NODE));
 	pNode->item = elem;
 	pNode->pNext = NULL;
 	insertNode(head, pNode);

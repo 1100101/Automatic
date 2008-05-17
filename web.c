@@ -1,10 +1,12 @@
 #include "web.h"
+#include "output.h"
 
 static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	HTTPData *mem = data;
 	mem->data = (char *)realloc(mem->data, mem->size + realsize + 1);
 	if (mem->data) {
+		dbg_printf(P_INFO2, "[write_callback] reallocated %d bytes for mem->data\n", mem->size + realsize + 1);
 		memcpy(&(mem->data[mem->size]), ptr, realsize);
 		mem->size += realsize;
 		mem->data[mem->size] = 0;
@@ -17,6 +19,7 @@ struct WebData* WebData_new(const char *url) {
 	int len;
 
 	data = malloc(sizeof(WebData));
+	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for wData\n", sizeof(WebData));
 	if(url) {
 		len = strlen(url);
 		data->url = malloc(len + 1);
@@ -24,9 +27,11 @@ struct WebData* WebData_new(const char *url) {
 		data->url[len] = '\0';
 	}
 	data->header = malloc(sizeof(HTTPData));
+	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for data->header\n", sizeof(HTTPData));
 	data->header->data = NULL;
 	data->header->size = 0;
 	data->response = malloc(sizeof(HTTPData));
+	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for data->response\n", sizeof(HTTPData));
 	data->response->data = NULL;
 	data->response->size = 0;
 	return data;

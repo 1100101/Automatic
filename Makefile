@@ -3,15 +3,20 @@ ifndef VERBOSE
 endif
 
 CC=gcc
-SRC = auto_loader.c list.c web.c
+SRC = automatic.c list.c web.c output.c
 
-all: $(SRC)
+all: $(SRC) version.h
 	$(Verb) $(CC) -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` \
-	`curl-config --cflags` `curl-config --libs` $(SRC) -o auto_loader
+	`curl-config --cflags` `curl-config --libs` $(SRC) -o automatic
 
-memwatch:
-	$(Verb) $(CC) $(SRC) memwatch.c -o auto_loader -DMEMWATCH -Wall -g -pedantic \
+memwatch: $(SRC) version.h
+	$(Verb) $(CC) $(SRC) memwatch.c -o automatic -DMEMWATCH -Wall -g -pedantic \
 	`xml2-config --cflags` `xml2-config --libs` `curl-config --cflags` `curl-config --libs`
 
 clean:
-	rm -f *.o auto_loader
+	rm -f *.o automatic version.h
+
+version.h:
+	$(Verb) echo '#define SVN_REVISION          "'`svn info | grep "Revision" | awk -F': ' '{print $$2}'`'"' >> version.h
+	$(Verb) echo '#define SHORT_VERSION_STRING  "'1.20'"' >> version.h
+	$(Verb) echo '#define LONG_VERSION_STRING   "'1.20' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h
