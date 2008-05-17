@@ -1,25 +1,20 @@
 #ifndef LIST_H__
 #define LIST_H__
-/* #define MEMWATCH 1
 #include "memwatch.h"
- */
 
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
 
 typedef struct NODE NODE;
-typedef struct list_elem list_elem;
+typedef struct rss_item rss_item;
 typedef NODE* linked_list;
 
-struct list_elem {
+struct rss_item {
 	char *name;
 	char *url;
 };
 
 struct NODE {
    NODE *pNext;
-   list_elem elem;
+   rss_item item;
 };
 
 /* read-only functions */
@@ -28,8 +23,8 @@ int hasURL(char *url, NODE *head);
 int hasItem(unsigned int addr, NODE *head);
 
 /* list modifiers */
-void addItem(list_elem elem, NODE **head);
-list_elem findItem(char *str, NODE *head);
+void addItem(rss_item elem, NODE **head);
+rss_item findItem(char *str, NODE *head);
 void freeList(NODE **head);
 void deleteHead(NODE **ptr_to_head);
 

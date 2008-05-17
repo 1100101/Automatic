@@ -1,9 +1,5 @@
-#define NODAEMON
-
-#define LOCK_FILE	"/tmp/auto_loader.pid"
-
+#define LOCK_FILE  "/ffp/tmp/auto_loader.pid"
 #define LONG_VERSION_STRING "0.1.0"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,48 +14,43 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/param.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <libxml/nanohttp.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+#include "auto_loader.h"
 #include "list.h"
+#include "web.h"
 
 #define MAX_BUFFER 128 * 1024   /* max. file size for xml/torrent = 128k */
 #define BUF_SIZE 4096
 #define MSGSIZE_MAX 300
 #define MAX_ITEMS 10
+#define TIME_STR_SIZE 20
 
 void shutdown_daemon(void);
 void cleanup_list(NODE **list);
-char* getlogtime_str( char * buf, int buflen );
+void getlogtime_str( char * buf );
 void freeItem(NODE *item);
 
 static linked_list rss_items = NULL;
 static linked_list regex_items = NULL;
 static linked_list bucket = NULL;
 
-list_elem newItem() {
-	list_elem i;
+static regex_t *content_disp_preg;
+
+rss_item newItem() {
+	rss_item i;
 	i.name = NULL;
 	i.url = NULL;
 	return i;
 }
 
-enum debug_type {
-	P_ERROR,
-	P_MSG,
-	P_INFO,
-	P_INFO2
-};
-typedef enum debug_type debug_type;
-
 static int verbose = P_MSG;
 static int gl_debug   = 0;
-static char logfile[MAXPATHLEN]  = "/tmp/auto_loader.log";
+static char logfile[MAXPATHLEN]  = "/ffp/tmp/auto_loader.log";
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
@@ -92,14 +83,16 @@ void dbg_printf(debug_type type, const char *format, ...) {
 			fp = fopen(logfile,"a");
 			if(fp) {
 				fprintf(fp,"%s", tmp);
+				fflush(fp);
 				fclose(fp);
 			}
 		} else {
 			fprintf(stderr, "%s", tmp);
+			fflush(stderr);
 		}
+
 	}
 }
-
 
 void usage() {
    printf(
@@ -162,10 +155,10 @@ void extract_feed_items(xmlNodeSetPtr nodes) {
 	int size, i, len;
 	int name_set, url_set;
 	char *str;
-	list_elem item = newItem();
+	rss_item item = newItem();
 	size = (nodes) ? nodes->nodeNr : 0;
 
-	dbg_printf(P_MSG, "%d items in XML\n", size);
+	dbg_printf(P_INFO2, "%d items in XML\n", size);
 	for(i = 0; i < size; ++i) {
 		assert(nodes->nodeTab[i]);
 		if(nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {
@@ -179,7 +172,7 @@ void extract_feed_items(xmlNodeSetPtr nodes) {
 						(strcmp((char*)child->name, "link" ) == 0)) {
 						textNode = xmlNodeGetContent(child->children);
 						if(!textNode) {
-							dbg_printf(P_ERROR, "Child of %s does not seem to be a text node\n", child->name);
+							dbg_printf(P_ERROR, "Child of '%s' does not seem to be a text node\n", child->name);
 							continue;
 						} else {
 							dbg_printf(P_INFO2, "Found text node '%s'\n", textNode);
@@ -265,136 +258,13 @@ int parse_xmldata(const char* buffer, int size, const xmlChar* xpathExpr) {
 	return 0;
 }
 
-char* http_getfile(const char *url, int *plength) {
-	void *ctxt = NULL;
-	char *content = NULL, tmp_buf[BUF_SIZE], *start;
-	int count = 0;
-	size_t read_bytes;
-
-	if (plength) {
-		*plength = 0;
-	}
-
-	if(url)
-		dbg_printf(P_MSG, "url: %s (%dbyte)\n", url, strlen(url));
-
-	xmlNanoHTTPInit();
-	ctxt = xmlNanoHTTPOpen(url, NULL);
-	if(!ctxt) {
-		dbg_printf(P_ERROR, "Could not open HTTP connection\n");
-	} else if(xmlNanoHTTPReturnCode(ctxt) == 200) {
-		content = malloc(MAX_BUFFER);
-		if(!content) {
-			perror("malloc");
-			content = NULL;
-		} else {
-			dbg_printf(P_INFO2, "[http_getfile] allocated %d bytes for 'content'\n", MAX_BUFFER);
-			start = content;
-			read_bytes = 0;
-			while((count = xmlNanoHTTPRead(ctxt, tmp_buf, BUF_SIZE)) > 0) {
-				read_bytes += count;
-				if(read_bytes < MAX_BUFFER) {
-					memcpy(content, tmp_buf, count);
-					content += count;
-				} else {
-					dbg_printf(P_ERROR, "HTTP response larger than %db! Buffer too small\n", MAX_BUFFER);
-					count = -1;
-					break;
-				}
-			}
-			content = start;
-			if(count == 0) {
-				dbg_printf(P_INFO, "Downloaded %d bytes from server\n", read_bytes);
-				if(read_bytes < MAX_BUFFER) {
-					content = realloc(content, read_bytes);
-					if(!content) {
-						dbg_printf(P_ERROR, "Error: realloc() failed: %s\n", strerror(errno));
-					} else {
-						dbg_printf(P_INFO2, "reallocated 'data' to %d byte\n", read_bytes);
-					}
-				}
-				if (plength) {
-					*plength = read_bytes;
-				}
-			} else {
-				dbg_printf(P_ERROR, "xmlNanoHTTPRead failed\n");
-				free(content);
-				dbg_printf(P_INFO2, "[http_getfile] freed 'content'\n");
-			}
-		}
-	} else {
-		dbg_printf(P_ERROR, "Uncaught HTTP response: %d\n", xmlNanoHTTPReturnCode(ctxt));
-	}
-	xmlNanoHTTPClose(ctxt);
-	xmlNanoHTTPCleanup();
-	return content;
-}
-
-/*char* http_getfile(const char *url, int *plength) {
-	void *ctxt = NULL;
-	char *content = NULL;
-	int content_length = 0;
-	int res;
-
-	if (plength) {
-		*plength = 0;
-	}
-
-	xmlNanoHTTPInit();
-	ctxt = xmlNanoHTTPOpen(url, NULL);
-	if(!ctxt) {
-		dbg_printf(P_ERROR, "Could not open HTTP connection\n");
-	} else if(xmlNanoHTTPReturnCode(ctxt) == 200) {
-		content_length = xmlNanoHTTPContentLength(ctxt);
-		if(content_length > 0) {
-			content = malloc(MAX_BUFFER);
-			if(!content) {
-				perror("malloc");
-				content = NULL;
-			} else {
-				dbg_printf(P_INFO2, "[http_getfile] allocated %d bytes for 'content'\n", MAX_BUFFER);
-				res = xmlNanoHTTPRead(ctxt, content, MAX_BUFFER);
-				dbg_printf(P_INFO, "Downloaded %d bytes from server\n", res);
-				if(res < MAX_BUFFER) {
-					content = realloc(content, res);
-					if(!content) {
-						dbg_printf(P_ERROR, "Error: realloc() failed: %s\n", strerror(errno));
-					} else {
-						dbg_printf(P_INFO2, "reallocated 'data' to %d byte\n", res);
-					}
-					if (plength) {
-						*plength = res;
-					}
-				} else if(res == MAX_BUFFER) {
-					dbg_printf(P_ERROR, "HTTP response larger than %db! Buffer too small\n", MAX_BUFFER);
-					free(content);
-					dbg_printf(P_INFO2, "[http_getfile] freed 'content'\n");
-				} else {
-					dbg_printf(P_ERROR, "xmlNanoHTTPRead failed: %d\n", res);
-					free(content);
-					dbg_printf(P_INFO2, "[http_getfile] freed 'content'\n");
-				}
-			}
-		} else {
-			dbg_printf(P_ERROR, "Could not determine content length\n");
-		}
-	} else {
-		dbg_printf(P_ERROR, "Uncaught HTTP response: %d\n", xmlNanoHTTPReturnCode(ctxt));
-	}
-	if(ctxt) {
-		xmlNanoHTTPClose(ctxt);
-	}
-	xmlNanoHTTPCleanup();
-	return content;
-}*/
-
 int parse_config_file(const char *filename) {
 	FILE *f;
 	char *buf, *p;
 	struct stat fs;
 	size_t fsize, read_bytes;
 	unsigned int len;
-	list_elem re = newItem();
+	rss_item re = newItem();
 
 
 	if(stat(filename, &fs) == -1) {
@@ -438,8 +308,8 @@ int parse_config_file(const char *filename) {
 void print_list(linked_list list) {
 	NODE *cur = list;
 	while(cur != NULL) {
-		if(cur->elem.name != NULL) {
-			dbg_printf(P_INFO, "\t%s\n", cur->elem.name);
+		if(cur->item.name != NULL) {
+			dbg_printf(P_INFO, "\t%s\n", cur->item.name);
 		}
 		cur = cur->pNext;
 	}
@@ -449,8 +319,8 @@ int has_been_downloaded(char *url) {
 	return hasURL(url, bucket);
 }
 
-int add_to_bucket(list_elem elem, NODE **b) {
-	list_elem b_elem = newItem();
+int add_to_bucket(rss_item elem, NODE **b) {
+	rss_item b_elem = newItem();
 	/* copy element content, as the original is going to be freed later on */
 	int integrity_check = 1;
 	if(elem.name != NULL) {
@@ -484,44 +354,26 @@ int add_to_bucket(list_elem elem, NODE **b) {
 	return integrity_check;
 }
 
-int random_range(int min, int max) {
-	int b = rand();
-	return (b % (max-min+1))+min;
-}
 
-char *random_string() {
-	char* mychar;
-	unsigned int i, len;
-	char array[16] = "abcdef0987654321";
-	len = random_range(1,10);
-	mychar = malloc(len + 1);
-	for(i = 0; i < len; i++)
-		mychar[i] = array[random_range(0, 15)];
-	mychar[len] = '\0';
-	return mychar;
-}
+int call_transmission(const char *filename) {
+	char buf[MAXPATHLEN];
+	int ret;
 
-char *get_filename(char *url) {
-	char *p, fname[MAXPATHLEN], *ret, *tmp_str;
-	int len;
-	if(!url || strlen(url) < 1) {
-		return NULL;
+	if(filename && strlen(filename) > 1) {
+		sprintf(buf, "transmission-remote -a \"%s\"", filename);
+		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
+		ret = system(buf);
+		if(ret == -1) {
+			dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s\n", strerror(errno));
+			return -1;
+		} else {
+			dbg_printf(P_INFO, "Success\n");
+			return 0;
+		}
+	} else {
+		dbg_printf(P_ERROR, "[call_transmission] Error: no filename provided (%p)\n", (void*)filename);
+		return -1;
 	}
-	tmp_str = malloc(strlen(url) + 1);
-	strcpy(tmp_str, url);
-	p = strtok(tmp_str, "/");
-	while (p) {
-		len = strlen(p);
-		if(len < MAXPATHLEN)
-			strcpy(fname, p);
-		p = strtok(NULL, "/");
-	}
-	ret = malloc(strlen(fname) + 1);
-	if(ret)
-		strcpy(ret, fname);
-	if(tmp_str)
-		free(tmp_str);
-	return ret;
 }
 
 int is_torrent(const char *str) {
@@ -531,52 +383,123 @@ int is_torrent(const char *str) {
 		return 0;
 }
 
-void download_torrent(NODE *item) {
-	char fname[MAXPATHLEN], *tmp_name;
+void get_filename(WebData *data, char *file_name) {
+	char *p, *tmp, fname[MAXPATHLEN], buf1[MAXPATHLEN], buf2[MAXPATHLEN], erbuf[100];
+	int len,err, filename_found = 0;
+	regmatch_t pmatch[2];
 
-	if(add_to_bucket(item->elem, &bucket) == 1) {
-		dbg_printf(P_MSG, "Found new download: %s (%s)\n", item->elem.name, item->elem.url);
-		tmp_name = get_filename(item->elem.url);
-		if(tmp_name) {
-			strcpy(fname, "/tmp/");
-			strcat(fname, tmp_name);
-			if(!is_torrent(fname)) {
-				strcat(fname, ".torrent");
+	assert(data);
+
+	/* Case 1: Use Header field "Content-Disposition" (if available) to get correct filename */
+	tmp = malloc(data->header->size);
+	memcpy(tmp, data->header->data, data->header->size);
+	p = strtok(tmp, "\r\n");
+	if(!content_disp_preg) {
+		dbg_printf(P_ERROR, "[get_filename] Error: content_disp_preg not initialized\n");
+	} else {
+		while (p) {
+			if(filename_found == 0) {
+				strcpy(buf1, p);
+				dbg_printf(P_INFO2, "[get_filename] Current header line: %s\n", buf1);
+				err = regexec(content_disp_preg, buf1, 2, pmatch, 0);
+				if(!err) {			/* regex matches */
+					len = pmatch[1].rm_eo - pmatch[1].rm_so;
+					strncpy(buf2, buf1+pmatch[1].rm_so, len);
+					buf2[len] = '\0';
+					dbg_printf(P_INFO, "[get_filename] Found filename: %s\n", buf2);
+					filename_found = 1;
+				} else if(err != REG_NOMATCH && err != 0){
+					len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+					dbg_printf(P_ERROR, "[get_filename] regexec error: %s\n", erbuf);
+				} else {
+					if(!strncmp(buf1, "Content-Disposition", 19)) {
+						dbg_printf(P_ERROR, "[get_filename] Unknown pattern: %s\n", buf1);
+					}
+				}
 			}
-			if(xmlNanoHTTPFetch(item->elem.url, fname, NULL) != 0) {
-				dbg_printf(P_ERROR, "Error downloading torrent file\n");
-			}
-			free(tmp_name);
+			p = strtok(NULL, "\r\n");
+		}
+	}
+	if(tmp)
+		free(tmp);
+
+	/* Case 2: Parse URL for filename */
+	if(filename_found == 0) {
+		strcpy(buf1, data->url);
+		p = strtok(buf1, "/");
+		while (p) {
+			len = strlen(p);
+			if(len < MAXPATHLEN)
+				strcpy(buf2, p);
+			p = strtok(NULL, "/");
+		}
+	}
+	strcpy(fname, "/ffp/tmp/");
+	strcat(fname, buf2);
+	if(!is_torrent(buf2)) {
+		strcat(fname, ".torrent");
+	}
+	strcpy(file_name, fname);
+}
+
+void download_torrent(NODE *item) {
+	char fname[MAXPATHLEN];
+	int torrent;
+	int res;
+	WebData *wdata;
+
+	dbg_printf(P_MSG, "Found new download: %s (%s)\n", item->item.name, item->item.url);
+	wdata = getHTTPData(item->item.url);
+	if(wdata && wdata->response) {
+		get_filename(wdata, fname);
+		torrent = open(fname,O_RDWR|O_CREAT, 00444);
+		if(torrent == -1) {
+			dbg_printf(P_ERROR, "Error opening file for writing: %s\n", strerror(errno));
 		} else {
-			dbg_printf(P_ERROR, "Could not determine filename from URL '%s'\n", item->elem.url);
+			res = write(torrent, wdata->response->data, wdata->response->size);
+			if(res != wdata->response->size) {
+				dbg_printf(P_ERROR, "[download_torrent] Error writing torrent file: %s\n", strerror(errno));
+			} else {
+				dbg_printf(P_INFO, "Saved torrent file '%s'\n", fname);
+			}
+			fchmod(torrent, 00444);
+			close(torrent);
+			if(call_transmission(fname) == -1) {
+				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission\n");
+			}
+			/* unlink(fname); */
 		}
 	} else {
-		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s\n", item->elem.name);
+		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p\n", (void*)wdata, (void*)(wdata->response));
+	}
+	WebData_free(wdata);
+	if(!add_to_bucket(item->item, &bucket) == 1) {
+		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s\n", item->item.name);
 	}
 }
 
 void check_for_downloads() {
 	int err;
 	regex_t preg;
-	size_t len;
 	char erbuf[100];
 	NODE *current_regex = regex_items;
 	while (current_regex != NULL) {
 		NODE *current_rss_item = rss_items;
-		dbg_printf(P_INFO2, "Current regex: %s\n", current_regex->elem.name);
-		err = regcomp(&preg, current_regex->elem.name, REG_EXTENDED|REG_ICASE);
+		dbg_printf(P_INFO2, "Current regex: %s\n", current_regex->item.name);
+		err = regcomp(&preg, current_regex->item.name, REG_EXTENDED|REG_ICASE);
 		if(err) {
-			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %d\n", err);
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s\n", erbuf);
 			current_regex = current_regex->pNext;
 			continue;
 		}
 		while (current_rss_item != NULL) {
-			dbg_printf(P_INFO2, "Current rss_item: %s\n", current_rss_item->elem.name);
-			err = regexec(&preg, current_rss_item->elem.name, 0, NULL, 0);
-			if(!err && !has_been_downloaded(current_rss_item->elem.url)) {			/* regex matches and it hasn't been downloaded before */
+			dbg_printf(P_INFO2, "Current rss_item: %s\n", current_rss_item->item.name);
+			err = regexec(&preg, current_rss_item->item.name, 0, NULL, 0);
+			if(!err && !has_been_downloaded(current_rss_item->item.url)) {			/* regex matches and it hasn't been downloaded before */
 				download_torrent(current_rss_item);
 			} else if(err != REG_NOMATCH && err != 0){
-				len = regerror(err, &preg, erbuf, sizeof(erbuf));
+				regerror(err, &preg, erbuf, sizeof(erbuf));
 				dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s\n", erbuf);
 			}
 			current_rss_item = current_rss_item->pNext;
@@ -588,12 +511,12 @@ void check_for_downloads() {
 
 void freeItem(NODE *item) {
 	if(item != NULL) {
-		if(item->elem.name) {
-			free(item->elem.name);
+		if(item->item.name) {
+			free(item->item.name);
 			dbg_printf(P_INFO2, "[freeItem] freed 'elem.name'\n");
 		}
-		if(item->elem.url) {
-			free(item->elem.url);
+		if(item->item.url) {
+			free(item->item.url);
 			dbg_printf(P_INFO2, "[freeItem] freed 'elem.url'\n");
 		}
 	}
@@ -614,22 +537,14 @@ void do_cleanup(void) {
 	cleanup_list(&regex_items);
 	cleanup_list(&rss_items);
 	cleanup_list(&bucket);
-}
-
-void signal_handler(int sig) {
-	switch(sig) {
-		case SIGINT:
-		case SIGTERM: {
-			dbg_printf(P_MSG,"SIGTERM caught\n");
-			shutdown_daemon();
-			break;
-		}
-	}
+	regfree(content_disp_preg);
+	free(content_disp_preg);
 }
 
 void shutdown_daemon() {
-	char time_str[64];
-	dbg_printf(P_MSG,"%s: Shutting down daemon\n", getlogtime_str(time_str, sizeof(time_str)));
+	char time_str[TIME_STR_SIZE];
+	getlogtime_str(time_str);
+	dbg_printf(P_MSG,"%s: Shutting down daemon\n", time_str);
 	do_cleanup();
 	exit(0);
 }
@@ -687,18 +602,28 @@ int daemonize() {
 	return 0;
 }
 
-void setup_signals(void) {
-	signal(SIGCHLD,SIG_IGN); /* ignore child */
-	signal(SIGTSTP,SIG_IGN); /* ignore tty signals */
-	signal(SIGTTOU,SIG_IGN);
-	signal(SIGTTIN,SIG_IGN);
-	signal(SIGTERM,signal_handler); /* catch kill signal */
-	signal(SIGINT,signal_handler); /* catch kill signal */
+void signal_handler(int sig) {
+	switch(sig) {
+		case SIGINT:
+		case SIGTERM: {
+			dbg_printf(P_INFO2,"SIGTERM/SIGINT caught\n");
+			shutdown_daemon();
+			break;
+		}
+	}
 }
 
+void setup_signals(void) {
+	signal(SIGCHLD, SIG_IGN); /* ignore child */
+	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGTERM, signal_handler); /* catch kill signal */
+	signal(SIGINT , signal_handler); /* catch kill signal */
+}
 
-char* getlogtime_str( char * buf, int buflen ) {
-	char tmp[64];
+void getlogtime_str(char *buf) {
+	char tmp[TIME_STR_SIZE];
 	time_t now;
 	struct tm now_tm;
 	struct timeval tv;
@@ -708,48 +633,48 @@ char* getlogtime_str( char * buf, int buflen ) {
 
 	localtime_r( &now, &now_tm );
 	strftime( tmp, sizeof(tmp), "%y/%m/%d %H:%M:%S", &now_tm );
-	/*milliseconds = (int)(tv.tv_usec / 1000);*/
-	snprintf( buf, buflen, "%s", tmp);
+	snprintf( buf, strlen(tmp) + 1, "%s", tmp);
+}
 
-	return buf;
+void init_cd_preg() {
+	int err;
+	char erbuf[100];
+	const char* fname_regex = "Content-Disposition: inline; filename=\"(.+)\"$";
+
+	assert(content_disp_preg == NULL);
+
+	content_disp_preg = malloc(sizeof(regex_t));
+	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
+	if(err) {
+		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s\n", erbuf);
+	}
 }
 
 int main(int argc, char **argv) {
-	char *data = NULL;
-	int data_size = 0;
 	FILE *fp;
 	int nofork = 0;
 	int interval = 10;
-	const char *feed_url = "http://tvrss.net/feed/eztv/";
 	char *log_file;
-	char time_str[64];
+	const char *feed_url = "http://tvrss.net/feed/eztv/";
+	char time_str[TIME_STR_SIZE];
+	WebData *wdata;
 
 	LIBXML_TEST_VERSION
-	readargs(argc, argv, &nofork, &interval, &log_file );
+	readargs(argc, argv, &nofork, &interval, &log_file);
+	if(log_file != NULL)
+		strcpy(logfile, log_file);
 
-	if(!nofork && (log_file != NULL)) {
-		fp = fopen(log_file, "w");
-		if(fp == NULL) {
-			fprintf(stderr, "Failed to open logfile: %s\n", log_file);
-			fprintf(stderr, "Fallback to default '%s'\n", logfile);
-		} else {
-			fclose(fp);
-			strncpy(logfile, log_file, sizeof(logfile));
-			logfile[MAXPATHLEN-1] = '\0';
-		}
+	/* clear logfile */
+	fp = fopen(logfile, "w");
+	if(fp == NULL) {
+		fprintf(stderr, "Failed to open logfile '%s': %s\n", logfile, strerror(errno));
+		exit(1);
+	} else {
+		fclose(fp);
 	}
-
-	if(!nofork) {
-		/* clear log file */
-		fp = fopen(logfile, "w");
-		if(fp == NULL) {
-			fprintf(stderr, "Failed to open logfile: %s\n", logfile);
-			exit(1);
-		} else {
-			fclose(fp);
-		}
-	}
-	dbg_printf( P_MSG, "%s: Daemon started\n", getlogtime_str(time_str, sizeof(time_str)));
+	getlogtime_str(time_str);
+	dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
 	dbg_printf(P_INFO, "check interval: %d min\n", interval);
 	dbg_printf(P_INFO, "verbose level: %d\n", verbose);
 	dbg_printf(P_INFO, "log file: %s\n", nofork ? "stderr" : logfile);
@@ -758,7 +683,7 @@ int main(int argc, char **argv) {
 		shutdown_daemon();
 		exit(1);
 	}
-	dbg_printf(P_MSG, "Read %d regular expressions from config file\n", listCount(regex_items));
+	dbg_printf(P_MSG, "Read %d patterns from config file\n", listCount(regex_items));
 	print_list(regex_items);
  	if(!nofork) {
 		if(daemonize() != 0) {
@@ -768,19 +693,21 @@ int main(int argc, char **argv) {
 		}
 	}
 	setup_signals();
+	init_cd_preg();
 	while(1) {
-		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------\n", getlogtime_str(time_str, sizeof(time_str)));
-		data = http_getfile(feed_url, &data_size);
-		if(data) {
-			if(data_size > 0) {
-				parse_xmldata(data, data_size, (xmlChar*)"//item");
+		getlogtime_str(time_str);
+		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------\n", time_str);
+		wdata = getHTTPData(feed_url);
+		if(wdata && wdata->response) {
+			if(wdata->response->size > 0) {
+				dbg_printf(P_INFO2, "wdata->response->data: %d\n", strlen(wdata->response->data));
+				parse_xmldata(wdata->response->data, wdata->response->size, (xmlChar*)"//item");
 			}
-			free(data);
+			WebData_free(wdata);
 			dbg_printf(P_INFO2, "[main] freed 'data'\n");
 			check_for_downloads();
 		}
 		cleanup_list(&rss_items);
-		dbg_printf( P_MSG, "------ %s: Done! ------\n", getlogtime_str(time_str, sizeof(time_str)));
  		sleep(interval * 60);
 	}
 	return 0;

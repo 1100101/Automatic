@@ -29,7 +29,7 @@ NODE* findNode(char *str, NODE *head) {
 	NODE *p = head;
 
 	while (p != NULL) {
-		if(strcmp(p->elem.url, str) == 0)
+		if(strcmp(p->item.url, str) == 0)
 			return p;
 		p = p->pNext;
 	}
@@ -68,11 +68,11 @@ void freeList(NODE **ptr_to_head) {
 	return;
 }
 
-void addItem(list_elem elem, NODE **head) {
+void addItem(rss_item elem, NODE **head) {
 	NODE *pNode = (NODE*)malloc(sizeof(NODE));
 	if(pNode == NULL)
 		perror("malloc failed");
-	pNode->elem = elem;
+	pNode->item = elem;
 	pNode->pNext = NULL;
 	insertNode(head, pNode);
 }
@@ -98,23 +98,3 @@ unsigned int listCount(NODE *head) {
 	}
 	return c;
 }
-
-/*
-
-int main() {
-	NODE *myList = NULL;
-	addAddress(12345, &myList);
-	addAddress(678910, &myList);
-	addAddress(42938423, &myList);
-	printf("count: %i\n", countList(myList));
-	printf("findNode(12345): %i\n", hasAddress(12345, myList));
-	printf("findNode(32343): %i\n", hasAddress(32343, myList));
-	deleteAddress(678910, &myList);
-	printf("findNode(678910): %i\n", hasAddress(678910, myList));
-	printf("count: %i\n", countList(myList));
-	deleteAllNodes(&myList);
-	printf("count: %i\n", countList(myList));
-	return 0;
-}
-
-*/

@@ -1,21 +1,17 @@
-CPATH=/home/kylek/crosscompile/ch3snas
+ifndef VERBOSE
+  Verb := @
+endif
+
 CC=gcc
-CROSS_CC=arm-linux-gcc
-#SRC = auto_loader.c list.c memwatch.c
-SRC = auto_loader.c list.c
+SRC = auto_loader.c list.c web.c
 
 all: $(SRC)
-	@ $(CC) -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` $(SRC) -o auto_loader
+	$(Verb) $(CC) -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` \
+	`curl-config --cflags` `curl-config --libs` $(SRC) -o auto_loader
 
-cross:
-	@ $(CROSS_CC) -Wall -g -funsigned-char -pedantic -I$(CPATH)/include/libxml2 $(SRC) \
-	-L$(CPATH)/lib -lxml2 -lm -o arm-auto_loader
+memwatch:
+	$(Verb) $(CC) $(SRC) memwatch.c -o auto_loader -DMEMWATCH -Wall -g -pedantic \
+	`xml2-config --cflags` `xml2-config --libs` `curl-config --cflags` `curl-config --libs`
 
-dmalloc:
-	$(CC) $(SRC) -o auto_loader -Wall -g -DDMALLOC -DDMALLOC_FUNC_CHECK -pedantic \
-	`xml2-config --cflags` `xml2-config --libs` \
-	-I/usr/local/include -L/usr/local/lib -ldmalloc
-
-
-test: tmp.c
-	$(CC) -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` $< -o $@
+clean:
+	rm -f *.o auto_loader
