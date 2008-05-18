@@ -19,6 +19,8 @@ struct WebData* WebData_new(const char *url) {
 	int len;
 
 	data = malloc(sizeof(WebData));
+	if(!data)
+		return NULL;
 	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for wData\n", sizeof(WebData));
 	if(url) {
 		len = strlen(url);
@@ -27,10 +29,19 @@ struct WebData* WebData_new(const char *url) {
 		data->url[len] = '\0';
 	}
 	data->header = malloc(sizeof(HTTPData));
+	if(!data->header) {
+		free(data);
+		return NULL;
+	}
 	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for data->header\n", sizeof(HTTPData));
 	data->header->data = NULL;
 	data->header->size = 0;
 	data->response = malloc(sizeof(HTTPData));
+	if(!data->response) {
+		free(data->header);
+		free(data);
+		return NULL;
+	}
 	dbg_printf(P_INFO2, "[WebData_new] allocated %d bytes for data->response\n", sizeof(HTTPData));
 	data->response->data = NULL;
 	data->response->size = 0;
@@ -65,6 +76,8 @@ WebData* getHTTPData(const char *url) {
 	char errorBuffer[CURL_ERROR_SIZE];
 
 	WebData* data = WebData_new(url);
+	if(!data)
+		return NULL;
 
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
@@ -78,7 +91,8 @@ WebData* getHTTPData(const char *url) {
 	res = curl_easy_perform(curl_handle);
 	curl_easy_cleanup(curl_handle);
 	if (res != CURLE_OK) {
-		fprintf(stderr, "Failed to get '%s' [%s]\n", url, errorBuffer);
+		dbg_printf(P_INFO2, "Failed to get '%s' [%s]\n", url, errorBuffer);
+		WebData_free(data);
 		return NULL;
 	} else {
 		return data;
