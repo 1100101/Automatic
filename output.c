@@ -1,12 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/param.h>
 #include <stdarg.h>
 #include "output.h"
 
-extern char logfile[MAXPATHLEN];
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
+
+extern char log_file[MAXPATHLEN + 1];
 extern int verbose;
-extern int gl_debug;
+extern int nofork;
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
@@ -24,9 +29,12 @@ void dbg_printf(debug_type type, const char *format, ...) {
 				print_msg = 1;
 			break;
 		}
+
 		default: {
+#ifdef DEBUG
 			if(verbose > 2)
 				print_msg = 1;
+#endif
 			break;
 		}
 	}
@@ -35,8 +43,8 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		vsnprintf(tmp, MSGSIZE_MAX, format, va);
 		va_end(va);
 		tmp[MSGSIZE_MAX-1] = '\0';
-		if(gl_debug == 0) {
-			fp = fopen(logfile,"a");
+		if(nofork == 0 && strlen(log_file) > 1) {
+			fp = fopen(log_file,"a");
 			if(fp) {
 				fprintf(fp,"%s", tmp);
 				fflush(fp);
@@ -47,5 +55,19 @@ void dbg_printf(debug_type type, const char *format, ...) {
 			fflush(stderr);
 		}
 
+	}
+}
+
+
+void print_list(linked_list list) {
+	NODE *cur = list;
+	while(cur != NULL) {
+		if(cur->item.name != NULL) {
+			dbg_printf(P_INFO2, "  name:\t%s\n", cur->item.name);
+		}
+		if(cur->item.url != NULL) {
+			dbg_printf(P_INFO2, "  URL:\t%s\n", cur->item.url);
+		}
+		cur = cur->pNext;
 	}
 }

@@ -3,24 +3,41 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include "config_parser.h"
+#include "output.h"
+#include "list.h"
+
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
+
 
 #define MAX_OPT_LEN	50
-#define MAX_PARAM_LEN	1000
+#define MAX_PARAM_LEN	2000
 
-char* shorten(char *str) {
-		char *tmp;
+static const char *delim = ";;";
+
+extern char *feed_url;
+extern int check_interval;
+extern linked_list regex_patterns;
+extern char log_file[MAXPATHLEN + 1];
+extern char state_file[MAXPATHLEN + 1];
+extern int use_transmission;
+
+static int init_regex_patterns(const char *pattern_str);
+
+void shorten(char *str) {
+		char tmp[MAX_PARAM_LEN + 1];
 		int tmp_pos;
 		char c;
 		int line_pos = 0, i;
 		int len = strlen(str);
-		const char *delim = ";;";
 
-		tmp = calloc(MAX_PARAM_LEN + 1, 1);
-
-		if(!tmp)
-			return NULL;
+		for(i = 0; i < sizeof(tmp); ++i)
+			tmp[i] = '\0';
 
 		while (isspace(str[line_pos])) {
 			++line_pos;
@@ -48,9 +65,78 @@ char* shorten(char *str) {
 				++line_pos;
 			}
 		}
-		return tmp;
+		tmp[tmp_pos] = '\0';
+		assert(strlen(tmp) < MAX_PARAM_LEN);
+		strncpy(str, tmp, strlen(tmp) + 1);
 }
 
+int set_option(const char *opt, char *param, option_type type) {
+	int i;
+	int numval;
+	dbg_printf(P_INFO2, "%s=%s (type: %d)\n", opt, param, type);
+	if(!strcmp(opt, "url")) {
+		feed_url = realloc(feed_url, strlen(param) + 1);
+		if(feed_url)
+			strncpy(feed_url, param, strlen(param) + 1);
+	}else if(!strcmp(opt, "logfile")) {
+		if(strlen(param) < MAXPATHLEN)
+			strncpy(log_file, param, strlen(param) + 1);
+	}else if(!strcmp(opt, "statefile")) {
+		if(strlen(param) < MAXPATHLEN)
+			strncpy(state_file, param, strlen(param) + 1);
+	} else if(!strcmp(opt, "interval")) {
+		numval = 1;
+		for(i = 0; i < strlen(param); i++) {
+			if(isdigit(param[i]) == 0)
+				numval--;
+		}
+		if(numval == 1) {
+			check_interval = atoi(param);
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s\n", opt, param);
+		}
+	} else if(!strcmp(opt, "use-transmission")) {
+		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
+			use_transmission = 0;
+		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
+			use_transmission = 1;
+		} else {
+			dbg_printf(P_ERROR, "WARN: unknown parameter: %s=%s\n", opt, param);
+		}
+	} else if(!strcmp(opt, "patterns")) {
+		shorten(param);
+		init_regex_patterns(param);
+	} else {
+		dbg_printf(P_ERROR, "[set_option] Unknown option: %s\n", opt);
+	}
+	return 0;
+}
+
+static int init_regex_patterns(const char *pattern_str) {
+	rss_item re;
+	char *buf, *p;
+	int len;
+
+	re = newRSSItem();
+	buf = calloc(1, strlen(pattern_str) + 1);
+	strncpy(buf, pattern_str, strlen(pattern_str) + 1);
+	p = strtok(buf, delim);
+	while (p) {
+		len = strlen(p);
+		re.name = malloc(len + 1);
+		if(re.name) {
+			dbg_printf(P_INFO2, "[init_regex_patterns] allocated %d bytes for '%s'\n", len + 1, p);
+			strcpy(re.name, p);
+			addRSSItem(re, &regex_patterns);
+		} else {
+			perror("malloc");
+		}
+		p = strtok(NULL, delim);
+	}
+	free(buf);
+	dbg_printf(P_INFO2, "[init_regex_patterns] freed 'buf'\n");
+	return 0;
+}
 
 int parse_config_file(const char *filename) {
 	FILE *fp;
@@ -68,11 +154,12 @@ int parse_config_file(const char *filename) {
 	int param_good = 0;
 	struct stat fs;
 	int ret = 0;
+	option_type type;
 
 	if(stat(filename, &fs) == -1)  {
-		printf("Error: Unable to determine file size of %s", filename);
 		return -1;
 	}
+	dbg_printf(P_INFO2, "Configuration file size: %d\n", fs.st_size);
 
 	if ((fp = fopen(filename, "r")) == NULL) {
 		perror("fopen");
@@ -80,7 +167,7 @@ int parse_config_file(const char *filename) {
 	}
 
 	if ((line = malloc(fs.st_size + 1)) == NULL) {
-		printf("Can't get memory for 'line': %s\n", strerror(errno));
+		printf("Can't allocate memory for 'line': %s (%ldb)\n", strerror(errno), fs.st_size + 1);
 		return -1;
 	}
 
@@ -169,6 +256,7 @@ int parse_config_file(const char *filename) {
 			}
 			if(param_good) {
 				line_pos++;	/* skip the closing " or ' */
+				type = STRING_TYPE;
 			} else {
 				break;
 			}
@@ -191,6 +279,7 @@ int parse_config_file(const char *filename) {
 			}
 			if(param_good) {
 				line_pos++;	/* skip the closing ')' */
+				type = STRINGLIST_TYPE;
 			} else {
 				break;
 			}
@@ -210,14 +299,13 @@ int parse_config_file(const char *filename) {
 			if(param_good == 0) {
 				break;
 			}
+			type = INT_TYPE;
 		}
 		param[param_pos] = '\0';
-#ifdef DEBUG
-		printf("option: %s\n", opt);
-		printf("param: %s\n", param);
-		printf("shortened: %s\n", shorten(param));
-		printf("-----------------\n");
-#endif
+		dbg_printf(P_INFO2, "option: %s\n", opt);
+		dbg_printf(P_INFO2, "param: %s\n", param);
+		dbg_printf(P_INFO2, "-----------------\n");
+		set_option(opt, param, type);
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
 			if(line[line_pos] == '\n')
@@ -235,6 +323,8 @@ int parse_config_file(const char *filename) {
 	return ret;
 }
 
+/*
+
 int main(int argc, char **argv) {
 
 	if(argc != 2) {
@@ -247,3 +337,4 @@ int main(int argc, char **argv) {
 }
 
 
+*/

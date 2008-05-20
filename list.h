@@ -1,6 +1,5 @@
 #ifndef LIST_H__
 #define LIST_H__
-#include "memwatch.h"
 
 
 typedef struct NODE NODE;
@@ -19,13 +18,14 @@ struct NODE {
 
 /* read-only functions */
 unsigned int listCount(NODE *head);
-int hasURL(char *url, NODE *head);
-int hasItem(unsigned int addr, NODE *head);
+int hasURL(const char *url, NODE *head);
 
 /* list modifiers */
-void addItem(rss_item elem, NODE **head);
-rss_item findItem(char *str, NODE *head);
+void addRSSItem(rss_item elem, NODE **head);
 void freeList(NODE **head);
 void deleteHead(NODE **ptr_to_head);
+rss_item newRSSItem();
+int add_to_bucket(rss_item elem, NODE **b, int use_size_limit);
+void freeItem(NODE *item);
 
 #endif

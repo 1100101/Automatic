@@ -1,13 +1,6 @@
 #ifndef WEB_H__
 #define WEB_H__
 
-#include <sys/time.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <curl/curl.h>
-#include "memwatch.h"
-
 struct HTTPData {
  char *data;
  size_t size;
@@ -15,6 +8,7 @@ struct HTTPData {
 
 struct WebData {
 	char *url;
+	long responseCode;
 	struct HTTPData* header;
 	struct HTTPData* response;
 };
