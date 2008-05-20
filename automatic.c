@@ -541,11 +541,6 @@ int main(int argc, char **argv) {
 		strncpy(configfile, default_config, strlen(default_config) + 1);
 	}
 
-	dbg_printf(P_MSG, "[main] verbose: %d\n", verbose);
-	dbg_printf(P_MSG, "[main] nofork: %d\n", nofork);
-	dbg_printf(P_MSG, "[main] config file: %s\n", configfile);
-
-
 	if(parse_config_file(configfile) != 0) {
 		if(errno == ENOENT) {
 			snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", configfile);
@@ -571,6 +566,9 @@ int main(int argc, char **argv) {
 			fclose(fp);
 		}
 	}
+	dbg_printf(P_INFO, "verbose: %d\n", verbose);
+	dbg_printf(P_INFO, "nofork: %d\n", nofork);
+	dbg_printf(P_INFO, "config file: %s\n", configfile);
 	dbg_printf(P_INFO, "check interval: %d min\n", check_interval);
 	dbg_printf(P_INFO, "log file: %s\n", nofork ? "stderr" : log_file);
 	dbg_printf(P_INFO, "state file: %s\n", state_file);

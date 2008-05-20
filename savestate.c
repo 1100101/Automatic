@@ -28,7 +28,7 @@ int save_state(NODE *head) {
 	while (current != NULL) {
 		sprintf(tmp, "%s\n", current->item.url);
 		if(!fwrite(tmp, strlen(tmp), 1, fp)){
-			dbg_printf(P_ERROR, "[save_state] Error: Unable to write to state.txt: %s\n", strerror(errno));
+			dbg_printf(P_ERROR, "[save_state] Error: Unable to write to '%s': %s\n", state_file, strerror(errno));
 			fclose(fp);
 			return -1;
 		}
@@ -45,7 +45,7 @@ int load_state(NODE **head) {
 	rss_item item = newRSSItem();
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
-		dbg_printf(P_ERROR, "[save_state] Error: Unable to open state.txt for reading: %s\n", strerror(errno));
+		dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for reading: %s\n", state_file, strerror(errno));
 		return -1;
 	}
 	while (fgets(line, MAX_LINE_LEN, fp)) {

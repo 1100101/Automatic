@@ -73,7 +73,7 @@ void shorten(char *str) {
 int set_option(const char *opt, char *param, option_type type) {
 	int i;
 	int numval;
-	dbg_printf(P_INFO2, "%s=%s (type: %d)\n", opt, param, type);
+	dbg_printf(P_INFO, "%s=%s (type: %d)\n", opt, param, type);
 	if(!strcmp(opt, "url")) {
 		feed_url = realloc(feed_url, strlen(param) + 1);
 		if(feed_url)
@@ -161,13 +161,13 @@ int parse_config_file(const char *filename) {
 	}
 	dbg_printf(P_INFO2, "Configuration file size: %d\n", fs.st_size);
 
-	if ((fp = fopen(filename, "r")) == NULL) {
+	if ((fp = fopen(filename, "rb")) == NULL) {
 		perror("fopen");
 		return -1;
 	}
 
 	if ((line = malloc(fs.st_size + 1)) == NULL) {
-		printf("Can't allocate memory for 'line': %s (%ldb)\n", strerror(errno), fs.st_size + 1);
+		dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)\n", strerror(errno), fs.st_size + 1);
 		return -1;
 	}
 
@@ -176,41 +176,53 @@ int parse_config_file(const char *filename) {
 		free(line);
 		return -1;
 	}
+	if(fp)
+		fclose(fp);
 
 	line_pos = 0;
 
 	while(line_pos != fs.st_size) {
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n')
+			if(line[line_pos] == '\n') {
+				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
 				line_num++;
+			}
 			++line_pos;
 		}
 
 		/* comment */
 		if (line[line_pos] == '#') {
+			dbg_printf(P_INFO2, "skipping comment (line %d)\n", line_num);
 			while (line[line_pos] != '\n') {
 				++line_pos;
 			}
 			++line_num;
 			++line_pos;  /* skip the newline as well */
 		}
+		/* skip whitespaces */
+		while (isspace(line[line_pos])) {
+			if(line[line_pos] == '\n') {
+				line_num++;
+				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+			}
+
+			++line_pos;
+		}
 
 		/* read option */
 		for (opt_pos = 0; isprint(line[line_pos]) && line[line_pos] != ' ' &&
 				line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
-/* 				printf("%c\n", line[line_pos]); */
-			if(line[line_pos] == '\n')
-				++line_num;
 			opt[opt_pos++] = line[line_pos++];
 			if (opt_pos >= MAX_OPT_LEN) {
-				snprintf(erbuf, sizeof(erbuf), "too long option at line %d\n", line_num);
+				dbg_printf(P_ERROR, "too long option at line %d\n", line_num);
 				parse_error = 1;
 				opt_good = 0;
 			}
 		}
 		if (opt_pos == 0 || parse_error == 1) {
-			snprintf(erbuf, sizeof(erbuf), "parse error at line %d (line_pos: %d)\n", line_num, line[line_pos]);
+			dbg_printf(P_ERROR, "parse error at line %d (pos: %d)\n", line_num, line_pos);
+			parse_error = 1;
 			break;
 		} else {
 			opt[opt_pos] = '\0';
@@ -218,12 +230,14 @@ int parse_config_file(const char *filename) {
 		}
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n')
+			if(line[line_pos] == '\n') {
 				line_num++;
+				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+			}
 			++line_pos;
 		}
 
-		/* check '=' */
+		/* check for '=' */
 		if (line[line_pos++] != '=') {
 			snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)\n", opt, line_num);
 			parse_error = 1;
@@ -232,8 +246,10 @@ int parse_config_file(const char *filename) {
 
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n')
+			if(line[line_pos] == '\n') {
 				line_num++;
+				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+			}
 			++line_pos;
 		}
 
@@ -245,7 +261,7 @@ int parse_config_file(const char *filename) {
 			++line_pos;  /* skip quote */
 			param_good = 1;
 			for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
-				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
+				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN && line[line_pos] != '\n') {
 					param[param_pos++] = line[line_pos++];
 				} else {
 					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n",opt, line_num);
@@ -262,6 +278,7 @@ int parse_config_file(const char *filename) {
 			}
 		/* case 2: multiple items, linebreaks allowed */
 		} else if (line[line_pos] == '{') {
+			dbg_printf(P_INFO2, "reading multiline param\n", line_num);
 			c = '}';
 			++line_pos;
 			param_good = 1;
@@ -277,6 +294,7 @@ int parse_config_file(const char *filename) {
 					break;
 				}
 			}
+			dbg_printf(P_INFO2, "multiline param: param_good=%d\n", param_good);
 			if(param_good) {
 				line_pos++;	/* skip the closing ')' */
 				type = STRINGLIST_TYPE;
@@ -315,7 +333,6 @@ int parse_config_file(const char *filename) {
 	}
 
 	if(parse_error == 1) {
-		printf("Parse error: %s", erbuf);
 		ret = -1;
 	}
 	if(line)
