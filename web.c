@@ -21,7 +21,7 @@ static regex_t *content_disp_preg = NULL;
 static void init_cd_preg() {
 	int err;
 	char erbuf[100];
-	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+ 	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
 
 	assert(content_disp_preg == NULL);
 
@@ -48,15 +48,23 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 	char *p;
 	char erbuf[100];
 	int content_length = 0, len, err;
+	int i;
 	regmatch_t pmatch[3];
 
-	if(!mem->header->data) {
-		mem->header->data = malloc(HEADER_BUFFER);
-		dbg_printf(P_INFO2, "[write_callback] allocated %d bytes for mem->header->data\n", HEADER_BUFFER);
-	}
 	buf = malloc(realsize + 1);
+	if(!buf) {
+		dbg_printf(P_ERROR, "[write_header_callback] Error allocating %d bytes for 'buf'\n", realsize + 1);
+		return realsize;
+	}
+
 	memcpy(buf, ptr, realsize);
 	buf[realsize] = '\0';
+
+	/* total hack to get rid of the newline/carriage return at the end of each header line */
+	for(i = realsize-2; i < realsize; i++) {
+		if(buf[i] == '\r' || buf[i] == '\n')
+			buf[i] = '\0';
+	}
 
 	/* parse header for Content-Length to allocate correct size for data->response->data */
 	if(!strncmp(buf, "Content-Length:", 15)) {
@@ -71,25 +79,33 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 			mem->response->data = realloc(mem->response->data, content_length + 1);
 			dbg_printf(P_INFO, "[write_header_callback] reallocated data->response->data to %d byte (using Content-Length)\n", content_length + 1);
 		}
-	}
-	/* parse header for Content-Disposition to get correct filename */
-	if(!content_disp_preg) {
-		init_cd_preg();
-	}
-	err = regexec(content_disp_preg, buf, 3, pmatch, 0);
-	if(!err) {			/* regex matches */
-		len = pmatch[2].rm_eo - pmatch[2].rm_so;
-		mem->content_filename = realloc(mem->content_filename, len + 1);
-		strncpy(mem->content_filename, buf + pmatch[2].rm_so, len);
-		mem->content_filename[len] = '\0';
-		dbg_printf(P_INFO, "[write_header_callback] Found filename: %s\n", mem->content_filename);
-	} else if(err != REG_NOMATCH && err != 0){
-		len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s\n", erbuf);
 	} else {
-		if(!strncmp(buf, "Content-Disposition", 19)) {
-			dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s\n", buf);
+		/* parse header for Content-Disposition to get correct filename */
+		if(!content_disp_preg) {
+			init_cd_preg();
 		}
+		err = regexec(content_disp_preg, buf, 3, pmatch, 0);
+		if(!err) {			/* regex matches */
+			len = pmatch[2].rm_eo - pmatch[2].rm_so;
+			mem->content_filename = realloc(mem->content_filename, len + 1);
+			strncpy(mem->content_filename, buf + pmatch[2].rm_so, len);
+			mem->content_filename[len] = '\0';
+			dbg_printf(P_INFO, "[write_header_callback] Found filename: %s\n", mem->content_filename);
+		} else if(err != REG_NOMATCH && err != 0){
+			len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s\n", erbuf);
+		} else {
+			if(!strncmp(buf, "Content-Disposition", 19)) {
+				len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+				dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s\n", erbuf);
+				dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s\n", buf);
+			}
+		}
+	}
+
+	if(!mem->header->data) {
+		mem->header->data = malloc(HEADER_BUFFER);
+		dbg_printf(P_INFO2, "[write_header_callback] allocated %d bytes for mem->header->data\n", HEADER_BUFFER);
 	}
 
 	/* save header line to mem->header */

@@ -33,7 +33,7 @@
 #include "web.h"
 #include "output.h"
 #include "config_parser.h"
-#include "savestate.h"
+#include "state.h"
 
 #define MAX_BUFFER 128 * 1024   /* max. file size for xml/torrent = 128k */
 #define BUF_SIZE 4096

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -48,12 +49,12 @@ int load_state(NODE **head) {
 	rss_item item = newRSSItem();
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
-		dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for reading: %s\n", state_file, strerror(errno));
+		dbg_printf(P_ERROR, "[load_state] Error: Unable to open '%s' for reading: %s\n", state_file, strerror(errno));
 		return -1;
 	}
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		len = strlen(line);
-		if(len > 20) {  /* arbitrary limit for an URL */
+		if(len > 20) {  /* arbitrary threshold for the length of an URL */
 			strncpy(str, line, len);
 			str[len-1] = '\0';
 			item.url = str;

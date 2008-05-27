@@ -4,7 +4,7 @@ endif
 
 
 CC=gcc
-SRC = automatic.c list.c web.c output.c config_parser.c savestate.c
+SRC = automatic.c list.c web.c output.c config_parser.c state.c
 
 all: $(SRC) version.h
 	$(Verb) $(CC) -O2 -Wall -g -funsigned-char -pedantic `xml2-config --cflags` `xml2-config --libs` \
