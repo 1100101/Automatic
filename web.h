@@ -9,6 +9,8 @@ struct HTTPData {
 struct WebData {
 	char *url;
 	long responseCode;
+	size_t content_length;
+	char *content_filename;
 	struct HTTPData* header;
 	struct HTTPData* response;
 };
@@ -19,6 +21,6 @@ typedef struct WebData WebData;
 
 WebData* getHTTPData(const char *url);
 void WebData_free(struct WebData *data);
-
+void cd_preg_free(void);
 
 #endif

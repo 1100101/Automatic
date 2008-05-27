@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
@@ -10,8 +11,8 @@
 #endif
 
 extern char log_file[MAXPATHLEN + 1];
-extern int verbose;
-extern int nofork;
+extern uint8_t verbose;
+extern uint8_t nofork;
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;

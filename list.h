@@ -26,6 +26,7 @@ void freeList(NODE **head);
 void deleteHead(NODE **ptr_to_head);
 rss_item newRSSItem();
 int add_to_bucket(rss_item elem, NODE **b, int use_size_limit);
-void freeItem(NODE *item);
+/*void freeItem(NODE *item);*/
+void cleanup_list(NODE **list);
 
 #endif

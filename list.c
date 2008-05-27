@@ -12,6 +12,8 @@ extern int max_bucket_items;
 	#include "memwatch.h"
 #endif
 
+static void freeItem(NODE *item);
+
 void insertNode(NODE **ptr_to_head, NODE *newnode) {
 	NODE /* *p, */ *prev;
 
@@ -139,7 +141,7 @@ int add_to_bucket(rss_item elem, NODE **b, int use_size_limit) {
 }
 
 
-void freeItem(NODE *item) {
+static void freeItem(NODE *item) {
 	if(item != NULL) {
 		if(item->item.name) {
 			free(item->item.name);
@@ -151,3 +153,15 @@ void freeItem(NODE *item) {
 		}
 	}
 }
+
+void cleanup_list(NODE **list) {
+	NODE *current = *list;
+	dbg_printf(P_INFO2, "[cleanup_list] list size before: %d\n", listCount(*list));
+	while (current != NULL) {
+		freeItem(current);
+		current = current->pNext;
+	}
+	freeList(list);
+	dbg_printf(P_INFO2, "[cleanup_list] list size after: %d\n", listCount(*list));
+}
+

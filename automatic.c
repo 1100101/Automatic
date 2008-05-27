@@ -1,7 +1,9 @@
+
 #define LOCK_FILE  "/ffp/tmp/automatic.pid"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
@@ -45,17 +47,20 @@ static linked_list rss_items = NULL;
 linked_list bucket = NULL;
 linked_list regex_patterns = NULL;
 
-static regex_t *content_disp_preg;
 
-int verbose = P_MSG;
-int nofork = 0;
-int max_bucket_items = 10;
+
+uint8_t verbose = P_MSG;
+uint8_t nofork = 0;
+uint8_t max_bucket_items = 10;
+uint8_t bucket_changed = 0;
 char log_file[MAXPATHLEN + 1] = "/ffp/tmp/automatic.log";
 char state_file[MAXPATHLEN + 1] = "/mnt/USB/.automatic/state.txt";
+char config_path[MAXPATHLEN + 1] = "/mnt/HD_a2/.transmission";
 char *feed_url;
+char *configfile = NULL;
 
-int check_interval = 10;
-int use_transmission = 1;
+uint8_t check_interval = 10;
+uint8_t use_transmission = 1;
 
 void usage() {
    printf(
@@ -104,7 +109,7 @@ void extract_feed_items(xmlNodeSetPtr nodes) {
 	xmlNodePtr cur, child;
 	xmlChar *textNode;
 	int size, i, len;
-	int name_set, url_set;
+	uint8_t name_set, url_set;
 	char *str;
 	rss_item item = newRSSItem();
 	size = (nodes) ? nodes->nodeNr : 0;
@@ -214,8 +219,8 @@ int parse_xmldata(const char* buffer, int size) {
 }
 
 
-int has_been_downloaded(char *url) {
-	int res;
+uint8_t has_been_downloaded(char *url) {
+	uint8_t res;
 
 	res = hasURL(url, bucket);
 	if(res)
@@ -224,13 +229,12 @@ int has_been_downloaded(char *url) {
 }
 
 
-
 int call_transmission(const char *filename) {
 	char buf[MAXPATHLEN];
-	int status;
+	int8_t status;
 
 	if(filename && strlen(filename) > 1) {
-		sprintf(buf, "transmission-remote -a \"%s\"", filename);
+		sprintf(buf, "transmission-remote -g \"%s\" -a \"%s\"", config_path, filename);
 		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...\n");
 		status = system(buf);
 		dbg_printf(P_INFO, "[call_transmission] WEXITSTATUS(status): %d\n", WEXITSTATUS(status));
@@ -255,64 +259,28 @@ int is_torrent(const char *str) {
 }
 
 void get_filename(WebData *data, char *file_name) {
-	char *p, *tmp, fname[MAXPATHLEN], buf1[MAXPATHLEN], buf2[MAXPATHLEN], erbuf[100];
-	int len,err, filename_found = 0;
-	regmatch_t pmatch[3];
+	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
+	int len;
+
 #ifdef DEBUG
 	assert(data);
 #endif
 
-/** move this to web.c: write_header_callback() **/
-
-	/* Case 1: Use Header field "Content-Disposition" (if available) to get correct filename */
-	if(!content_disp_preg) {
-		dbg_printf(P_ERROR, "[get_filename] Error: content_disp_preg not initialized\n");
+	if(data->content_filename) {
+		strncpy(buf, data->content_filename, strlen(data->content_filename) + 1);
 	} else {
-		tmp = malloc(data->header->size + 1);
-		if(tmp) {
-			memcpy(tmp, data->header->data, data->header->size);
-			tmp[data->header->size] = '\0';
-			p = strtok(tmp, "\r\n");
-			while (p) {
-				if(filename_found == 0) {
-					strcpy(buf1, p);
-					dbg_printf(P_INFO2, "[get_filename] Current header line: %s\n", buf1);
-					err = regexec(content_disp_preg, buf1, 3, pmatch, 0);
-					if(!err) {			/* regex matches */
-						len = pmatch[2].rm_eo - pmatch[2].rm_so;
-						strncpy(buf2, buf1+pmatch[2].rm_so, len);
-						buf2[len] = '\0';
-						dbg_printf(P_INFO, "[get_filename] Found filename: %s\n", buf2);
-						filename_found = 1;
-					} else if(err != REG_NOMATCH && err != 0){
-						len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
-						dbg_printf(P_ERROR, "[get_filename] regexec error: %s\n", erbuf);
-					} else {
-						if(!strncmp(buf1, "Content-Disposition", 19)) {
-							dbg_printf(P_ERROR, "[get_filename] Unknown pattern: %s\n", buf1);
-						}
-					}
-				}
-				p = strtok(NULL, "\r\n");
-			}
-			free(tmp);
-		}
-	}
-
-	/* Case 2: Parse URL for filename */
-	if(filename_found == 0) {
-		strcpy(buf1, data->url);
-		p = strtok(buf1, "/");
+		strcpy(tmp, data->url);
+		p = strtok(tmp, "/");
 		while (p) {
 			len = strlen(p);
 			if(len < MAXPATHLEN)
-				strcpy(buf2, p);
+				strcpy(buf, p);
 			p = strtok(NULL, "/");
 		}
 	}
 	strcpy(fname, "/ffp/tmp/");
-	strcat(fname, buf2);
-	if(!is_torrent(buf2)) {
+	strcat(fname, buf);
+	if(!is_torrent(buf)) {
 		strcat(fname, ".torrent");
 	}
 	strcpy(file_name, fname);
@@ -350,7 +318,9 @@ void download_torrent(NODE *item) {
 		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p\n", (void*)wdata, (void*)(wdata->response));
 	}
 	WebData_free(wdata);
-	if(!add_to_bucket(item->item, &bucket, 1) == 1) {
+	if(add_to_bucket(item->item, &bucket, 1) == 1) {
+		bucket_changed = 1;
+	} else {
 		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s\n", item->item.name);
 	}
 }
@@ -386,27 +356,16 @@ void check_for_downloads() {
 	}
 }
 
-void cleanup_list(NODE **list) {
-	NODE *current = *list;
-	dbg_printf(P_INFO2, "[cleanup_list] list size before: %d\n", listCount(*list));
-	while (current != NULL) {
-		freeItem(current);
-		current = current->pNext;
-	}
-	freeList(list);
-	dbg_printf(P_INFO2, "[cleanup_list] list size after: %d\n", listCount(*list));
-}
-
 void do_cleanup(void) {
 	cleanup_list(&regex_patterns);
 	cleanup_list(&rss_items);
 	cleanup_list(&bucket);
-	if(content_disp_preg) {
-		regfree(content_disp_preg);
-		free(content_disp_preg);
-	}
+	cd_preg_free();
+
 	if(feed_url)
 		free(feed_url);
+	if(configfile)
+		free(configfile);
 }
 
 void shutdown_daemon() {
@@ -505,29 +464,9 @@ void getlogtime_str(char *buf) {
 	snprintf( buf, strlen(tmp) + 1, "%s", tmp);
 }
 
-
-/* the regular expression for the Content-Disposition HTTP header entry never changes, so we
-   initialize it once on startup and reuse it */
-void init_cd_preg() {
-	int err;
-	char erbuf[100];
-	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
-
-	assert(content_disp_preg == NULL);
-
-	content_disp_preg = malloc(sizeof(regex_t));
-	dbg_printf(P_INFO2, "[init_cd_preg] allocated %d bytes for content_disp_preg\n", sizeof(regex_t));
-	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
-	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
-	if(err) {
-		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s\n", erbuf);
-	}
-}
-
 int main(int argc, char **argv) {
 	FILE *fp;
-	char *configfile = NULL;
+
 	const char *default_config = "/ffp/etc/automatic.conf";
 	char time_str[TIME_STR_SIZE];
 	char erbuf[100];
@@ -545,7 +484,7 @@ int main(int argc, char **argv) {
 		if(errno == ENOENT) {
 			snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", configfile);
 		} else {
-			snprintf(erbuf, sizeof(erbuf), "%s", strerror(errno));
+			snprintf(erbuf, sizeof(erbuf), "Unknown error");
 		}
 		fprintf(stderr, "Error parsing config file: %s\n", erbuf);
 		exit(1);
@@ -569,6 +508,7 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "verbose: %d\n", verbose);
 	dbg_printf(P_INFO, "nofork: %d\n", nofork);
 	dbg_printf(P_INFO, "config file: %s\n", configfile);
+	dbg_printf(P_INFO, "Transmission home: %s\n", config_path);
 	dbg_printf(P_INFO, "check interval: %d min\n", check_interval);
 	dbg_printf(P_INFO, "log file: %s\n", nofork ? "stderr" : log_file);
 	dbg_printf(P_INFO, "state file: %s\n", state_file);
@@ -577,7 +517,7 @@ int main(int argc, char **argv) {
 	print_list(regex_patterns);
 	load_state(&bucket);
 	setup_signals();
-	init_cd_preg();
+
  	if(!nofork) {
 		if(daemonize() != 0) {
 			fprintf(stderr, "Error: Daemonize failed. Aborting...\n");

@@ -1,7 +1,9 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
+#include <regex.h>
 #include <curl/curl.h>
 
 #include "web.h"
@@ -14,20 +16,48 @@
 #define DATA_BUFFER 1024 * 100
 #define HEADER_BUFFER 500
 
+static regex_t *content_disp_preg = NULL;
+
+static void init_cd_preg() {
+	int err;
+	char erbuf[100];
+	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+
+	assert(content_disp_preg == NULL);
+
+	content_disp_preg = malloc(sizeof(regex_t));
+	dbg_printf(P_INFO2, "[init_cd_preg] allocated %d bytes for content_disp_preg\n", sizeof(regex_t));
+	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
+	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
+	if(err) {
+		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s\n", erbuf);
+	}
+}
+
+void cd_preg_free() {
+	regfree(content_disp_preg);
+	free(content_disp_preg);
+}
+
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
 	char *buf;
 	char tmp[20];
 	char *p;
-	int content_length = 0;
+	char erbuf[100];
+	int content_length = 0, len, err;
+	regmatch_t pmatch[3];
+
 	if(!mem->header->data) {
-		mem->header->data = (char*)malloc(HEADER_BUFFER);
+		mem->header->data = malloc(HEADER_BUFFER);
 		dbg_printf(P_INFO2, "[write_callback] allocated %d bytes for mem->header->data\n", HEADER_BUFFER);
 	}
 	buf = malloc(realsize + 1);
 	memcpy(buf, ptr, realsize);
 	buf[realsize] = '\0';
+
 	/* parse header for Content-Length to allocate correct size for data->response->data */
 	if(!strncmp(buf, "Content-Length:", 15)) {
 		p = strtok(buf, " ");
@@ -37,10 +67,32 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		}
 		content_length = atoi(tmp);
 		if(content_length > 0) {
+			mem->content_length = content_length;
 			mem->response->data = realloc(mem->response->data, content_length + 1);
-			dbg_printf(P_INFO2, "[write_header_callback] reallocated data->response->data to %d byte (using Content-Length)\n", content_length + 1);
+			dbg_printf(P_INFO, "[write_header_callback] reallocated data->response->data to %d byte (using Content-Length)\n", content_length + 1);
 		}
 	}
+	/* parse header for Content-Disposition to get correct filename */
+	if(!content_disp_preg) {
+		init_cd_preg();
+	}
+	err = regexec(content_disp_preg, buf, 3, pmatch, 0);
+	if(!err) {			/* regex matches */
+		len = pmatch[2].rm_eo - pmatch[2].rm_so;
+		mem->content_filename = realloc(mem->content_filename, len + 1);
+		strncpy(mem->content_filename, buf + pmatch[2].rm_so, len);
+		mem->content_filename[len] = '\0';
+		dbg_printf(P_INFO, "[write_header_callback] Found filename: %s\n", mem->content_filename);
+	} else if(err != REG_NOMATCH && err != 0){
+		len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s\n", erbuf);
+	} else {
+		if(!strncmp(buf, "Content-Disposition", 19)) {
+			dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s\n", buf);
+		}
+	}
+
+	/* save header line to mem->header */
 	if(mem->header->size + realsize + 1 > HEADER_BUFFER) {
 		mem->header->data = (char *)realloc(mem->header->data, mem->header->size + realsize + 1);
 		dbg_printf(P_INFO2, "[write_callback] reallocated %d bytes for mem->data\n", mem->header->size + realsize + 1);
@@ -58,6 +110,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
+
 	/* fallback in case content-length detection in write_header_callback was not successful */
 	if(!mem->response->data) {
 		mem->response->data = (char*)malloc(DATA_BUFFER);
@@ -74,20 +127,6 @@ static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *da
 	}
 	return realsize;
 }
-/*
-static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *data) {
-	size_t realsize = size * nmemb;
-	HTTPData *mem = data;
-	mem->data = (char *)realloc(mem->data, mem->size + realsize + 1);
-	if (mem->data) {
-		dbg_printf(P_INFO2, "[write_callback] reallocated %d bytes for mem->data\n", mem->size + realsize + 1);
-		memcpy(&(mem->data[mem->size]), ptr, realsize);
-		mem->size += realsize;
-		mem->data[mem->size] = 0;
-	}
-	return realsize;
-}
-*/
 
 struct WebData* WebData_new(const char *url) {
 	WebData *data;
@@ -103,6 +142,8 @@ struct WebData* WebData_new(const char *url) {
 		strncpy(data->url, url, len);
 		data->url[len] = '\0';
 	}
+	data->content_filename = NULL;
+	data->content_length = -1;
 	data->header = malloc(sizeof(HTTPData));
 	if(!data->header) {
 		free(data);
@@ -128,6 +169,10 @@ void WebData_free(struct WebData *data) {
 		if(data->url) {
 			free(data->url);
 			dbg_printf(P_INFO2, "[WebData_free] freed data->url\n");
+		}
+		if(data->content_filename) {
+			free(data->content_filename);
+			dbg_printf(P_INFO2, "[WebData_free] freed data->content_filename\n");
 		}
 		if(data->response) {
 			if(data->response->data) {

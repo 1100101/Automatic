@@ -11,7 +11,7 @@ all: $(SRC) version.h
 	`curl-config --cflags` `curl-config --libs` $(SRC) -o automatic
 
 memwatch: $(SRC) version.h
-	$(Verb) $(CC) $(SRC) -DDEBUG memwatch.c -o automatic -DMEMWATCH -Wall -g -pedantic \
+	$(Verb) $(CC) $(SRC) memwatch.c -o automatic -DDEBUG -DMEMWATCH -Wall -g -pedantic \
 	`xml2-config --cflags` `xml2-config --libs` `curl-config --cflags` `curl-config --libs`
 
 debug: $(SRC) version.h
@@ -24,5 +24,4 @@ clean:
 
 version.h:
 	$(Verb) echo '#define SVN_REVISION          "'`svn info | grep "Revision" | awk -F': ' '{print $$2}'`'"' >> version.h
-	$(Verb) echo '#define SHORT_VERSION_STRING  "'1.20'"' >> version.h
-	$(Verb) echo '#define LONG_VERSION_STRING   "'1.20' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h
+	$(Verb) echo '#define LONG_VERSION_STRING   "'0.1.1' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include "config_parser.h"
 #include "output.h"
 #include "list.h"
+
 
 #ifdef MEMWATCH
 	#include "memwatch.h"
@@ -21,54 +23,15 @@
 static const char *delim = ";;";
 
 extern char *feed_url;
-extern int check_interval;
+extern uint8_t check_interval;
 extern linked_list regex_patterns;
 extern char log_file[MAXPATHLEN + 1];
+extern char config_path[MAXPATHLEN + 1];
 extern char state_file[MAXPATHLEN + 1];
-extern int use_transmission;
+extern uint8_t use_transmission;
 
 static int init_regex_patterns(const char *pattern_str);
-
-void shorten(char *str) {
-		char tmp[MAX_PARAM_LEN + 1];
-		int tmp_pos;
-		char c;
-		int line_pos = 0, i;
-		int len = strlen(str);
-
-		for(i = 0; i < sizeof(tmp); ++i)
-			tmp[i] = '\0';
-
-		while (isspace(str[line_pos])) {
-			++line_pos;
-		}
-		tmp_pos = 0;
-		while(line_pos < len) {
-			/* case 1: quoted strings */
-			if(tmp_pos != 0) {
-				for(i = 0; i < strlen(delim); ++i)
-					tmp[tmp_pos++] = delim[i];
-			}
-			if (str[line_pos] == '"' || str[line_pos] == '\'') {
-				c = str[line_pos];
-				++line_pos;  /* skip quote */
-				for (; str[line_pos] != c; /* NOTHING */) {
-						tmp[tmp_pos++] = str[line_pos++];
-				}
-				line_pos++;	/* skip the closing " or ' */
-			} else {
-				for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
-					tmp[tmp_pos++] = str[line_pos++];
-				}
-			}
-			while (isspace(str[line_pos])) {
-				++line_pos;
-			}
-		}
-		tmp[tmp_pos] = '\0';
-		assert(strlen(tmp) < MAX_PARAM_LEN);
-		strncpy(str, tmp, strlen(tmp) + 1);
-}
+static void shorten(char *str);
 
 int set_option(const char *opt, char *param, option_type type) {
 	int i;
@@ -81,6 +44,9 @@ int set_option(const char *opt, char *param, option_type type) {
 	}else if(!strcmp(opt, "logfile")) {
 		if(strlen(param) < MAXPATHLEN)
 			strncpy(log_file, param, strlen(param) + 1);
+	}else if(!strcmp(opt, "transmission-home")) {
+		if(strlen(param) < MAXPATHLEN)
+			strncpy(config_path, param, strlen(param) + 1);
 	}else if(!strcmp(opt, "statefile")) {
 		if(strlen(param) < MAXPATHLEN)
 			strncpy(state_file, param, strlen(param) + 1);
@@ -91,7 +57,12 @@ int set_option(const char *opt, char *param, option_type type) {
 				numval--;
 		}
 		if(numval == 1) {
-			check_interval = atoi(param);
+			if(atoi(param) > 0) {
+				check_interval = atoi(param);
+			} else {
+				dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (10min)\n\t%s=%s\n", opt, param);
+				check_interval = 10;
+			}
 		} else {
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s\n", opt, param);
 		}
@@ -117,6 +88,7 @@ static int init_regex_patterns(const char *pattern_str) {
 	char *buf, *p;
 	int len;
 
+	cleanup_list(&regex_patterns);
 	re = newRSSItem();
 	buf = calloc(1, strlen(pattern_str) + 1);
 	strncpy(buf, pattern_str, strlen(pattern_str) + 1);
@@ -153,7 +125,6 @@ int parse_config_file(const char *filename) {
 	int opt_good = 0;
 	int param_good = 0;
 	struct stat fs;
-	int ret = 0;
 	option_type type;
 
 	if(stat(filename, &fs) == -1)  {
@@ -161,18 +132,20 @@ int parse_config_file(const char *filename) {
 	}
 	dbg_printf(P_INFO2, "Configuration file size: %d\n", fs.st_size);
 
-	if ((fp = fopen(filename, "rb")) == NULL) {
-		perror("fopen");
-		return -1;
-	}
-
 	if ((line = malloc(fs.st_size + 1)) == NULL) {
 		dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)\n", strerror(errno), fs.st_size + 1);
 		return -1;
 	}
 
+	if ((fp = fopen(filename, "rb")) == NULL) {
+		perror("fopen");
+		free(line);
+		return -1;
+	}
+
 	if(fread(line, fs.st_size, 1, fp) != 1) {
 		perror("fread");
+		fclose(fp);
 		free(line);
 		return -1;
 	}
@@ -199,15 +172,7 @@ int parse_config_file(const char *filename) {
 			}
 			++line_num;
 			++line_pos;  /* skip the newline as well */
-		}
-		/* skip whitespaces */
-		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n') {
-				line_num++;
-				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
-			}
-
-			++line_pos;
+			continue;
 		}
 
 		/* read option */
@@ -259,18 +224,17 @@ int parse_config_file(const char *filename) {
 		if (line[line_pos] == '"' || line[line_pos] == '\'') {
 			c = line[line_pos];
 			++line_pos;  /* skip quote */
-			param_good = 1;
+			parse_error = 0;
 			for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
 				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN && line[line_pos] != '\n') {
 					param[param_pos++] = line[line_pos++];
 				} else {
 					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n",opt, line_num);
 					parse_error = 1;
-					param_good = 0;
 					break;
 				}
 			}
-			if(param_good) {
+			if(parse_error == 0) {
 				line_pos++;	/* skip the closing " or ' */
 				type = STRING_TYPE;
 			} else {
@@ -279,10 +243,9 @@ int parse_config_file(const char *filename) {
 		/* case 2: multiple items, linebreaks allowed */
 		} else if (line[line_pos] == '{') {
 			dbg_printf(P_INFO2, "reading multiline param\n", line_num);
-			c = '}';
 			++line_pos;
-			param_good = 1;
-			for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
+			parse_error = 0;
+			for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
 				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
 					param[param_pos++] = line[line_pos++];
 					if(line[line_pos] == '\n')
@@ -290,40 +253,41 @@ int parse_config_file(const char *filename) {
 				} else {
 					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
 					parse_error = 1;
-					param_good = 0;
 					break;
 				}
 			}
 			dbg_printf(P_INFO2, "multiline param: param_good=%d\n", param_good);
-			if(param_good) {
-				line_pos++;	/* skip the closing ')' */
+			if(parse_error == 0) {
+				line_pos++;	/* skip the closing '}' */
 				type = STRINGLIST_TYPE;
 			} else {
 				break;
 			}
 		/* Case 3: integers */
 		} else {
-			param_good = 1;
+			parse_error = 0;
 			for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos])
 					&& line[line_pos] != '#'; /* NOTHING */) {
 				param[param_pos++] = line[line_pos++];
 				if (param_pos >= MAX_PARAM_LEN) {
 					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
 					parse_error = 1;
-					param_good = 0;
 					break;
 				}
 			}
-			if(param_good == 0) {
+			if(parse_error == 0) {
+				type = INT_TYPE;
+			} else {
 				break;
 			}
-			type = INT_TYPE;
+
 		}
 		param[param_pos] = '\0';
-		dbg_printf(P_INFO2, "option: %s\n", opt);
-		dbg_printf(P_INFO2, "param: %s\n", param);
-		dbg_printf(P_INFO2, "-----------------\n");
+		dbg_printf(P_INFO2, "[parse_config_file] option: %s\n", opt);
+		dbg_printf(P_INFO2, "[parse_config_file] param: %s\n", param);
+		dbg_printf(P_INFO2, "[parse_config_file] -----------------\n");
 		set_option(opt, param, type);
+
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
 			if(line[line_pos] == '\n')
@@ -332,26 +296,54 @@ int parse_config_file(const char *filename) {
 		}
 	}
 
-	if(parse_error == 1) {
-		ret = -1;
-	}
 	if(line)
 		free(line);
-	return ret;
-}
 
-/*
-
-int main(int argc, char **argv) {
-
-	if(argc != 2) {
-		printf("Usage: %s <conf-file>\n", argv[0]);
-		exit(0);
+	if(parse_error == 1) {
+		return -1;
+	} else {
+		return 0;
 	}
-	if(parse_config_file(argv[1]) == -1)
-		printf("Error parsing configuration file\n");
-	return 0;
 }
 
 
-*/
+static void shorten(char *str) {
+		char tmp[MAX_PARAM_LEN + 1];
+		int tmp_pos;
+		char c;
+		int line_pos = 0, i;
+		int len = strlen(str);
+
+		for(i = 0; i < sizeof(tmp); ++i)
+			tmp[i] = '\0';
+
+		while (isspace(str[line_pos])) {
+			++line_pos;
+		}
+		tmp_pos = 0;
+		while(line_pos < len) {
+			/* case 1: quoted strings */
+			if(tmp_pos != 0) {
+				for(i = 0; i < strlen(delim); ++i)
+					tmp[tmp_pos++] = delim[i];
+			}
+			if (str[line_pos] == '"' || str[line_pos] == '\'') {
+				c = str[line_pos];
+				++line_pos;  /* skip quote */
+				for (; str[line_pos] != c; /* NOTHING */) {
+						tmp[tmp_pos++] = str[line_pos++];
+				}
+				line_pos++;	/* skip the closing " or ' */
+			} else {
+				for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
+					tmp[tmp_pos++] = str[line_pos++];
+				}
+			}
+			while (isspace(str[line_pos])) {
+				++line_pos;
+			}
+		}
+		tmp[tmp_pos] = '\0';
+		assert(strlen(tmp) < MAX_PARAM_LEN);
+		strncpy(str, tmp, strlen(tmp) + 1);
+}
