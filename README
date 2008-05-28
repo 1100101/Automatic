@@ -1,0 +1,11 @@
+Automatic is a RSS daemon that downloads torrent files matching given regular expression patterns
+at given intervals.
+
+It is capable of adding downloaded torrents directly to Transmission (www.transmissionbt.com), making
+it a auto-downloader.
+
+The user has to place a configuration file automatic.conf in the /usr/etc folder.
+The file contains further instructions on how to configure the tool.
+
+For questions I advise you to visit the thread at http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html
+

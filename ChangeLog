@@ -1,0 +1,9 @@
+2008-05-26  v0.1.2
+            New config option "transmission-home"
+            Makes it unnecessary to set the environment variable TRANSMISSION_HOME
+
+2008-05-25  v0.1.1
+            Fixed a problem with the configuration file parser
+
+2008-05-24  v0.1.0
+            Initial release
