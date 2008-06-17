@@ -78,6 +78,7 @@ char *configfile = NULL;
 
 uint8_t check_interval = 10;
 uint8_t use_transmission = 1;
+uint8_t daemonized = 0;
 
 void usage() {
    printf(
@@ -381,15 +382,17 @@ void do_cleanup(void) {
 
 	if(feed_url)
 		free(feed_url);
-	if(configfile)
+/* 	if(configfile)
 		free(configfile);
+ */
 }
 
 void shutdown_daemon() {
 	char time_str[TIME_STR_SIZE];
 	getlogtime_str(time_str);
 	dbg_printf(P_MSG,"%s: Shutting down daemon\n", time_str);
-	save_state(bucket);
+	if(bucket)
+		save_state(bucket);
 	do_cleanup();
 	exit(0);
 }
@@ -404,23 +407,23 @@ int daemonize() {
 		case 0:
          break;
       case -1:
-         fprintf(stderr, "Error daemonizing (fork)! %d - %s\n", errno, strerror(errno));
+         dbg_printf(P_ERROR, "Error daemonizing (fork)! %d - %s\n", errno, strerror(errno));
          return -1;
       default:
          _exit(0);
 	}
 	if( setsid() < 0 ) {
-      fprintf( stderr, "Error daemonizing (setsid)! %d - %s\n", errno, strerror(errno) );
+      dbg_printf(P_ERROR, "Error daemonizing (setsid)! %d - %s\n", errno, strerror(errno) );
       return -1;
 	}
 	/* first instance continues */
 	lfp = open(LOCK_FILE,O_RDWR|O_CREAT,0640);
 	if (lfp < 0) {
-		fprintf(stderr, "Failed to open lockfile (%s). Aborting...\n", strerror(errno));
+		dbg_printf(P_ERROR, "Failed to open lockfile (%s). Aborting...\n", strerror(errno));
 		exit(1); /* can not open */
 	}
 	if (lockf(lfp,F_TLOCK,0) < 0) {
-		fprintf(stderr, "Cannot lock pid file. Another instance running? Aborting...\n");
+		dbg_printf(P_ERROR, "Cannot lock pid file. Another instance running? Aborting...\n");
 		exit(0); /* can not lock */
 	}
 	sprintf(str, "%d\n", getpid());
@@ -444,6 +447,7 @@ int daemonize() {
 		close( fd );
 	}
 	umask(027); /* set newly created file permissions */
+	daemonized = 1;
 	return 0;
 }
 
@@ -503,25 +507,40 @@ int main(int argc, char **argv) {
 		} else {
 			snprintf(erbuf, sizeof(erbuf), "Unknown error");
 		}
-		fprintf(stderr, "Error parsing config file: %s\n", erbuf);
+		dbg_printf(P_ERROR, "Error parsing config file: %s\n", erbuf);
 		exit(1);
 	}
 
 	if(!feed_url || strlen(feed_url) < 1)  {
-		fprintf(stderr, "\nNo feed URL specified in automatic.conf!\n\n");
-		shutdown_daemon();
+		dbg_printf(P_ERROR, "No feed URL specified in automatic.conf!");
+		exit(1);
 	}
 
 	/* clear logfile */
 	if(!nofork) {
 		fp = fopen(log_file, "w");
 		if(fp == NULL) {
-			fprintf(stderr, "[main] Failed to open logfile '%s': %s\n", log_file, strerror(errno));
+			dbg_printf(P_ERROR, "[main] Failed to open logfile '%s': %s\n", log_file, strerror(errno));
 			shutdown_daemon();
 		} else {
 			fclose(fp);
 		}
 	}
+
+	print_list(regex_patterns);
+	load_state(&bucket);
+	setup_signals();
+
+ 	if(!nofork) {
+		if(daemonize() != 0) {
+			dbg_printf(P_ERROR, "Error: Daemonize failed. Aborting...\n");
+			shutdown_daemon();
+			exit(1);
+		}
+		getlogtime_str(time_str);
+		dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
+	}
+
 	dbg_printf(P_INFO, "verbose: %d\n", verbose);
 	dbg_printf(P_INFO, "nofork: %d\n", nofork);
 	dbg_printf(P_INFO, "config file: %s\n", configfile);
@@ -531,29 +550,17 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "state file: %s\n", state_file);
 	dbg_printf(P_INFO, "Feed URL: %s\n", feed_url);
 	dbg_printf(P_MSG, "Read %d patterns from config file\n", listCount(regex_patterns));
-	print_list(regex_patterns);
-	load_state(&bucket);
-	setup_signals();
 
- 	if(!nofork) {
-		if(daemonize() != 0) {
-			fprintf(stderr, "Error: Daemonize failed. Aborting...\n");
-			shutdown_daemon();
-			exit(1);
-		}
-		getlogtime_str(time_str);
-		dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
-	}
 	while(1) {
 		getlogtime_str(time_str);
-		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------\n", time_str);
+		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
 		wdata = getHTTPData(feed_url);
 		if(wdata && wdata->response) {
 			if(wdata->response->size > 0) {
 				parse_xmldata(wdata->response->data, wdata->response->size);
 			}
 			WebData_free(wdata);
-			dbg_printf(P_INFO2, "[main] freed 'data'\n");
+			dbg_printf(P_INFO2, "[main] freed 'data'");
 			check_for_downloads();
 		}
 		cleanup_list(&rss_items);

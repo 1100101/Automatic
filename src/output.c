@@ -33,6 +33,7 @@
 extern char log_file[MAXPATHLEN + 1];
 extern uint8_t verbose;
 extern uint8_t nofork;
+extern uint8_t daemonized;
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
@@ -64,15 +65,15 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		vsnprintf(tmp, MSGSIZE_MAX, format, va);
 		va_end(va);
 		tmp[MSGSIZE_MAX-1] = '\0';
-		if(nofork == 0 && strlen(log_file) > 1) {
+		if(daemonized == 1 && nofork == 0 && strlen(log_file) > 1) {
 			fp = fopen(log_file,"a");
 			if(fp) {
-				fprintf(fp,"%s", tmp);
+				fprintf(fp,"%s\n", tmp);
 				fflush(fp);
 				fclose(fp);
 			}
 		} else {
-			fprintf(stderr, "%s", tmp);
+			fprintf(stderr, "%s\n", tmp);
 			fflush(stderr);
 		}
 

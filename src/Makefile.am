@@ -10,6 +10,13 @@ automatic_SOURCES = \
    state.c         \
    web.c
 
+noinst_HEADERS = \
+   config_parser.h  \
+   list.h           \
+   output.h         \
+   state.h          \
+   web.h
+
 dist_sysconf_DATA = automatic.conf
 
 LDADD = \

@@ -56,8 +56,8 @@ static void init_cd_preg() {
 }
 
 void cd_preg_free() {
-	regfree(content_disp_preg);
-	free(content_disp_preg);
+	if(content_disp_preg)
+		regfree(content_disp_preg);
 }
 
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
