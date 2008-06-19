@@ -24,22 +24,25 @@
 #include <string.h>
 #include <sys/param.h>
 #include <stdarg.h>
+#include <time.h>
+#include <sys/time.h>
+
 #include "output.h"
-
-#ifdef MEMWATCH
-	#include "memwatch.h"
-#endif
-
-extern char log_file[MAXPATHLEN + 1];
-extern uint8_t verbose;
-extern uint8_t nofork;
-extern uint8_t daemonized;
+#include "automatic.h"
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
    char tmp[MSGSIZE_MAX];
 	int print_msg = 0;
 	FILE *fp;
+	const char *log_file = NULL;
+
+	uint8_t nofork  = am_get_nofork();
+	uint8_t verbose = am_get_verbose();
+
+	if(nofork == 0)
+		log_file = am_getlogfile();
+
 	switch(type) {
 		case P_ERROR: /* fallthrough */
 		case P_MSG: {
@@ -53,10 +56,8 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		}
 
 		default: {
-#ifdef DEBUG
 			if(verbose > 2)
 				print_msg = 1;
-#endif
 			break;
 		}
 	}
@@ -65,7 +66,7 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		vsnprintf(tmp, MSGSIZE_MAX, format, va);
 		va_end(va);
 		tmp[MSGSIZE_MAX-1] = '\0';
-		if(daemonized == 1 && nofork == 0 && strlen(log_file) > 1) {
+		if(nofork == 0 && log_file != NULL && strlen(log_file) > 1) {
 			fp = fopen(log_file,"a");
 			if(fp) {
 				fprintf(fp,"%s\n", tmp);
@@ -78,4 +79,18 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		}
 
 	}
+}
+
+void getlogtime_str(char *buf) {
+	char tmp[TIME_STR_SIZE];
+	time_t now;
+	struct tm now_tm;
+	struct timeval tv;
+
+	now = time( NULL );
+	gettimeofday( &tv, NULL );
+
+	localtime_r( &now, &now_tm );
+	strftime( tmp, sizeof(tmp), "%y/%m/%d %H:%M:%S", &now_tm );
+	snprintf( buf, strlen(tmp) + 1, "%s", tmp);
 }

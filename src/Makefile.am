@@ -3,19 +3,22 @@ AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS)
 bin_PROGRAMS = automatic
 
 automatic_SOURCES = \
-   automatic.c     \
-   config_parser.c \
-   list.c          \
-   output.c        \
-   state.c         \
-   web.c
+   automatic.c      \
+   config_parser.c  \
+   list.c           \
+   output.c         \
+   state.c          \
+   web.c            \
+	xml_parser.c
 
-noinst_HEADERS = \
+noinst_HEADERS =    \
+   automatic.h      \
    config_parser.h  \
    list.h           \
    output.h         \
    state.h          \
-   web.h
+   web.h            \
+   xml_parser.h
 
 dist_sysconf_DATA = automatic.conf
 
@@ -31,7 +34,6 @@ EXTRA_automatic_SOURCES = \
 
 BUILT_SOURCES = \
     version.h
-
 
 
 version.h:

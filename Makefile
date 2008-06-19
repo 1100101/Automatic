@@ -31,7 +31,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure AUTHORS \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure AUTHORS COPYING \
 	ChangeLog depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -151,7 +151,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /ffp/bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /ffp/devel/release/Test/ffp
+prefix = /ffp
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -163,6 +163,12 @@ top_builddir = .
 top_srcdir = .
 SUBDIRS = \
   src
+
+EXTRA_DIST = \
+   AUTHORS    \
+   ChangeLog  \
+   COPYING    \
+   README
 
 all: all-recursive
 

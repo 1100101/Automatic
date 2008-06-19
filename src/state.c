@@ -24,34 +24,33 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/param.h>
+
+#include "automatic.h"
 #include "output.h"
 #include "list.h"
 
-#ifdef MEMWATCH
-	#include "memwatch.h"
-#endif
 
 #define MAX_LINE_LEN	300
 
-extern char state_file[MAXPATHLEN + 1];
-extern linked_list bucket;
-extern uint8_t bucket_changed;
+
+
 
 int save_state(NODE *head) {
 	FILE *fp;
 	NODE *current = head;
 	char tmp[MAX_LINE_LEN + 1];
+	const char *state_file = am_get_statefile();
 
-	if(bucket_changed == 1) {
-		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk\n", listCount(head));
+	if(state_file) {
+		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(head));
 		if((fp = fopen(state_file, "wb")) == NULL) {
-			dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for writing: %s\n", state_file, strerror(errno));
+			dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for writing: %s", state_file, strerror(errno));
 			return -1;
 		}
 		while (current != NULL) {
 			sprintf(tmp, "%s\n", current->item.url);
 			if(!fwrite(tmp, strlen(tmp), 1, fp)){
-				dbg_printf(P_ERROR, "[save_state] Error: Unable to write to '%s': %s\n", state_file, strerror(errno));
+				dbg_printf(P_ERROR, "[save_state] Error: Unable to write to '%s': %s", state_file, strerror(errno));
 				fclose(fp);
 				return -1;
 			}
@@ -66,10 +65,13 @@ int load_state(NODE **head) {
 	FILE *fp;
 	char line[MAX_LINE_LEN], str[MAX_LINE_LEN];
 	int len;
-	rss_item item = newRSSItem();
+	rss_item item;
+	const char* state_file = am_get_statefile();
+
+	item = newRSSItem();
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
-		dbg_printf(P_ERROR, "[load_state] Error: Unable to open '%s' for reading: %s\n", state_file, strerror(errno));
+		dbg_printf(P_ERROR, "[load_state] Error: Unable to open '%s' for reading: %s", state_file, strerror(errno));
 		return -1;
 	}
 	while (fgets(line, MAX_LINE_LEN, fp)) {
@@ -82,8 +84,8 @@ int load_state(NODE **head) {
 		}
 	}
 	fclose(fp);
-	dbg_printf(P_MSG, "Read state from file: %d old entries\n", listCount(bucket));
-	print_list(bucket);
+	dbg_printf(P_MSG, "[load_state] Restored %d old entries", listCount(*head));
+	print_list(*head);
 	return 0;
 }
 

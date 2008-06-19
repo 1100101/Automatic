@@ -19,6 +19,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  */
+#include "list.h"
+#include "automatic.h"
 
 struct HTTPData {
  char *data;
@@ -41,5 +43,5 @@ typedef struct WebData WebData;
 WebData* getHTTPData(const char *url);
 void WebData_free(struct WebData *data);
 void cd_preg_free(void);
-
+void download_torrent(auto_handle *ses, NODE *item);
 #endif

@@ -21,6 +21,7 @@
  * 02111-1307, USA.
  */
 
+#include "automatic.h"
 
 enum option_type {
 	STRING_TYPE,
@@ -30,6 +31,6 @@ enum option_type {
 
 typedef enum option_type option_type;
 
-int parse_config_file(const char *filename);
+int parse_config_file(auto_handle *as, const char *filename);
 
 #endif

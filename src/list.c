@@ -23,32 +23,39 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
 #include "list.h"
 #include "output.h"
-
-extern int max_bucket_items;
+#include "automatic.h"
 
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
 
 static void freeItem(NODE *item);
+void deleteLast(NODE **ptr_to_head);
 
 void insertNode(NODE **ptr_to_head, NODE *newnode) {
-	NODE /* *p, */ *prev;
 
-	/* link new element into existing list */
-	prev = NULL;
-	if (prev == NULL) {						/* insertion at head of list */
-		newnode->pNext = *ptr_to_head; 		/* append old list (if any) to new node */
-		*ptr_to_head = newnode;				/* new item becomes head of list */
-	} else {								/* insert between prev and p */
+	NODE *p = *ptr_to_head, *prev = NULL;
+
+	if(*ptr_to_head == NULL) {					/* empty list */
+		*ptr_to_head = newnode;					/* new item becomes head of list */
+		newnode->pNext = NULL;
+	} else {
+		while(p != NULL) {
+			prev = p;
+			p = p->pNext;
+		}
 		prev->pNext = newnode;
 		newnode->pNext = NULL;
 	}
 }
 
 void deleteNode(NODE **ptr_to_head, NODE *pNode) {
+	deleteLast(ptr_to_head);
+}
+void deleteNode2(NODE **ptr_to_head, NODE *pNode) {
 	NODE *p, *prev = NULL;
 
 	for (p = *ptr_to_head; p != NULL; prev = p, p = p->pNext) {
@@ -58,11 +65,23 @@ void deleteNode(NODE **ptr_to_head, NODE *pNode) {
 			} else {
 				prev->pNext = p->pNext;		/* make predecessor point to successor */
 			}
-			free(p);								/* release memory */
+			am_free(p);								/* release memory */
 			return;
 		}
 	}
 }
+
+void deleteLast(NODE **ptr_to_head) {
+	NODE *p = *ptr_to_head, *prev = NULL;
+
+	while(p && p->pNext != NULL) {
+		prev = p;
+		p = p->pNext;
+	}
+	prev->pNext = NULL;
+	am_free(p);
+}
+
 
 /* public functions */
 
@@ -79,7 +98,7 @@ void freeList(NODE **ptr_to_head) {
 	while (*ptr_to_head != NULL) {
 		p = (*ptr_to_head)->pNext;
 		/* release element and check pointer after "free" */
-		free(*ptr_to_head);
+		am_free(*ptr_to_head);
 		/* deleteNode(ptr_to_head, *ptr_to_head); */
 		*ptr_to_head = p;
 	}
@@ -87,12 +106,13 @@ void freeList(NODE **ptr_to_head) {
 }
 
 void addRSSItem(rss_item elem, NODE **head) {
-	NODE *pNode = (NODE*)malloc(sizeof(NODE));
-	if(pNode == NULL)
+	NODE *pNode = (NODE*)am_malloc(sizeof(NODE));
+	if(pNode == NULL) {
 		perror("malloc failed");
-	dbg_printf(P_INFO2, "[addRSSItem] allocated %d bytes for pNode\n", sizeof(NODE));
+	}
 	pNode->item = elem;
 	pNode->pNext = NULL;
+
 	insertNode(head, pNode);
 }
 
@@ -127,72 +147,70 @@ int add_to_bucket(rss_item elem, NODE **b, int use_size_limit) {
 	rss_item b_elem = newRSSItem();
 	/* copy element content, as the original is going to be freed later on */
 	int integrity_check = 1;
+	int max_bucket_items = am_get_bucket_size();
+
+	dbg_printf(P_INFO2, "[add_to_bucket] max_bucket_items: %d", max_bucket_items);
 
 	if(elem.name != NULL) {
-		dbg_printf(P_INFO2, "[add_to_bucket] elem.name: %s\n", elem.name);
-		b_elem.name = malloc(strlen(elem.name) + 1);
+		dbg_printf(P_INFO2, "[add_to_bucket] elem.name: %s", elem.name);
+		b_elem.name = am_malloc(strlen(elem.name) + 1);
 		if(b_elem.name) {
-			dbg_printf(P_INFO2, "[add_to_bucket] allocated %d bytes for '%s'\n", strlen(elem.name) + 1, elem.name);
 			strcpy(b_elem.name, elem.name);
 		} else {
-			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s\n", strerror(errno));
+			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s", strerror(errno));
 			integrity_check &= 0;
 		}
 	}
 	if(elem.url != NULL) {
-		dbg_printf(P_INFO2, "[add_to_bucket] elem.url: %s\n", elem.url);
-		b_elem.url = malloc(strlen(elem.url) + 1);
+		dbg_printf(P_INFO2, "[add_to_bucket] elem.url: %s", elem.url);
+		b_elem.url = am_malloc(strlen(elem.url) + 1);
 		if(b_elem.url) {
-			dbg_printf(P_INFO2, "[add_to_bucket] allocated %d bytes for '%s'\n", strlen(elem.url) + 1, elem.url);
 			strcpy(b_elem.url, elem.url);
 		} else {
-			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s\n", strerror(errno));
+			dbg_printf(P_ERROR, "[add_to_bucket] malloc failed: %s", strerror(errno));
 			integrity_check &= 0;
 		}
 	}
 	if(integrity_check) {
 		addRSSItem(b_elem, b);
 		if(use_size_limit && listCount(*b) > max_bucket_items) {
-			dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting head item...\n");
+			dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting head item...");
 			deleteHead(b);
 		}
 	}
 	return integrity_check;
 }
 
-
 static void freeItem(NODE *item) {
 	if(item != NULL) {
 		if(item->item.name) {
-			free(item->item.name);
-			dbg_printf(P_INFO2, "[freeItem] freed 'elem.name'\n");
+			am_free(item->item.name);
 		}
 		if(item->item.url) {
-			free(item->item.url);
-			dbg_printf(P_INFO2, "[freeItem] freed 'elem.url'\n");
+			am_free(item->item.url);
 		}
 	}
 }
 
 void cleanup_list(NODE **list) {
 	NODE *current = *list;
-	dbg_printf(P_INFO2, "[cleanup_list] list size before: %d\n", listCount(*list));
+	dbg_printf(P_INFO2, "[cleanup_list] list size before: %d", listCount(*list));
 	while (current != NULL) {
 		freeItem(current);
 		current = current->pNext;
 	}
 	freeList(list);
-	dbg_printf(P_INFO2, "[cleanup_list] list size after: %d\n", listCount(*list));
+	dbg_printf(P_INFO2, "[cleanup_list] list size after: %d", listCount(*list));
 }
 
 void print_list(linked_list list) {
 	NODE *cur = list;
 	while(cur != NULL) {
 		if(cur->item.name != NULL) {
-			dbg_printf(P_INFO2, "  name:\t%s\n", cur->item.name);
+			dbg_printf(P_INFO2, "  name:\t%s", cur->item.name);
 		}
 		if(cur->item.url != NULL) {
-			dbg_printf(P_INFO2, "  URL:\t%s\n", cur->item.url);
+			dbg_printf(P_INFO2, "  URL:\t%s", cur->item.url);
 		}
 		cur = cur->pNext;
 	}

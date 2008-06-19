@@ -27,49 +27,50 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+
+#include "automatic.h"
 #include "config_parser.h"
 #include "output.h"
 #include "list.h"
-
-
-#ifdef MEMWATCH
-	#include "memwatch.h"
-#endif
-
 
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	2000
 
 static const char *delim = ";;";
 
-extern char *feed_url;
-extern uint8_t check_interval;
-extern linked_list regex_patterns;
-extern char log_file[MAXPATHLEN + 1];
-extern char config_path[MAXPATHLEN + 1];
-extern char state_file[MAXPATHLEN + 1];
-extern uint8_t use_transmission;
+static int init_regex_patterns(auto_handle *as, const char *pattern_str);
+static char* shorten(const char *str);
 
-static int init_regex_patterns(const char *pattern_str);
-static void shorten(char *str);
-
-int set_option(const char *opt, char *param, option_type type) {
+static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int i;
 	int numval;
-	dbg_printf(P_INFO, "%s=%s (type: %d)\n", opt, param, type);
+	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
+
+	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
-		feed_url = realloc(feed_url, strlen(param) + 1);
-		if(feed_url)
-			strncpy(feed_url, param, strlen(param) + 1);
+		as->feed_url = am_realloc(as->feed_url, strlen(param) + 1);
+		if(as->feed_url)
+			strncpy(as->feed_url, param, strlen(param) + 1);
 	}else if(!strcmp(opt, "logfile")) {
-		if(strlen(param) < MAXPATHLEN)
-			strncpy(log_file, param, strlen(param) + 1);
+		if(strlen(param) < MAXPATHLEN) {
+			am_free(as->log_file);
+			as->log_file = am_malloc(strlen(param) + 1);
+			if(as->log_file)
+				strncpy(as->log_file, param, strlen(param) + 1);
+			printf("[set_option] redid session->log_file: %s\n", as->log_file);
+		}
 	}else if(!strcmp(opt, "transmission-home")) {
-		if(strlen(param) < MAXPATHLEN)
-			strncpy(config_path, param, strlen(param) + 1);
+		if(strlen(param) < MAXPATHLEN) {
+			as->transmission_path = am_realloc(as->transmission_path, strlen(param) + 1);
+			if(as->transmission_path)
+				strncpy(as->transmission_path, param, strlen(param) + 1);
+		}
 	}else if(!strcmp(opt, "statefile")) {
-		if(strlen(param) < MAXPATHLEN)
-			strncpy(state_file, param, strlen(param) + 1);
+		if(strlen(param) < MAXPATHLEN) {
+			as->statefile = am_realloc(as->statefile, strlen(param) + 1);
+			if(as->statefile)
+				strncpy(as->statefile, param, strlen(param) + 1);
+		}
 	} else if(!strcmp(opt, "interval")) {
 		numval = 1;
 		for(i = 0; i < strlen(param); i++) {
@@ -78,59 +79,57 @@ int set_option(const char *opt, char *param, option_type type) {
 		}
 		if(numval == 1) {
 			if(atoi(param) > 0) {
-				check_interval = atoi(param);
+				as->check_interval = atoi(param);
 			} else {
-				dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (10min)\n\t%s=%s\n", opt, param);
-				check_interval = 10;
+				dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (10min)\n\t%s=%s", opt, param);
+				as->check_interval = 10;
 			}
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s\n", opt, param);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "use-transmission")) {
 		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
-			use_transmission = 0;
+			as->use_transmission = 0;
 		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
-			use_transmission = 1;
+			as->use_transmission = 1;
 		} else {
-			dbg_printf(P_ERROR, "WARN: unknown parameter: %s=%s\n", opt, param);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
-		shorten(param);
-		init_regex_patterns(param);
+		init_regex_patterns(as, param);
 	} else {
-		dbg_printf(P_ERROR, "[set_option] Unknown option: %s\n", opt);
+		dbg_printf(P_ERROR, "[set_option] Unknown option: %s", opt);
 	}
 	return 0;
 }
 
-static int init_regex_patterns(const char *pattern_str) {
+static int init_regex_patterns(auto_handle *session, const char *patterns) {
 	rss_item re;
 	char *buf, *p;
 	int len;
-
-	cleanup_list(&regex_patterns);
+	char *pattern_str = shorten(patterns);
+	cleanup_list(&session->regex_patterns);
 	re = newRSSItem();
 	buf = calloc(1, strlen(pattern_str) + 1);
 	strncpy(buf, pattern_str, strlen(pattern_str) + 1);
 	p = strtok(buf, delim);
 	while (p) {
 		len = strlen(p);
-		re.name = malloc(len + 1);
+		re.name = am_malloc(len + 1);
 		if(re.name) {
-			dbg_printf(P_INFO2, "[init_regex_patterns] allocated %d bytes for '%s'\n", len + 1, p);
 			strcpy(re.name, p);
-			addRSSItem(re, &regex_patterns);
+			addRSSItem(re, &session->regex_patterns);
 		} else {
 			perror("malloc");
 		}
 		p = strtok(NULL, delim);
 	}
-	free(buf);
-	dbg_printf(P_INFO2, "[init_regex_patterns] freed 'buf'\n");
+	am_free(buf);
+	am_free(pattern_str);
 	return 0;
 }
 
-int parse_config_file(const char *filename) {
+int parse_config_file(struct auto_handle *as, const char *filename) {
 	FILE *fp;
 	char *line;
 	char opt[MAX_OPT_LEN + 1];
@@ -150,35 +149,35 @@ int parse_config_file(const char *filename) {
 	if(stat(filename, &fs) == -1)  {
 		return -1;
 	}
-	dbg_printf(P_INFO2, "Configuration file size: %d\n", fs.st_size);
+	dbg_printf(P_INFO2, "Configuration file size: %d", fs.st_size);
 
-	if ((line = malloc(fs.st_size + 1)) == NULL) {
-		dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)\n", strerror(errno), fs.st_size + 1);
+	if ((line = am_malloc(fs.st_size + 1)) == NULL) {
+		dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)", strerror(errno), fs.st_size + 1);
 		return -1;
 	}
 
 	if ((fp = fopen(filename, "rb")) == NULL) {
 		perror("fopen");
-		free(line);
+		am_free(line);
 		return -1;
 	}
 
 	if(fread(line, fs.st_size, 1, fp) != 1) {
 		perror("fread");
 		fclose(fp);
-		free(line);
+		am_free(line);
 		return -1;
 	}
 	if(fp)
 		fclose(fp);
-
 	line_pos = 0;
+
 
 	while(line_pos != fs.st_size) {
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
 			if(line[line_pos] == '\n') {
-				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
 				line_num++;
 			}
 			++line_pos;
@@ -186,7 +185,7 @@ int parse_config_file(const char *filename) {
 
 		/* comment */
 		if (line[line_pos] == '#') {
-			dbg_printf(P_INFO2, "skipping comment (line %d)\n", line_num);
+			dbg_printf(P_INFO2, "skipping comment (line %d)", line_num);
 			while (line[line_pos] != '\n') {
 				++line_pos;
 			}
@@ -200,13 +199,13 @@ int parse_config_file(const char *filename) {
 				line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
 			opt[opt_pos++] = line[line_pos++];
 			if (opt_pos >= MAX_OPT_LEN) {
-				dbg_printf(P_ERROR, "too long option at line %d\n", line_num);
+				dbg_printf(P_ERROR, "too long option at line %d", line_num);
 				parse_error = 1;
 				opt_good = 0;
 			}
 		}
 		if (opt_pos == 0 || parse_error == 1) {
-			dbg_printf(P_ERROR, "parse error at line %d (pos: %d)\n", line_num, line_pos);
+			dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
 			parse_error = 1;
 			break;
 		} else {
@@ -217,14 +216,14 @@ int parse_config_file(const char *filename) {
 		while (isspace(line[line_pos])) {
 			if(line[line_pos] == '\n') {
 				line_num++;
-				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
 			}
 			++line_pos;
 		}
 
 		/* check for '=' */
 		if (line[line_pos++] != '=') {
-			snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)\n", opt, line_num);
+			snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)", opt, line_num);
 			parse_error = 1;
 			break;
 		}
@@ -233,7 +232,7 @@ int parse_config_file(const char *filename) {
 		while (isspace(line[line_pos])) {
 			if(line[line_pos] == '\n') {
 				line_num++;
-				dbg_printf(P_INFO2, "skipping newline (line %d)\n", line_num);
+				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
 			}
 			++line_pos;
 		}
@@ -262,7 +261,7 @@ int parse_config_file(const char *filename) {
 			}
 		/* case 2: multiple items, linebreaks allowed */
 		} else if (line[line_pos] == '{') {
-			dbg_printf(P_INFO2, "reading multiline param\n", line_num);
+			dbg_printf(P_INFO2, "reading multiline param", line_num);
 			++line_pos;
 			parse_error = 0;
 			for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
@@ -276,7 +275,7 @@ int parse_config_file(const char *filename) {
 					break;
 				}
 			}
-			dbg_printf(P_INFO2, "multiline param: param_good=%d\n", param_good);
+			dbg_printf(P_INFO2, "multiline param: param_good=%d", param_good);
 			if(parse_error == 0) {
 				line_pos++;	/* skip the closing '}' */
 				type = STRINGLIST_TYPE;
@@ -303,10 +302,10 @@ int parse_config_file(const char *filename) {
 
 		}
 		param[param_pos] = '\0';
-		dbg_printf(P_INFO2, "[parse_config_file] option: %s\n", opt);
-		dbg_printf(P_INFO2, "[parse_config_file] param: %s\n", param);
-		dbg_printf(P_INFO2, "[parse_config_file] -----------------\n");
-		set_option(opt, param, type);
+		dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
+		dbg_printf(P_INFO2, "[parse_config_file] param: %s", param);
+		dbg_printf(P_INFO2, "[parse_config_file] -----------------");
+		set_option(as, opt, param, type);
 
 		/* skip whitespaces */
 		while (isspace(line[line_pos])) {
@@ -316,8 +315,7 @@ int parse_config_file(const char *filename) {
 		}
 	}
 
-	if(line)
-		free(line);
+	am_free(line);
 
 	if(parse_error == 1) {
 		return -1;
@@ -327,7 +325,7 @@ int parse_config_file(const char *filename) {
 }
 
 
-static void shorten(char *str) {
+static char* shorten(const char *str) {
 		char tmp[MAX_PARAM_LEN + 1];
 		int tmp_pos;
 		char c;
@@ -365,5 +363,5 @@ static void shorten(char *str) {
 		}
 		tmp[tmp_pos] = '\0';
 		assert(strlen(tmp) < MAX_PARAM_LEN);
-		strncpy(str, tmp, strlen(tmp) + 1);
+		return strdup(tmp);
 }
