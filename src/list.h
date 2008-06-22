@@ -20,11 +20,16 @@
  * 02111-1307, USA.
  */
 
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
+
+
 typedef struct NODE NODE;
-typedef struct rss_item rss_item;
+typedef struct rss_obj* rss_item;
 typedef NODE* linked_list;
 
-struct rss_item {
+struct rss_obj {
 	char *name;
 	char *url;
 };
@@ -37,15 +42,16 @@ struct NODE {
 /* read-only functions */
 unsigned int listCount(linked_list head);
 int hasURL(const char *url, linked_list head);
-void print_list(linked_list list);
+void printList(linked_list list);
 
 /* list modifiers */
-void addRSSItem(rss_item elem, NODE **head);
+void freeRSSItem(rss_item listItem);
+int addItem(rss_item elem, NODE **head);
 void freeList(NODE **head);
-void deleteHead(NODE **ptr_to_head);
 rss_item newRSSItem();
-int add_to_bucket(rss_item elem, NODE **b, int use_size_limit);
-/*void freeItem(NODE *item);*/
-void cleanup_list(NODE **list);
+int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items);
+void cleanupList(NODE **list);
+
+
 
 #endif

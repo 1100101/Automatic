@@ -38,7 +38,7 @@ BUILT_SOURCES = \
 
 version.h:
 	echo '#define SVN_REVISION          "'`svn info | grep "Revision" | awk -F': ' '{print $$2}'`'"' >> version.h
-	echo '#define LONG_VERSION_STRING   "'0.1.2' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h
+	echo '#define LONG_VERSION_STRING   "'0.1.3' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h
 
 strip:
 	$(STRIP) $(bin_PROGRAMS)

@@ -54,7 +54,12 @@ void dbg_printf(debug_type type, const char *format, ...) {
 				print_msg = 1;
 			break;
 		}
-
+		case P_DBG: {
+#ifdef DEBUG
+			print_msg = 1;
+#endif
+			break;
+		}
 		default: {
 			if(verbose > 2)
 				print_msg = 1;

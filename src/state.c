@@ -32,9 +32,6 @@
 
 #define MAX_LINE_LEN	300
 
-
-
-
 int save_state(NODE *head) {
 	FILE *fp;
 	NODE *current = head;
@@ -47,8 +44,8 @@ int save_state(NODE *head) {
 			dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for writing: %s", state_file, strerror(errno));
 			return -1;
 		}
-		while (current != NULL) {
-			sprintf(tmp, "%s\n", current->item.url);
+		while (current != NULL && current->item != NULL && current->item->url != NULL) {
+			sprintf(tmp, "%s\n", current->item->url);
 			if(!fwrite(tmp, strlen(tmp), 1, fp)){
 				dbg_printf(P_ERROR, "[save_state] Error: Unable to write to '%s': %s", state_file, strerror(errno));
 				fclose(fp);
@@ -63,12 +60,10 @@ int save_state(NODE *head) {
 
 int load_state(NODE **head) {
 	FILE *fp;
-	char line[MAX_LINE_LEN], str[MAX_LINE_LEN];
+	char line[MAX_LINE_LEN];
 	int len;
 	rss_item item;
 	const char* state_file = am_get_statefile();
-
-	item = newRSSItem();
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
 		dbg_printf(P_ERROR, "[load_state] Error: Unable to open '%s' for reading: %s", state_file, strerror(errno));
@@ -77,15 +72,16 @@ int load_state(NODE **head) {
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		len = strlen(line);
 		if(len > 20) {  /* arbitrary threshold for the length of an URL */
-			strncpy(str, line, len);
-			str[len-1] = '\0';
-			item.url = str;
+			item = newRSSItem();
+			item->url = malloc(len);
+			strncpy(item->url, line, len - 1); /* it's len-1 because of the trailing '\n' from fgets */
+			item->url[len - 1] = '\0';
 			add_to_bucket(item, head, 0);
+			freeRSSItem(item);
 		}
 	}
 	fclose(fp);
-	dbg_printf(P_MSG, "[load_state] Restored %d old entries", listCount(*head));
-	print_list(*head);
+	dbg_printf(P_MSG, "Restored %d old entries", listCount(*head));
 	return 0;
 }
 

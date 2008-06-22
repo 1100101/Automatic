@@ -317,14 +317,14 @@ static int call_transmission(const char* transmission_path, const char *filename
 }
 
 
-void download_torrent(auto_handle *ah, NODE *item) {
+void download_torrent(auto_handle *ah,rss_item item) {
 	char fname[MAXPATHLEN];
 	int torrent;
 	int res;
 	WebData *wdata;
 
-	dbg_printf(P_MSG, "Found new download: %s (%s)", item->item.name, item->item.url);
-	wdata = getHTTPData(item->item.url);
+	dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
+	wdata = getHTTPData(item->url);
 	if(wdata && wdata->response) {
 		get_filename(wdata, fname);
 		torrent = open(fname,O_RDWR|O_CREAT, 00444);
@@ -349,9 +349,9 @@ void download_torrent(auto_handle *ah, NODE *item) {
 		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p", (void*)wdata, (void*)(wdata->response));
 	}
 	WebData_free(wdata);
-	if(add_to_bucket(item->item, &ah->bucket, 1) == 1) {
+	if(add_to_bucket(item, &ah->bucket, ah->max_bucket_items) == 0) {
 		ah->bucket_changed = 1;
 	} else {
-		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->item.name);
+		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->name);
 	}
 }

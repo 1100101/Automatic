@@ -160,30 +160,28 @@ static uint8_t has_been_downloaded(linked_list bucket, char *url) {
 	return res;
 }
 
-void check_for_downloads(auto_handle *ao) {
+static void check_for_downloads(void) {
 	int err;
 	regex_t preg;
 	char erbuf[100];
-	NODE *current_regex;
+	linked_list current_rss_item, current_regex;
 
-	assert(ao != NULL);
-
-	current_regex = ao->regex_patterns;
-	while (current_regex != NULL) {
-		NODE *current_rss_item = rss_items;
-		dbg_printf(P_INFO2, "Current regex: %s", current_regex->item.name);
-		err = regcomp(&preg, current_regex->item.name, REG_EXTENDED|REG_ICASE);
+	current_regex = session->regex_patterns;
+	while (current_regex != NULL && current_regex->item != NULL) {
+		dbg_printf(P_INFO2, "Current regex: %s", current_regex->item->name);
+		err = regcomp(&preg, current_regex->item->name, REG_EXTENDED|REG_ICASE);
 		if(err) {
 			regerror(err, &preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
 			current_regex = current_regex->pNext;
 			continue;
 		}
-		while (current_rss_item != NULL) {
-			dbg_printf(P_INFO2, "Current rss_item: %s", current_rss_item->item.name);
-			err = regexec(&preg, current_rss_item->item.name, 0, NULL, 0);
-			if(!err && !has_been_downloaded(ao->bucket, current_rss_item->item.url)) {			/* regex matches and it hasn't been downloaded before */
-				download_torrent(session, current_rss_item);
+		current_rss_item = rss_items;
+		while (current_rss_item != NULL && current_rss_item->item != NULL) {
+			dbg_printf(P_INFO2, "Current rss_item: %s", current_rss_item->item->name);
+			err = regexec(&preg, current_rss_item->item->name, 0, NULL, 0);
+			if(!err && !has_been_downloaded(session->bucket, current_rss_item->item->url)) {			/* regex matches and it hasn't been downloaded before */
+				download_torrent(session, current_rss_item->item);
 			} else if(err != REG_NOMATCH && err != 0){
 				regerror(err, &preg, erbuf, sizeof(erbuf));
 				dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
@@ -205,14 +203,14 @@ static void autohandle_free(auto_handle *as) {
 			am_free(as->transmission_path);
 		if(as->statefile)
 			am_free(as->statefile);
-		cleanup_list(&as->bucket);
-		cleanup_list(&as->regex_patterns);
+		cleanupList(&as->bucket);
+		cleanupList(&as->regex_patterns);
 		am_free(as);
 	}
 }
 
 static void do_cleanup(auto_handle *as) {
-	cleanup_list(&rss_items);
+	cleanupList(&rss_items);
 	autohandle_free(as);
 	cd_preg_free();
 }
@@ -324,12 +322,10 @@ auto_handle* session_init(void) {
 	sprintf(path, "%s/%s", get_temp_folder(), AM_DEFAULT_LOGFILE);
 	ses->log_file = am_malloc(strlen(path) + 1);
 	strcpy(ses->log_file, path);
-	printf("[session_init] tmp: %s\n", ses->log_file);
 	ses->transmission_path = get_tr_folder();
 	sprintf(path, "%s/%s", get_home_folder(), AM_DEFAULT_STATEFILE);
 	ses->statefile = am_malloc(strlen(path) + 1);
 	strcpy(ses->statefile, path);
-	printf("[session_init] statefile: %s\n", ses->statefile);
 	ses->bucket = NULL;
 	ses->regex_patterns = NULL;
 	ses->feed_url = NULL;
@@ -369,7 +365,7 @@ uint8_t am_get_bucket_size() {
 void am_set_bucket_size(uint8_t size) {
 	if(session) {
 		dbg_printf(P_INFO, "New bucket list size: %d", size);
-		session->max_bucket_items = size;
+ 		session->max_bucket_items = size;
 	}
 }
 
@@ -432,7 +428,7 @@ int main(int argc, char **argv) {
 	}
 
 	if(!session->regex_patterns)  {
-		fprintf(stderr, "No patterns specified in automatic.conf!");
+		fprintf(stderr, "No patterns specified in automatic.conf!\n");
 		shutdown_daemon(session);
 	}
 
@@ -440,7 +436,7 @@ int main(int argc, char **argv) {
 	if(!nofork) {
 		fp = fopen(session->log_file, "w");
 		if(fp == NULL) {
-			fprintf(stderr, "[main] Failed to open logfile '%s': %s", session->log_file, strerror(errno));
+			fprintf(stderr, "FATAL: Could not open logfile '%s': %s\n", session->log_file, strerror(errno));
 			shutdown_daemon(session);
 		} else {
 			fclose(fp);
@@ -457,7 +453,7 @@ int main(int argc, char **argv) {
 		}
 		daemonized = 1;
 		getlogtime_str(time_str);
-		dbg_printf( P_MSG, "%s: Daemon started\n", time_str);
+		dbg_printf( P_MSG, "%s: Daemon started", time_str);
 	}
 
 	dbg_printf(P_INFO, "verbose level: %d", verbose);
@@ -470,7 +466,6 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "feed URL: %s", session->feed_url);
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->regex_patterns));
 
-	print_list(session->regex_patterns);
 	load_state(&session->bucket);
 
 	while(1) {
@@ -480,10 +475,10 @@ int main(int argc, char **argv) {
 		if(wdata && wdata->response && wdata->response->size > 0) {
 			parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
 		}
+
 		WebData_free(wdata);
-		check_for_downloads(session);
-		print_list(rss_items);
-		cleanup_list(&rss_items);
+		check_for_downloads();
+		cleanupList(&rss_items);
  		sleep(session->check_interval * 60);
 	}
 	return 0;

@@ -1,5 +1,5 @@
-#ifndef WEB_H__
-#define WEB_H__
+#ifndef AUTOMATIC_H__
+#define AUTOMATIC_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -19,29 +19,43 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  */
+
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
+
+
+#include <stdint.h>
 #include "list.h"
-#include "automatic.h"
 
-struct HTTPData {
- char *data;
- size_t size;
+struct auto_handle {
+	char *feed_url;
+	char *log_file;
+	char *transmission_path;
+	char *statefile;
+	linked_list bucket;
+	linked_list regex_patterns;
+	uint8_t max_bucket_items;
+	uint8_t bucket_changed;
+	uint8_t check_interval;
+	uint8_t use_transmission;
 };
 
-struct WebData {
-	char *url;
-	long responseCode;
-	size_t content_length;
-	char *content_filename;
-	struct HTTPData* header;
-	struct HTTPData* response;
-};
+typedef struct auto_handle auto_handle;
 
+const char *get_home_folder(void);
+void set_home_folder(const char *path);
 
-typedef struct HTTPData HTTPData;
-typedef struct WebData WebData;
+const char *get_temp_folder(void);
 
-WebData* getHTTPData(const char *url);
-void WebData_free(struct WebData *data);
-void cd_preg_free(void);
-void download_torrent(auto_handle *ses, rss_item item);
+const char* am_getlogfile();
+const char* am_get_statefile();
+uint8_t am_get_verbose();
+uint8_t am_get_nofork();
+uint8_t am_get_bucket_size();
+void am_set_bucket_size(uint8_t size);
+void* am_malloc(size_t size);
+void* am_realloc(void *p, size_t size);
+void am_free(void *p);
+
 #endif

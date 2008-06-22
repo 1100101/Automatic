@@ -51,21 +51,22 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		as->feed_url = am_realloc(as->feed_url, strlen(param) + 1);
 		if(as->feed_url)
 			strncpy(as->feed_url, param, strlen(param) + 1);
-	}else if(!strcmp(opt, "logfile")) {
+	} else if(!strcmp(opt, "logfile")) {
 		if(strlen(param) < MAXPATHLEN) {
 			am_free(as->log_file);
 			as->log_file = am_malloc(strlen(param) + 1);
-			if(as->log_file)
+			if(as->log_file) {
 				strncpy(as->log_file, param, strlen(param) + 1);
-			printf("[set_option] redid session->log_file: %s\n", as->log_file);
+				dbg_printf(P_DBG, "[set_option] redid session->log_file: %s\n", as->log_file);
+			}
 		}
-	}else if(!strcmp(opt, "transmission-home")) {
+	} else if(!strcmp(opt, "transmission-home")) {
 		if(strlen(param) < MAXPATHLEN) {
 			as->transmission_path = am_realloc(as->transmission_path, strlen(param) + 1);
 			if(as->transmission_path)
 				strncpy(as->transmission_path, param, strlen(param) + 1);
 		}
-	}else if(!strcmp(opt, "statefile")) {
+	} else if(!strcmp(opt, "statefile")) {
 		if(strlen(param) < MAXPATHLEN) {
 			as->statefile = am_realloc(as->statefile, strlen(param) + 1);
 			if(as->statefile)
@@ -108,19 +109,19 @@ static int init_regex_patterns(auto_handle *session, const char *patterns) {
 	char *buf, *p;
 	int len;
 	char *pattern_str = shorten(patterns);
-	cleanup_list(&session->regex_patterns);
-	re = newRSSItem();
+	cleanupList(&session->regex_patterns);
 	buf = calloc(1, strlen(pattern_str) + 1);
 	strncpy(buf, pattern_str, strlen(pattern_str) + 1);
 	p = strtok(buf, delim);
 	while (p) {
 		len = strlen(p);
-		re.name = am_malloc(len + 1);
-		if(re.name) {
-			strcpy(re.name, p);
-			addRSSItem(re, &session->regex_patterns);
+		re = newRSSItem();
+		re->name = am_malloc(len + 1);
+		if(re->name) {
+			strcpy(re->name, p);
+			addItem(re, &session->regex_patterns);
 		} else {
-			perror("malloc");
+			dbg_printf(P_ERROR, "Error allocating memory for regular expression");
 		}
 		p = strtok(NULL, delim);
 	}

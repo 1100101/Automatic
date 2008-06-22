@@ -1,3 +1,8 @@
+#ifndef XML_PARSER_H__
+#define XML_PARSER_H__
+
+#include <stdint.h>
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -17,18 +22,7 @@
  * 02111-1307, USA.
  */
 
-#define MSGSIZE_MAX 700
 
-#define TIME_STR_SIZE 30
-enum debug_type {
-	P_ERROR,
-	P_MSG,
-	P_INFO,
-	P_INFO2,
-	P_DBG
-};
+int parse_xmldata(const char* buffer, int size, NODE **rss_items);
 
-typedef enum debug_type debug_type;
-
-void dbg_printf(debug_type type, const char *format, ...);
-void getlogtime_str(char *buf);
+#endif
