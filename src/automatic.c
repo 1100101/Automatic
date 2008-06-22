@@ -129,8 +129,7 @@ static char* get_tr_folder() {
 
 	if(!path) {
 		strcpy(buf, get_home_folder());
-		strcat(buf, "/");
-		strcat(buf, ".automatic");
+		strcat(buf, "/.config/.transmission");
 		path = strdup(buf);
 	}
 	return path;
@@ -193,7 +192,7 @@ static void check_for_downloads(void) {
 	}
 }
 
-static void autohandle_free(auto_handle *as) {
+static void ah_free(auto_handle *as) {
 	if(as) {
 		if(as->feed_url)
 			am_free(as->feed_url);
@@ -211,7 +210,7 @@ static void autohandle_free(auto_handle *as) {
 
 static void do_cleanup(auto_handle *as) {
 	cleanupList(&rss_items);
-	autohandle_free(as);
+	ah_free(as);
 	cd_preg_free();
 }
 
@@ -432,8 +431,10 @@ int main(int argc, char **argv) {
 		shutdown_daemon(session);
 	}
 
-	/* clear logfile */
-	if(!nofork) {
+	setup_signals();
+
+ 	if(!nofork) {
+		/* clear logfile */
 		fp = fopen(session->log_file, "w");
 		if(fp == NULL) {
 			fprintf(stderr, "FATAL: Could not open logfile '%s': %s\n", session->log_file, strerror(errno));
@@ -441,15 +442,11 @@ int main(int argc, char **argv) {
 		} else {
 			fclose(fp);
 		}
-	}
 
-	setup_signals();
-
- 	if(!nofork) {
+		/* start daemon */
 		if(daemonize() != 0) {
 			dbg_printf(P_ERROR, "Error: Daemonize failed. Aborting...");
 			shutdown_daemon(session);
-			exit(1);
 		}
 		daemonized = 1;
 		getlogtime_str(time_str);
