@@ -33,6 +33,7 @@ struct auto_handle {
 	char *log_file;
 	char *transmission_path;
 	char *statefile;
+	char *torrent_folder;
 	linked_list bucket;
 	linked_list regex_patterns;
 	uint8_t max_bucket_items;
@@ -43,10 +44,10 @@ struct auto_handle {
 
 typedef struct auto_handle auto_handle;
 
-const char *get_home_folder(void);
-void set_home_folder(const char *path);
+char *get_home_folder(void);
+char* resolve_path(char *path);
 
-const char *get_temp_folder(void);
+char *get_temp_folder(void);
 
 const char* am_getlogfile();
 const char* am_get_statefile();

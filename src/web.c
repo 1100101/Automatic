@@ -45,7 +45,7 @@
 #define HEADER_BUFFER 500
 
 static regex_t *content_disp_preg = NULL;
-
+static void get_filename(WebData *data, char *file_name, const char *path);
 
 int is_torrent(const char *str) {
 	if(strstr(str, ".torrent"))
@@ -53,36 +53,6 @@ int is_torrent(const char *str) {
 	else
 		return 0;
 }
-
-static void get_filename(WebData *data, char *file_name) {
-	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
-	int len;
-
-#ifdef DEBUG
-	assert(data);
-#endif
-
-	if(data->content_filename) {
-		strncpy(buf, data->content_filename, strlen(data->content_filename) + 1);
-	} else {
-		strcpy(tmp, data->url);
-		p = strtok(tmp, "/");
-		while (p) {
-			len = strlen(p);
-			if(len < MAXPATHLEN)
-				strcpy(buf, p);
-			p = strtok(NULL, "/");
-		}
-	}
-	strcpy(fname, get_temp_folder());
-	strcat(fname, "/");
-	strcat(fname, buf);
-	if(!is_torrent(buf)) {
-		strcat(fname, ".torrent");
-	}
-	strcpy(file_name, fname);
-}
-
 
 static void init_cd_preg() {
 	int err;
@@ -326,8 +296,8 @@ void download_torrent(auto_handle *ah,rss_item item) {
 	dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
 	wdata = getHTTPData(item->url);
 	if(wdata && wdata->response) {
-		get_filename(wdata, fname);
-		torrent = open(fname,O_RDWR|O_CREAT, 00444);
+		get_filename(wdata, fname, ah->torrent_folder);
+		torrent = open(fname,O_RDWR|O_CREAT, 00755);
 		if(torrent == -1) {
 			dbg_printf(P_ERROR, "Error opening file for writing: %s", strerror(errno));
 		} else {
@@ -337,21 +307,52 @@ void download_torrent(auto_handle *ah,rss_item item) {
 			} else {
 				dbg_printf(P_INFO, "Saved torrent file '%s'", fname);
 			}
-			fchmod(torrent, 00444);
 			close(torrent);
 			if(ah->use_transmission && call_transmission(ah->transmission_path, fname) == -1) {
 				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
-				sleep(1);
 				unlink(fname);
+			} else {
+				if(add_to_bucket(item, &ah->bucket, ah->max_bucket_items) == 0) {
+					ah->bucket_changed = 1;
+				} else {
+					dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->name);
+				}
 			}
 		}
 	} else {
-		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p", (void*)wdata, (void*)(wdata->response));
+		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p)", (void*)wdata, (void*)(wdata->response));
 	}
 	WebData_free(wdata);
-	if(add_to_bucket(item, &ah->bucket, ah->max_bucket_items) == 0) {
-		ah->bucket_changed = 1;
+}
+
+
+static void get_filename(WebData *data, char *file_name, const char *path) {
+	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
+	int len;
+
+#ifdef DEBUG
+	assert(data);
+	assert(path);
+#endif
+
+	if(data->content_filename) {
+		strncpy(buf, data->content_filename, strlen(data->content_filename) + 1);
 	} else {
-		dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->name);
+		strcpy(tmp, data->url);
+		p = strtok(tmp, "/");
+		while (p) {
+			len = strlen(p);
+			if(len < MAXPATHLEN)
+				strcpy(buf, p);
+			p = strtok(NULL, "/");
+		}
 	}
+	strcpy(fname, path);
+	strcat(fname, "/");
+	strcat(fname, buf);
+	if(!is_torrent(buf)) {
+		strcat(fname, ".torrent");
+	}
+	strcpy(file_name, fname);
+	dbg_printf(P_INFO, "save spot: %s", file_name);
 }

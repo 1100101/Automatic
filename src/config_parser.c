@@ -41,6 +41,20 @@ static const char *delim = ";;";
 static int init_regex_patterns(auto_handle *as, const char *pattern_str);
 static char* shorten(const char *str);
 
+void write_string(char *src, char **dst) {
+	char *tmp;
+
+	if(src && strlen(src) < MAXPATHLEN) {
+		tmp = resolve_path(src);
+		if(tmp) {
+			am_free(*dst);
+			*dst = strdup(tmp);
+			am_free(tmp);
+		}
+	}
+}
+
+
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int i;
 	int numval;
@@ -48,30 +62,15 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
-		as->feed_url = am_realloc(as->feed_url, strlen(param) + 1);
-		if(as->feed_url)
-			strncpy(as->feed_url, param, strlen(param) + 1);
+		write_string(param, &as->feed_url);
 	} else if(!strcmp(opt, "logfile")) {
-		if(strlen(param) < MAXPATHLEN) {
-			am_free(as->log_file);
-			as->log_file = am_malloc(strlen(param) + 1);
-			if(as->log_file) {
-				strncpy(as->log_file, param, strlen(param) + 1);
-				dbg_printf(P_DBG, "[set_option] redid session->log_file: %s\n", as->log_file);
-			}
-		}
+		write_string(param, &as->log_file);
 	} else if(!strcmp(opt, "transmission-home")) {
-		if(strlen(param) < MAXPATHLEN) {
-			as->transmission_path = am_realloc(as->transmission_path, strlen(param) + 1);
-			if(as->transmission_path)
-				strncpy(as->transmission_path, param, strlen(param) + 1);
-		}
+		write_string(param, &as->transmission_path);
+	} else if(!strcmp(opt, "torrent-folder")) {
+		write_string(param, &as->torrent_folder);
 	} else if(!strcmp(opt, "statefile")) {
-		if(strlen(param) < MAXPATHLEN) {
-			as->statefile = am_realloc(as->statefile, strlen(param) + 1);
-			if(as->statefile)
-				strncpy(as->statefile, param, strlen(param) + 1);
-		}
+		write_string(param, &as->statefile);
 	} else if(!strcmp(opt, "interval")) {
 		numval = 1;
 		for(i = 0; i < strlen(param); i++) {
@@ -99,7 +98,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 	} else if(!strcmp(opt, "patterns")) {
 		init_regex_patterns(as, param);
 	} else {
-		dbg_printf(P_ERROR, "[set_option] Unknown option: %s", opt);
+		dbg_printf(P_ERROR, "Unknown option: %s", opt);
 	}
 	return 0;
 }

@@ -18,10 +18,10 @@
  */
 
 
-#define AM_LOCKFILE  						"/tmp/automatic.pid"
+#define AM_LOCKFILE  					"/tmp/automatic.pid"
 #define AM_DEFAULT_CONFIGFILE  		"/etc/automatic.conf"
-#define AM_DEFAULT_LOGFILE  			"automatic.log"
-#define AM_DEFAULT_STATEFILE  		"automatic.state"
+#define AM_DEFAULT_LOGFILE  			"/var/log/automatic.log"
+#define AM_DEFAULT_STATEFILE  		".automatic.state"
 #define AM_DEFAULT_VERBOSE 			P_MSG
 #define AM_DEFAULT_NOFORK 				0
 #define AM_DEFAULT_MAXBUCKET 			10
@@ -54,6 +54,7 @@
 #include "state.h"
 
 static char AutoConfigFile[MAXPATHLEN + 1];
+static void ah_free(auto_handle *as);
 
 static linked_list rss_items = NULL;
 
@@ -104,8 +105,8 @@ void readargs( int argc, char ** argv, char **c_file, uint8_t * nofork, uint8_t 
 	}
 }
 
-const char* get_home_folder() {
-	static char * dir = NULL;
+char* get_home_folder() {
+	char * dir = NULL;
 	struct passwd * pw = NULL;
 	if(!dir) {
 		dir = getenv( "HOME" );
@@ -123,20 +124,37 @@ const char* get_home_folder() {
 	return dir;
 }
 
-static char* get_tr_folder() {
+char* resolve_path(char *path) {
+	char new_dir[MAXPATHLEN];
+	const char *homedir = NULL;
+
+	if(path) {
+		/* home dir */
+		if(path[0] == '~' && path[1] == '/') {
+			homedir = get_home_folder();
+			strcpy(new_dir, homedir);
+			strcat(new_dir, ++path);
+			return strdup(new_dir);
+		}
+		return strdup(path);
+	}
+	return NULL;
+}
+
+char* get_tr_folder() {
 	static char *path = NULL;
 	char buf[MAXPATHLEN];
 
 	if(!path) {
 		strcpy(buf, get_home_folder());
-		strcat(buf, "/.config/.transmission");
+		strcat(buf, "/.config/transmission");
 		path = strdup(buf);
 	}
 	return path;
 }
 
-const char* get_temp_folder() {
-	static char *dir = NULL;
+char* get_temp_folder() {
+	char *dir = NULL;
 
 	if(!dir) {
 		dir = getenv( "TEMPDIR" );
@@ -189,22 +207,6 @@ static void check_for_downloads(void) {
 		}
 		regfree(&preg);
 		current_regex = current_regex->pNext;
-	}
-}
-
-static void ah_free(auto_handle *as) {
-	if(as) {
-		if(as->feed_url)
-			am_free(as->feed_url);
-		if(as->log_file)
-			am_free(as->log_file);
-		if(as->transmission_path)
-			am_free(as->transmission_path);
-		if(as->statefile)
-			am_free(as->statefile);
-		cleanupList(&as->bucket);
-		cleanupList(&as->regex_patterns);
-		am_free(as);
 	}
 }
 
@@ -311,24 +313,36 @@ void setup_signals(void) {
 }
 
 auto_handle* session_init(void) {
-	char path[MAXPATHLEN+1];
+	char path[MAXPATHLEN];
 
 	auto_handle *ses = am_malloc(sizeof(auto_handle));
 	ses->max_bucket_items = AM_DEFAULT_MAXBUCKET;
 	ses->bucket_changed = 0;
 	ses->check_interval = AM_DEFAULT_INTERVAL;
 	ses->use_transmission = AM_DEFAULT_USETRANSMISSION;
-	sprintf(path, "%s/%s", get_temp_folder(), AM_DEFAULT_LOGFILE);
-	ses->log_file = am_malloc(strlen(path) + 1);
-	strcpy(ses->log_file, path);
+	ses->log_file = strdup(AM_DEFAULT_LOGFILE);
 	ses->transmission_path = get_tr_folder();
 	sprintf(path, "%s/%s", get_home_folder(), AM_DEFAULT_STATEFILE);
 	ses->statefile = am_malloc(strlen(path) + 1);
-	strcpy(ses->statefile, path);
+	strncpy(ses->statefile, path, strlen(path) + 1);
+	ses->torrent_folder = get_temp_folder();
 	ses->bucket = NULL;
 	ses->regex_patterns = NULL;
 	ses->feed_url = NULL;
 	return ses;
+}
+
+static void ah_free(auto_handle *as) {
+	if(as) {
+		am_free(as->feed_url);
+		am_free(as->log_file);
+		am_free(as->transmission_path);
+		am_free(as->statefile);
+		am_free(as->torrent_folder);
+		cleanupList(&as->bucket);
+		cleanupList(&as->regex_patterns);
+		am_free(as);
+	}
 }
 
 uint8_t am_get_verbose() {
@@ -458,10 +472,12 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
 	dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
+	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
 	dbg_printf(P_INFO, "log file: %s", nofork ? "stderr" : session->log_file);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
 	dbg_printf(P_INFO, "feed URL: %s", session->feed_url);
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->regex_patterns));
+	shutdown_daemon(session);
 
 	load_state(&session->bucket);
 
