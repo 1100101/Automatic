@@ -1,0 +1,23 @@
+# URL of the RSS feed
+url =
+
+# interval in minutes between checks for new downloads/episodes
+interval = 30
+
+# path to the logfile. Use empty string "" to disable logging functionality
+logfile = "/tmp/automatic.log"
+
+# Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
+use-transmission = yes
+
+# Path to the Transmission configuration files (default: /mnt/HD_a2/.transmission)
+# transmission-home = ~/.config/transmission
+
+# path to the file which stores already downloaded torrents (so they don't get readded to Transmission)
+statefile = "~/.config/automatic.state"
+
+# patterns contains a number of regular expressions which are matched against the RSS feed entries
+# letter-casing does not matter
+patterns =  { "Name of Something I Want to Download Automatically.*HDTV"
+              "Something else to download.*HDTV"
+            }

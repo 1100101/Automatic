@@ -20,7 +20,7 @@ noinst_HEADERS =    \
    web.h            \
    xml_parser.h
 
-dist_sysconf_DATA = automatic.conf
+dist_sysconf_DATA = automatic.conf-sample
 
 LDADD = \
     $(LIBCURL_LIBS) \

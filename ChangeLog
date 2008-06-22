@@ -1,3 +1,8 @@
+2008-06-xx v0.1.3
+            Fixed problems with saving the state
+            New config option "torrent-folder" for storing the downloaded torrent files
+            Works now on "normal" Linux distributions (previously worked only on a specific NAS device)
+
 2008-05-26  v0.1.2
             New config option "transmission-home"
             Makes it unnecessary to set the environment variable TRANSMISSION_HOME

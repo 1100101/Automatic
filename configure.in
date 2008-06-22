@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([Automatic],[0.1.2],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html]) AC_CONFIG_SRCDIR([src/automatic.c])
+AC_INIT([Automatic],[0.1.3],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html]) AC_CONFIG_SRCDIR([src/automatic.c])
 AM_INIT_AUTOMAKE([1.10 foreign])
 
 # get the flags

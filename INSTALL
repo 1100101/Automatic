@@ -1,0 +1,33 @@
+Installation instructions
+--------------------------
+
+1. Dependencies
+----------------
+
+Automatic makes use of the libcurl and libxml2 libraries, so make sure those are installed.
+
+2. Configuration
+----------------
+
+First configure the tool by typing
+
+			./configure
+
+This should work on most systems and prepare the package for compilation. You may check out further
+options by typing ./configure --help
+
+After configure is done, you compile via
+
+			make
+
+If everything went well, install Automatic by typing
+
+			make install
+
+That's it! You're done!
+
+Start Automatic with the command 'automatic'. You may specify a different location for the configuration file
+(the default one sits at /etc/automatic.conf)
+
+
+Have fun!
