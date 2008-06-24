@@ -477,7 +477,6 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
 	dbg_printf(P_INFO, "feed URL: %s", session->feed_url);
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->regex_patterns));
-	shutdown_daemon(session);
 
 	load_state(&session->bucket);
 

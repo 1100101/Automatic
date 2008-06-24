@@ -297,7 +297,7 @@ void download_torrent(auto_handle *ah,rss_item item) {
 	wdata = getHTTPData(item->url);
 	if(wdata && wdata->response) {
 		get_filename(wdata, fname, ah->torrent_folder);
-		torrent = open(fname,O_RDWR|O_CREAT, 00755);
+		torrent = open(fname,O_RDWR|O_CREAT, 00644);
 		if(torrent == -1) {
 			dbg_printf(P_ERROR, "Error opening file for writing: %s", strerror(errno));
 		} else {
@@ -307,6 +307,7 @@ void download_torrent(auto_handle *ah,rss_item item) {
 			} else {
 				dbg_printf(P_INFO, "Saved torrent file '%s'", fname);
 			}
+			fchmod(torrent, 0644);
 			close(torrent);
 			if(ah->use_transmission && call_transmission(ah->transmission_path, fname) == -1) {
 				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
