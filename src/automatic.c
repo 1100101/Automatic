@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
  *
- * This program is am_free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
  * License, or (at your option) any later version.
@@ -157,9 +157,9 @@ char* get_temp_folder() {
 	char *dir = NULL;
 
 	if(!dir) {
-		dir = getenv( "TEMPDIR" );
+		dir = strdup(getenv( "TEMPDIR" ));
 		if(!dir) {
-			dir = getenv( "TMPDIR" );
+			dir = strdup(getenv( "TMPDIR" ));
 			if(!dir) {
 				dir = strdup("/tmp");
 			}
@@ -221,7 +221,7 @@ void shutdown_daemon(auto_handle *as) {
 	getlogtime_str(time_str);
 	dbg_printf(P_MSG,"%s: Shutting down daemon", time_str);
 	if(as && as->bucket_changed)
-		save_state(as->bucket);
+		save_state(&as->bucket);
 	do_cleanup(as);
 	exit(0);
 }

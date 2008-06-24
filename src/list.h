@@ -43,6 +43,7 @@ struct NODE {
 unsigned int listCount(linked_list head);
 int hasURL(const char *url, linked_list head);
 void printList(linked_list list);
+void reverseList(NODE **list);
 
 /* list modifiers */
 void freeRSSItem(rss_item listItem);
@@ -51,7 +52,6 @@ void freeList(NODE **head);
 rss_item newRSSItem();
 int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items);
 void cleanupList(NODE **list);
-
 
 
 #endif

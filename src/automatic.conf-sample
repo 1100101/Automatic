@@ -11,13 +11,15 @@ logfile = "/tmp/automatic.log"
 use-transmission = yes
 
 # Path to the Transmission configuration files (default: /mnt/HD_a2/.transmission)
-# transmission-home = ~/.config/transmission
+transmission-home = ~/.config/transmission
 
-# path to the file which stores already downloaded torrents (so they don't get readded to Transmission)
+# path to the file which stores information about already downloaded torrents (so they don't get readded to Transmission)
 statefile = "~/.config/automatic.state"
 
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
+# please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter
+
 patterns =  { "Name of Something I Want to Download Automatically.*HDTV"
               "Something else to download.*HDTV"
             }

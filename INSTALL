@@ -11,18 +11,18 @@ Automatic makes use of the libcurl and libxml2 libraries, so make sure those are
 
 First configure the tool by typing
 
-			./configure
+        ./configure
 
 This should work on most systems and prepare the package for compilation. You may check out further
 options by typing ./configure --help
 
 After configure is done, you compile via
 
-			make
+        make
 
 If everything went well, install Automatic by typing
 
-			make install
+        make install
 
 That's it! You're done!
 

@@ -32,14 +32,16 @@
 
 #define MAX_LINE_LEN	300
 
-int save_state(NODE *head) {
+int save_state(linked_list *bucket) {
 	FILE *fp;
-	NODE *current = head;
 	char tmp[MAX_LINE_LEN + 1];
+	NODE *current = NULL;
 	const char *state_file = am_get_statefile();
 
 	if(state_file) {
-		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(head));
+		reverseList(bucket);
+		current = *bucket;
+		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(current));
 		if((fp = fopen(state_file, "wb")) == NULL) {
 			dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for writing: %s", state_file, strerror(errno));
 			return -1;

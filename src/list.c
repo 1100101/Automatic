@@ -54,8 +54,6 @@ void deleteLast(NODE **ptr_to_head) {
 	p = NULL;
 }
 
-
-
 void deleteHead(NODE **ptr_to_head) {
 	NODE *p;
 
@@ -69,6 +67,21 @@ void deleteHead(NODE **ptr_to_head) {
 }
 
 /* public functions */
+
+void reverseList( NODE **list ) {
+	NODE *next;
+	NODE *current ;
+	NODE *result = NULL;
+	current = *list;
+
+	while(current != NULL )	{
+		next = current->pNext;
+		current->pNext = result;
+		result = current;
+		current = next;
+	}
+	*list = result;
+}
 
 int addItem(rss_item elem, NODE **head) {
 	NODE *pNode;
@@ -139,24 +152,24 @@ int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items) {
 }
 
 void cleanupList(NODE **list) {
-	dbg_printf(P_DBG, "[cleanupList] size before: %d\n", listCount(*list));
+	dbg_printf(P_DBG, "[cleanupList] size before: %d", listCount(*list));
 	while (*list != NULL) {
 		deleteHead(list);
 	}
-	dbg_printf(P_DBG, "[cleanupList] size after: %d\n", listCount(*list));
+	dbg_printf(P_DBG, "[cleanupList] size after: %d", listCount(*list));
 }
 
 void printList(linked_list list) {
 	NODE *cur = list;
 	while(cur != NULL && cur->item != NULL) {
-		dbg_printf(P_DBG, " item: (%p)\n", (void*)cur->item);
+		dbg_printf(P_DBG, "item: (%p)", (void*)cur->item);
 		if(cur->item->name != NULL) {
-			dbg_printf(P_DBG, " name: %s (%p)\n", cur->item->name, (void*)cur->item->name);
+			dbg_printf(P_DBG, "  name: %s (%p)", cur->item->name, (void*)cur->item->name);
 		}
 		if(cur->item->url != NULL) {
-			dbg_printf(P_DBG, " url: %s (%p)\n", cur->item->url, (void*)cur->item->url);
+			dbg_printf(P_DBG, "  url: %s (%p)", cur->item->url, (void*)cur->item->url);
 		}
-		dbg_printf(P_DBG, " next: (%p)\n", (void*)cur->pNext);
+		dbg_printf(P_DBG, "  next: (%p)", (void*)cur->pNext);
 		cur = cur->pNext;
 	}
 }
@@ -177,12 +190,12 @@ void freeRSSItem(rss_item listItem) {
 
 	if(listItem != NULL) {
 		if(listItem->name != NULL) {
-			dbg_printf(P_DBG, "freeing name: %s (%p)\n", listItem->name, (void*)listItem->name);
+			dbg_printf(P_DBG, "freeing name: %s (%p)", listItem->name, (void*)listItem->name);
 			am_free(listItem->name);
 			listItem->name = NULL;
 		}
 		if(listItem->url != NULL) {
-			dbg_printf(P_DBG, "freeing url: %s (%p)\n", listItem->url, (void*)listItem->url);
+			dbg_printf(P_DBG, "freeing url: %s (%p)", listItem->url, (void*)listItem->url);
 			am_free(listItem->url);
 			listItem->url = NULL;
 		}
