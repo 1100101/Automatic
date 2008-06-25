@@ -108,17 +108,17 @@ void readargs( int argc, char ** argv, char **c_file, uint8_t * nofork, uint8_t 
 char* get_home_folder() {
 	char * dir = NULL;
 	struct passwd * pw = NULL;
+
 	if(!dir) {
-		dir = getenv( "HOME" );
-		if(!dir) {
-			pw = getpwuid( getuid() );
-			if(pw) {
+		if(getenv("HOME")) {
+			dir = strdup(getenv( "HOME" ));
+		} else {
+			if(pw = getpwuid(getuid())) {
 				dir = strdup(pw->pw_dir);
 				endpwent();
 			} else {
 				dir = strdup("");
 			}
-		} else {
 		}
 	}
 	return dir;
@@ -126,15 +126,18 @@ char* get_home_folder() {
 
 char* resolve_path(char *path) {
 	char new_dir[MAXPATHLEN];
-	const char *homedir = NULL;
+	char *homedir = NULL;
 
-	if(path) {
+	if(path && strlen(path) > 2) {
 		/* home dir */
 		if(path[0] == '~' && path[1] == '/') {
 			homedir = get_home_folder();
-			strcpy(new_dir, homedir);
-			strcat(new_dir, ++path);
-			return strdup(new_dir);
+			if(homedir) {
+				strcpy(new_dir, homedir);
+				strcat(new_dir, ++path);
+				am_free(homedir);
+				return strdup(new_dir);
+			}
 		}
 		return strdup(path);
 	}
@@ -154,17 +157,18 @@ char* get_tr_folder() {
 }
 
 char* get_temp_folder() {
-	char *dir = NULL;
+	static char *dir = NULL;
 
 	if(!dir) {
-		dir = strdup(getenv( "TEMPDIR" ));
-		if(!dir) {
+		if(getenv("TEMPDIR")) {
+			dir = strdup(getenv( "TEMPDIR" ));
+		} else if(getenv("TMPDIR")) {
 			dir = strdup(getenv( "TMPDIR" ));
-			if(!dir) {
-				dir = strdup("/tmp");
-			}
+		} else {
+			dir = strdup("/tmp");
 		}
 	}
+	fprintf(stderr, "dir8: %p\n", (void*)dir);
 	return dir;
 }
 
@@ -386,7 +390,7 @@ void* am_malloc( size_t size ) {
 	void *tmp;
 	if(size > 0) {
 		tmp = malloc(size);
-		dbg_printf(P_INFO2, "Allocated %d bytes (%p)", size, tmp);
+		dbg_printf(P_DBG, "Allocated %d bytes (%p)", size, tmp);
 		return tmp;
 	}
 	return NULL;
@@ -410,7 +414,7 @@ void am_free(void * p) {
 int main(int argc, char **argv) {
 	FILE *fp;
 
-   char * config_file = NULL;
+   char* config_file = NULL;
 	int daemonized = 0;
 	char erbuf[100];
 	char time_str[TIME_STR_SIZE];

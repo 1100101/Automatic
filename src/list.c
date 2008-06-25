@@ -152,11 +152,11 @@ int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items) {
 }
 
 void cleanupList(NODE **list) {
-	dbg_printf(P_DBG, "[cleanupList] size before: %d", listCount(*list));
+	dbg_printf(P_INFO2, "[cleanupList] size before: %d", listCount(*list));
 	while (*list != NULL) {
 		deleteHead(list);
 	}
-	dbg_printf(P_DBG, "[cleanupList] size after: %d", listCount(*list));
+	dbg_printf(P_INFO2, "[cleanupList] size after: %d", listCount(*list));
 }
 
 void printList(linked_list list) {
