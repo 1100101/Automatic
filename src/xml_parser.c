@@ -37,7 +37,6 @@ int getNodeText(xmlNodePtr child, char **dest) {
 
 	textNode = xmlNodeGetContent(child);
 	if(textNode) {
-		dbg_printf(P_INFO2, "Found text node '%s'", textNode);
 		len = strlen((char*)textNode) + 1;
 		*dest = am_malloc(len);
 		if(*dest) {
@@ -93,11 +92,9 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 				while(child) {
 					if((strcmp((char*)child->name, "title") == 0)) {
 						name_set = getNodeText(child->children, &item->name);
-						dbg_printf(P_INFO, "item->name set");
 					} else if((strcmp((char*)child->name, "link" ) == 0)) {
 						if(url_set == 0) {			/* if "enclosure" was scanned before "link", use the former */
 							url_set = getNodeText(child->children, &item->url);
-							dbg_printf(P_INFO, "item->url set (using link)");
 						}
 					} else if((strcmp((char*)child->name, "enclosure" ) == 0)) {
 						enclosure = getNodeAttributes(child);
@@ -105,7 +102,6 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 							if(enclosure->url) {
 								if(item->url) {
 									am_free(item->url);
-									dbg_printf(P_INFO, "item->url set (using enclosure, was already set)");
 								}
 								item->url = strdup(enclosure->url);
 								url_set = 1;
@@ -167,13 +163,11 @@ int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
 
 	/* check for time-to-live element in RSS feed */
 	if(ttl == 0) {
-		dbg_printf(P_INFO, "ttl not set");
 		xpathObj = xmlXPathEvalExpression(ttlExpr, xpathCtx);
 		if(xpathObj != NULL) {
 			dbg_printf(P_INFO, "xpathObj != NULL");
 			ttlNode = xpathObj->nodesetval;
 
-			dbg_printf(P_INFO, "TTL nodes: %d", ttlNode->nodeNr);
 			if(ttlNode->nodeNr == 1 && ttlNode->nodeTab[0]->type == XML_ELEMENT_NODE) {
 				ttl = atoi((char*)xmlNodeGetContent(ttlNode->nodeTab[0]->children));
 

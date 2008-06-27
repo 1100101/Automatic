@@ -514,7 +514,6 @@ int main(int argc, char **argv) {
 		WebData_free(wdata);
 		check_for_downloads();
 		cleanupList(&rss_items);
-		shutdown_daemon(session);
  		sleep(session->check_interval * 60);
 	}
 	return 0;
