@@ -26,7 +26,7 @@
 #define AM_DEFAULT_NOFORK 				0
 #define AM_DEFAULT_MAXBUCKET 			10
 #define AM_DEFAULT_USETRANSMISSION 	1
-#define AM_DEFAULT_INTERVAL 			10
+#define AM_DEFAULT_INTERVAL 			30
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -113,7 +113,7 @@ char* get_home_folder() {
 		if(getenv("HOME")) {
 			dir = strdup(getenv( "HOME" ));
 		} else {
-			if(pw = getpwuid(getuid())) {
+			if((pw = getpwuid(getuid())) != NULL) {
 				dir = strdup(pw->pw_dir);
 				endpwent();
 			} else {
@@ -168,7 +168,6 @@ char* get_temp_folder() {
 			dir = strdup("/tmp");
 		}
 	}
-	fprintf(stderr, "dir8: %p\n", (void*)dir);
 	return dir;
 }
 
@@ -379,6 +378,20 @@ uint8_t am_get_bucket_size() {
 		return AM_DEFAULT_MAXBUCKET;
 }
 
+int am_get_interval() {
+	if(session)
+		return session->check_interval;
+	else
+		return AM_DEFAULT_INTERVAL;
+}
+
+void am_set_interval(int interval) {
+	if(session) {
+		dbg_printf(P_INFO, "New interval: %d", interval);
+		session->check_interval = interval;
+	}
+}
+
 void am_set_bucket_size(uint8_t size) {
 	if(session) {
 		dbg_printf(P_INFO, "New bucket list size: %d", size);
@@ -480,7 +493,7 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "log file: %s", nofork ? "stderr" : session->log_file);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
 	dbg_printf(P_INFO, "feed URL: %s", session->feed_url);
-	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->regex_patterns));
+	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->regex_patterns));
 
 	load_state(&session->bucket);
 
@@ -495,6 +508,7 @@ int main(int argc, char **argv) {
 		WebData_free(wdata);
 		check_for_downloads();
 		cleanupList(&rss_items);
+		shutdown_daemon(session);
  		sleep(session->check_interval * 60);
 	}
 	return 0;

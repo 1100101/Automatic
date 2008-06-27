@@ -49,12 +49,14 @@ char* resolve_path(char *path);
 
 char *get_temp_folder(void);
 
-const char* am_getlogfile();
-const char* am_get_statefile();
-uint8_t am_get_verbose();
-uint8_t am_get_nofork();
-uint8_t am_get_bucket_size();
+const char* am_getlogfile(void);
+const char* am_get_statefile(void);
+uint8_t am_get_verbose(void);
+uint8_t am_get_nofork(void);
+uint8_t am_get_bucket_size(void);
 void am_set_bucket_size(uint8_t size);
+void am_set_interval(int interval);
+int am_get_interval(void);
 void* am_malloc(size_t size);
 void* am_realloc(void *p, size_t size);
 void am_free(void *p);

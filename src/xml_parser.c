@@ -12,13 +12,66 @@
 #include "list.h"
 #include "output.h"
 
+struct rssNode {
+	char *url;
+	char *type;
+};
+
+typedef struct rssNode rssNode;
+
+void freeNode(rssNode *rss) {
+	if(rss) {
+		am_free(rss->url);
+		rss->url = NULL;
+		am_free(rss->type);
+		rss->type = NULL;
+	}
+	am_free(rss);
+	rss = NULL;
+}
+
+int getNodeText(xmlNodePtr child, char **dest) {
+	xmlChar * textNode;
+	int len;
+	int result = 0;
+
+	textNode = xmlNodeGetContent(child);
+	if(textNode) {
+		dbg_printf(P_INFO2, "Found text node '%s'", textNode);
+		len = strlen((char*)textNode) + 1;
+		*dest = am_malloc(len);
+		if(*dest) {
+			strncpy(*dest, (char*)textNode, len);
+			result = 1;
+		}
+	}
+	xmlFree(textNode);
+	return result;
+}
+
+rssNode* getNodeAttributes(xmlNodePtr child) {
+	rssNode *tmp = am_malloc(sizeof(rssNode));
+	xmlAttrPtr attr = child->properties;
+	while(attr) {
+		if((strcmp((char*)attr->name, "url") == 0)) {
+			getNodeText(attr->children, &tmp->url);
+		} else if((strcmp((char*)attr->name, "content") == 0) ||
+					 (strcmp((char*)attr->name, "type") == 0)) {
+			getNodeText(attr->children, &tmp->type);
+		}
+		attr = attr->next;
+	}
+	return tmp;
+}
+
 static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 	xmlNodePtr cur, child;
-	xmlChar *textNode;
-	int size, i, len;
+/*	xmlChar *textNode; */
+	int size, i;
 	rss_item item;
-	uint8_t name_set, url_set;
+	uint8_t name_set, url_set, is_torrent_feed = 0;
 	static int bucketsize_changed = 0;
+	rssNode *enclosure;
 	size = (nodes) ? nodes->nodeNr : 0;
 
 	if(!bucketsize_changed && size > 0 && size < 256) {
@@ -38,35 +91,36 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 				name_set = 0;
 				item = newRSSItem();
 				while(child) {
-					if((strcmp((char*)child->name, "title") == 0) ||
-						(strcmp((char*)child->name, "link" ) == 0)) {
-						textNode = xmlNodeGetContent(child->children);
-						if(textNode) {
-							dbg_printf(P_INFO2, "Found text node '%s'", textNode);
-							len = strlen((char*)textNode) + 1;
-							if(strcmp((char*)child->name, "title") == 0) {
-								item->name = am_malloc(len);
-								if(item->name) {
-									strncpy(item->name, (char*)textNode, len);
-									name_set = 1;
-								}
-							} else if(strcmp((char*)child->name, "link") == 0) {
-								item->url = am_malloc(len);
-								if(item->url) {
-									strncpy(item->url, (char*)textNode, len);
-									url_set = 1;
-								}
-							}
-							xmlFree(textNode);
+					if((strcmp((char*)child->name, "title") == 0)) {
+						name_set = getNodeText(child->children, &item->name);
+						dbg_printf(P_INFO, "item->name set");
+					} else if((strcmp((char*)child->name, "link" ) == 0)) {
+						if(url_set == 0) {			/* if "enclosure" was scanned before "link", use the former */
+							url_set = getNodeText(child->children, &item->url);
+							dbg_printf(P_INFO, "item->url set (using link)");
 						}
-					}
-					if(name_set && url_set) {
-						break;
+					} else if((strcmp((char*)child->name, "enclosure" ) == 0)) {
+						enclosure = getNodeAttributes(child);
+						if((strcmp(enclosure->type, "application/x-bittorrent") == 0)) {
+							if(enclosure->url) {
+								if(item->url) {
+									am_free(item->url);
+									dbg_printf(P_INFO, "item->url set (using enclosure, was already set)");
+								}
+								item->url = strdup(enclosure->url);
+								url_set = 1;
+								is_torrent_feed = 1;
+								freeNode(enclosure);
+							}
+						}
 					}
 					child = child->next;
 				}
-				if(name_set && url_set) {
+				if(name_set && url_set && is_torrent_feed) {
 					addItem(item, rss_items);
+				} else if(is_torrent_feed == 0) {
+					dbg_printf(P_MSG, "Is this really a torrent feed?");
+					freeRSSItem(item);
 				} else {
 					freeRSSItem(item);
 				}
@@ -83,15 +137,17 @@ int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	xmlXPathObjectPtr xpathObj;
+	xmlNodeSetPtr ttlNode;
 
-	const xmlChar* xpathExpr = (xmlChar*)"//item";
+	static int ttl = 0;
+	const xmlChar* ttlExpr = (xmlChar*)"//channel/ttl";
+	const xmlChar* itemExpr = (xmlChar*)"//item";
 	LIBXML_TEST_VERSION
 
 	/* Init libxml */
 	xmlInitParser();
 
 	assert(buffer);
-	assert(xpathExpr);
 
 	/* Load XML document */
 	doc = xmlParseMemory(buffer, size);
@@ -109,16 +165,40 @@ int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
 		return -1;
 	}
 
-	/* Evaluate xpath expression */
-	xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+	/* check for time-to-live element in RSS feed */
+	if(ttl == 0) {
+		dbg_printf(P_INFO, "ttl not set");
+		xpathObj = xmlXPathEvalExpression(ttlExpr, xpathCtx);
+		if(xpathObj != NULL) {
+			dbg_printf(P_INFO, "xpathObj != NULL");
+			ttlNode = xpathObj->nodesetval;
+
+			dbg_printf(P_INFO, "TTL nodes: %d", ttlNode->nodeNr);
+			if(ttlNode->nodeNr == 1 && ttlNode->nodeTab[0]->type == XML_ELEMENT_NODE) {
+				ttl = atoi((char*)xmlNodeGetContent(ttlNode->nodeTab[0]->children));
+
+				/* user-specified interval is shorter than that requested by the RSS feed */
+				if(ttl > am_get_interval()) {
+					am_set_interval(ttl);
+				}
+			}
+			xmlXPathFreeObject(xpathObj);
+		} else {
+			dbg_printf(P_ERROR, "Error: unable to evaluate TTL XPath expression");
+		}
+	}
+
+	/* Extract RSS "items" from feed */
+	xpathObj = xmlXPathEvalExpression(itemExpr, xpathCtx);
 	if(xpathObj == NULL) {
-		dbg_printf(P_ERROR, "Error: unable to evaluate XPath expression \"%s\"", xpathExpr);
+		dbg_printf(P_ERROR, "Error: unable to evaluate XPath expression \"%s\"", itemExpr);
 		xmlXPathFreeContext(xpathCtx);
 		xmlFreeDoc(doc);
 		xmlCleanupParser();
 		return -1;
 	}
 	extract_feed_items(xpathObj->nodesetval, rss_items);
+
 	/* Cleanup */
 	xmlXPathFreeObject(xpathObj);
 	xmlXPathFreeContext(xpathCtx);
