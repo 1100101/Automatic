@@ -147,11 +147,14 @@ char* resolve_path(char *path) {
 char* get_tr_folder() {
 	static char *path = NULL;
 	char buf[MAXPATHLEN];
+	char *home = NULL;
 
 	if(!path) {
-		strcpy(buf, get_home_folder());
+		home = get_home_folder();
+		strcpy(buf, home);
 		strcat(buf, "/.config/transmission");
 		path = strdup(buf);
+		am_free(home);
 	}
 	return path;
 }
@@ -317,6 +320,7 @@ void setup_signals(void) {
 
 auto_handle* session_init(void) {
 	char path[MAXPATHLEN];
+	char *home;
 
 	auto_handle *ses = am_malloc(sizeof(auto_handle));
 	ses->max_bucket_items = AM_DEFAULT_MAXBUCKET;
@@ -325,13 +329,15 @@ auto_handle* session_init(void) {
 	ses->use_transmission = AM_DEFAULT_USETRANSMISSION;
 	ses->log_file = strdup(AM_DEFAULT_LOGFILE);
 	ses->transmission_path = get_tr_folder();
-	sprintf(path, "%s/%s", get_home_folder(), AM_DEFAULT_STATEFILE);
+	home = get_home_folder();
+	sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
 	ses->statefile = am_malloc(strlen(path) + 1);
 	strncpy(ses->statefile, path, strlen(path) + 1);
 	ses->torrent_folder = get_temp_folder();
 	ses->bucket = NULL;
 	ses->regex_patterns = NULL;
 	ses->feed_url = NULL;
+	am_free(home);
 	return ses;
 }
 
