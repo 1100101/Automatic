@@ -29,11 +29,12 @@
 #include "list.h"
 
 struct auto_handle {
-	char *feed_url;
+
 	char *log_file;
 	char *transmission_path;
 	char *statefile;
 	char *torrent_folder;
+	linked_list url_list;
 	linked_list bucket;
 	linked_list regex_patterns;
 	uint8_t max_bucket_items;

@@ -43,13 +43,13 @@ int save_state(linked_list *bucket) {
 		current = *bucket;
 		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(current));
 		if((fp = fopen(state_file, "wb")) == NULL) {
-			dbg_printf(P_ERROR, "[save_state] Error: Unable to open '%s' for writing: %s", state_file, strerror(errno));
+			dbg_printf(P_ERROR, "Error: Unable to open statefile '%s' for writing: %s", state_file, strerror(errno));
 			return -1;
 		}
 		while (current != NULL && current->item != NULL && current->item->url != NULL) {
 			sprintf(tmp, "%s\n", current->item->url);
 			if(!fwrite(tmp, strlen(tmp), 1, fp)){
-				dbg_printf(P_ERROR, "[save_state] Error: Unable to write to '%s': %s", state_file, strerror(errno));
+				dbg_printf(P_ERROR, "Error: Unable to write to statefile '%s': %s", state_file, strerror(errno));
 				fclose(fp);
 				return -1;
 			}
@@ -68,7 +68,7 @@ int load_state(NODE **head) {
 	const char* state_file = am_get_statefile();
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
-		dbg_printf(P_ERROR, "[load_state] Error: Unable to open '%s' for reading: %s", state_file, strerror(errno));
+		dbg_printf(P_ERROR, "[load_state] Error: Unable to open statefile '%s' for reading: %s", state_file, strerror(errno));
 		return -1;
 	}
 	while (fgets(line, MAX_LINE_LEN, fp)) {

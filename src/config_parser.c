@@ -38,7 +38,8 @@
 
 static const char *delim = ";;";
 
-static int init_regex_patterns(auto_handle *as, const char *pattern_str);
+static int set_regex_patterns(auto_handle *as, const char *pattern_str);
+static int set_urls(auto_handle *session, const char *urls);
 static char* shorten(const char *str);
 
 void write_string(char *src, char **dst) {
@@ -62,7 +63,8 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
-		write_string(param, &as->feed_url);
+		/*write_string(param, &as->feed_url);*/
+		set_urls(as, param);
 	} else if(!strcmp(opt, "logfile")) {
 		write_string(param, &as->log_file);
 	} else if(!strcmp(opt, "transmission-home")) {
@@ -96,14 +98,14 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
-		init_regex_patterns(as, param);
+		set_regex_patterns(as, param);
 	} else {
 		dbg_printf(P_ERROR, "Unknown option: %s", opt);
 	}
 	return 0;
 }
 
-static int init_regex_patterns(auto_handle *session, const char *patterns) {
+static int set_regex_patterns(auto_handle *session, const char *patterns) {
 	rss_item re;
 	char *buf, *p;
 	int len;
@@ -126,6 +128,32 @@ static int init_regex_patterns(auto_handle *session, const char *patterns) {
 	}
 	am_free(buf);
 	am_free(pattern_str);
+	return 0;
+}
+
+static int set_urls(auto_handle *session, const char *urls) {
+	rss_item re;
+	char *buf, *p;
+	int len;
+	char *url_str = shorten(urls);
+	cleanupList(&session->url_list);
+	buf = calloc(1, strlen(url_str) + 1);
+	strncpy(buf, url_str, strlen(url_str) + 1);
+	p = strtok(buf, delim);
+	while (p) {
+		len = strlen(p);
+		re = newRSSItem();
+		re->url = am_malloc(len + 1);
+		if(re->url) {
+			strcpy(re->url, p);
+			addItem(re, &session->url_list);
+		} else {
+			dbg_printf(P_ERROR, "Error allocating memory for regular expression");
+		}
+		p = strtok(NULL, delim);
+	}
+	am_free(buf);
+	am_free(url_str);
 	return 0;
 }
 

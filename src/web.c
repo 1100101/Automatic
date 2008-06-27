@@ -127,7 +127,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 			mem->content_filename = am_realloc(mem->content_filename, len + 1);
 			strncpy(mem->content_filename, buf + pmatch[2].rm_so, len);
 			mem->content_filename[len] = '\0';
-			dbg_printf(P_INFO, "[write_header_callback] Found filename: %s", mem->content_filename);
+			dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
 		} else if(err != REG_NOMATCH && err != 0){
 			len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", erbuf);
@@ -251,7 +251,7 @@ WebData* getHTTPData(const char *url) {
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	res = curl_easy_perform(curl_handle);
 	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
-	dbg_printf(P_INFO, "[getHTTPData] response code: %ld", rc);
+	dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", rc);
 	curl_easy_cleanup(curl_handle);
 	if(rc != 200) {
 		dbg_printf(P_ERROR, "[getHTTPData] Failed to get '%s' [response: %ld]", url, rc);
@@ -355,5 +355,4 @@ static void get_filename(WebData *data, char *file_name, const char *path) {
 		strcat(fname, ".torrent");
 	}
 	strcpy(file_name, fname);
-	dbg_printf(P_INFO, "save spot: %s", file_name);
 }

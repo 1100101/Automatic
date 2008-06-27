@@ -336,18 +336,18 @@ auto_handle* session_init(void) {
 	ses->torrent_folder = get_temp_folder();
 	ses->bucket = NULL;
 	ses->regex_patterns = NULL;
-	ses->feed_url = NULL;
+	ses->url_list = NULL;
 	am_free(home);
 	return ses;
 }
 
 static void ah_free(auto_handle *as) {
 	if(as) {
-		am_free(as->feed_url);
 		am_free(as->log_file);
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
+		cleanupList(&as->url_list);
 		cleanupList(&as->bucket);
 		cleanupList(&as->regex_patterns);
 		am_free(as);
@@ -437,7 +437,9 @@ int main(int argc, char **argv) {
 	int daemonized = 0;
 	char erbuf[100];
 	char time_str[TIME_STR_SIZE];
-	WebData *wdata;
+	WebData *wdata = NULL;
+	NODE *current = NULL;
+	int count;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -458,12 +460,12 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	if(!session->feed_url || strlen(session->feed_url) < 1)  {
+	if(listCount(session->url_list) == 0)  {
 		fprintf(stderr, "No feed URL specified in automatic.conf!\n");
 		shutdown_daemon(session);
 	}
 
-	if(!session->regex_patterns)  {
+	if(listCount(session->regex_patterns) == 0)  {
 		fprintf(stderr, "No patterns specified in automatic.conf!\n");
 		shutdown_daemon(session);
 	}
@@ -491,14 +493,14 @@ int main(int argc, char **argv) {
 	}
 
 	dbg_printf(P_INFO, "verbose level: %d", verbose);
-	dbg_printf(P_INFO, "nofork: %s", nofork == 1 ? "true" : "false");
+	dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "true" : "false");
 	dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
 	dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
 	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
 	dbg_printf(P_INFO, "log file: %s", nofork ? "stderr" : session->log_file);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
-	dbg_printf(P_INFO, "feed URL: %s", session->feed_url);
+	dbg_printf(P_INFO, "feed URLs: %d", listCount(session->url_list));
 	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->regex_patterns));
 
 	load_state(&session->bucket);
@@ -506,14 +508,20 @@ int main(int argc, char **argv) {
 	while(1) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
-		wdata = getHTTPData(session->feed_url);
-		if(wdata && wdata->response && wdata->response->size > 0) {
-			parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
+		current = session->url_list;
+		count = 0;
+		while(current && current->item && current->item->url) {
+			++count;
+			dbg_printf(P_MSG, "Checking feed %d ...", count);
+			wdata = getHTTPData(current->item->url);
+			if(wdata && wdata->response && wdata->response->size > 0) {
+				parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
+			}
+			WebData_free(wdata);
+			check_for_downloads();
+			cleanupList(&rss_items);
+			current = current->pNext;
 		}
-
-		WebData_free(wdata);
-		check_for_downloads();
-		cleanupList(&rss_items);
  		sleep(session->check_interval * 60);
 	}
 	return 0;
