@@ -34,29 +34,30 @@ void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
    char tmp[MSGSIZE_MAX];
 	int print_msg = 0;
-	FILE *fp;
-	const char *log_file = NULL;
+	FILE *fp = stdout;
 
-	uint8_t nofork  = am_get_nofork();
 	uint8_t verbose = am_get_verbose();
 
-	if(nofork == 0)
-		log_file = am_getlogfile();
-
 	switch(type) {
-		case P_ERROR: /* fallthrough */
+		case P_ERROR: {
+			print_msg = 1;
+			fp = stderr;
+			break;
+		}
 		case P_MSG: {
 			print_msg = 1;
 			break;
 		}
 		case P_INFO: {
-			if(verbose > 1)
+			if(verbose > 1) {
 				print_msg = 1;
+			}
 			break;
 		}
 		case P_DBG: {
 #ifdef DEBUG
 			print_msg = 1;
+			fp = stderr;
 #endif
 			break;
 		}
@@ -71,22 +72,16 @@ void dbg_printf(debug_type type, const char *format, ...) {
 		vsnprintf(tmp, MSGSIZE_MAX, format, va);
 		va_end(va);
 		tmp[MSGSIZE_MAX-1] = '\0';
-		if(nofork == 0 && log_file != NULL && strlen(log_file) > 1) {
-			fp = fopen(log_file,"a");
-			if(fp) {
-				fprintf(fp,"%s\n", tmp);
-				fflush(fp);
-				fclose(fp);
-			}
-		} else {
-			fprintf(stderr, "%s\n", tmp);
-			fflush(stderr);
-		}
 
+		if(fp == NULL) {
+			fp = stderr;
+		}
+		fprintf(fp,"%s\n", tmp);
+		fflush(fp);
 	}
 }
 
-void getlogtime_str(char *buf) {
+char* getlogtime_str(char *buf) {
 	char tmp[TIME_STR_SIZE];
 	time_t now;
 	struct tm now_tm;
@@ -98,4 +93,5 @@ void getlogtime_str(char *buf) {
 	localtime_r( &now, &now_tm );
 	strftime( tmp, sizeof(tmp), "%y/%m/%d %H:%M:%S", &now_tm );
 	snprintf( buf, strlen(tmp) + 1, "%s", tmp);
+	return buf;
 }

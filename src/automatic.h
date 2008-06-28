@@ -30,7 +30,6 @@
 
 struct auto_handle {
 
-	char *log_file;
 	char *transmission_path;
 	char *statefile;
 	char *torrent_folder;
@@ -50,7 +49,6 @@ char* resolve_path(char *path);
 
 char *get_temp_folder(void);
 
-const char* am_getlogfile(void);
 const char* am_get_statefile(void);
 uint8_t am_get_verbose(void);
 uint8_t am_get_nofork(void);

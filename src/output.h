@@ -31,4 +31,4 @@ enum debug_type {
 typedef enum debug_type debug_type;
 
 void dbg_printf(debug_type type, const char *format, ...);
-void getlogtime_str(char *buf);
+char* getlogtime_str(char *buf);

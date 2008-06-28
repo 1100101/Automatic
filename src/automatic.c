@@ -20,7 +20,6 @@
 
 #define AM_LOCKFILE  					"/tmp/automatic.pid"
 #define AM_DEFAULT_CONFIGFILE  		"/etc/automatic.conf"
-#define AM_DEFAULT_LOGFILE  			"/var/log/automatic.log"
 #define AM_DEFAULT_STATEFILE  		".automatic.state"
 #define AM_DEFAULT_VERBOSE 			P_MSG
 #define AM_DEFAULT_NOFORK 				0
@@ -224,8 +223,7 @@ static void do_cleanup(auto_handle *as) {
 
 void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
-	getlogtime_str(time_str);
-	dbg_printf(P_MSG,"%s: Shutting down daemon", time_str);
+	dbg_printf(P_MSG,"%s: Shutting down daemon", getlogtime_str(time_str));
 	if(as && as->bucket_changed)
 		save_state(&as->bucket);
 	do_cleanup(as);
@@ -327,7 +325,6 @@ auto_handle* session_init(void) {
 	ses->bucket_changed = 0;
 	ses->check_interval = AM_DEFAULT_INTERVAL;
 	ses->use_transmission = AM_DEFAULT_USETRANSMISSION;
-	ses->log_file = strdup(AM_DEFAULT_LOGFILE);
 	ses->transmission_path = get_tr_folder();
 	home = get_home_folder();
 	sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
@@ -343,7 +340,6 @@ auto_handle* session_init(void) {
 
 static void ah_free(auto_handle *as) {
 	if(as) {
-		am_free(as->log_file);
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
@@ -363,13 +359,6 @@ const char *am_get_statefile() {
 /* 		return strdup(session->statefile); */
 		return session->statefile;
 	else
-		return NULL;
-}
-
-const char* am_getlogfile() {
-	if(session && session->log_file) {
-		return session->log_file;
-	} else
 		return NULL;
 }
 
@@ -473,14 +462,6 @@ int main(int argc, char **argv) {
 	setup_signals();
 
  	if(!nofork) {
-		/* clear logfile */
-		fp = fopen(session->log_file, "w");
-		if(fp == NULL) {
-			fprintf(stderr, "FATAL: Could not open logfile '%s': %s\n", session->log_file, strerror(errno));
-			shutdown_daemon(session);
-		} else {
-			fclose(fp);
-		}
 
 		/* start daemon */
 		if(daemonize() != 0) {
@@ -498,7 +479,6 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
 	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
-	dbg_printf(P_INFO, "log file: %s", nofork ? "stderr" : session->log_file);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
 	dbg_printf(P_INFO, "feed URLs: %d", listCount(session->url_list));
 	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->regex_patterns));

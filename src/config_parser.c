@@ -65,8 +65,6 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 	if(!strcmp(opt, "url")) {
 		/*write_string(param, &as->feed_url);*/
 		set_urls(as, param);
-	} else if(!strcmp(opt, "logfile")) {
-		write_string(param, &as->log_file);
 	} else if(!strcmp(opt, "transmission-home")) {
 		write_string(param, &as->transmission_path);
 	} else if(!strcmp(opt, "torrent-folder")) {
