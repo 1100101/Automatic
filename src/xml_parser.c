@@ -65,20 +65,12 @@ rssNode* getNodeAttributes(xmlNodePtr child) {
 
 static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 	xmlNodePtr cur, child;
-/*	xmlChar *textNode; */
 	int size, i;
 	rss_item item;
 	uint8_t name_set, url_set, is_torrent_feed = 0;
-/* 	static int bucketsize_changed = 0; */
 	rssNode *enclosure;
 	size = (nodes) ? nodes->nodeNr : 0;
 
-/*	if(!bucketsize_changed && size > 0 && size < 256) {
-		dbg_printf(P_INFO2, "bucketsize_changed: %d", size);
- 		am_set_bucket_size(size);
-		bucketsize_changed = 1;
-	}
-	*/
 	if(size > am_get_bucket_size()) {
 		dbg_printf(P_INFO2, "bucketsize_changed: %d", size);
 		am_set_bucket_size(size);
@@ -132,6 +124,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 			dbg_printf(P_ERROR, "Unknown node \"%s\": type %d", cur->name, cur->type);
 		}
 	}
+	dbg_printf(P_INFO2, "== Done extracting RSS items ==");
 }
 
 int parse_xmldata(const char* buffer, int size, NODE **rss_items) {

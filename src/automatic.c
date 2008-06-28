@@ -420,8 +420,6 @@ void am_free(void * p) {
 }
 
 int main(int argc, char **argv) {
-	FILE *fp;
-
    char* config_file = NULL;
 	int daemonized = 0;
 	char erbuf[100];
