@@ -40,6 +40,7 @@
 #include "automatic.h"
 #include "web.h"
 #include "output.h"
+#include "utils.h"
 
 #define DATA_BUFFER 1024 * 100
 #define HEADER_BUFFER 500
@@ -287,7 +288,7 @@ static int call_transmission(const char* transmission_path, const char *filename
 }
 
 
-void download_torrent(auto_handle *ah,rss_item item) {
+void download_torrent(auto_handle *ah, rss_item item) {
 	char fname[MAXPATHLEN];
 	int torrent;
 	int res;
@@ -313,7 +314,7 @@ void download_torrent(auto_handle *ah,rss_item item) {
 				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
 				unlink(fname);
 			} else {
-				if(add_to_bucket(item, &ah->bucket, ah->max_bucket_items) == 0) {
+				if(addToBucket(item->url, &ah->bucket, ah->max_bucket_items) == 0) {
 					ah->bucket_changed = 1;
 				} else {
 					dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->name);

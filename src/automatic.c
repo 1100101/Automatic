@@ -36,9 +36,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
-#include <pwd.h>
 #include <getopt.h>
-#include <sys/types.h>
 #include <regex.h>
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -51,11 +49,13 @@
 #include "config_parser.h"
 #include "xml_parser.h"
 #include "state.h"
+#include "utils.h"
+#include "rss_list.h"
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
 
-static linked_list rss_items = NULL;
+static rss_list rss_items = NULL;
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -104,79 +104,11 @@ void readargs( int argc, char ** argv, char **c_file, uint8_t * nofork, uint8_t 
 	}
 }
 
-char* get_home_folder() {
-	char * dir = NULL;
-	struct passwd * pw = NULL;
 
-	if(!dir) {
-		if(getenv("HOME")) {
-			dir = strdup(getenv( "HOME" ));
-		} else {
-			if((pw = getpwuid(getuid())) != NULL) {
-				dir = strdup(pw->pw_dir);
-				endpwent();
-			} else {
-				dir = strdup("");
-			}
-		}
-	}
-	return dir;
-}
-
-char* resolve_path(char *path) {
-	char new_dir[MAXPATHLEN];
-	char *homedir = NULL;
-
-	if(path && strlen(path) > 2) {
-		/* home dir */
-		if(path[0] == '~' && path[1] == '/') {
-			homedir = get_home_folder();
-			if(homedir) {
-				strcpy(new_dir, homedir);
-				strcat(new_dir, ++path);
-				am_free(homedir);
-				return strdup(new_dir);
-			}
-		}
-		return strdup(path);
-	}
-	return NULL;
-}
-
-char* get_tr_folder() {
-	static char *path = NULL;
-	char buf[MAXPATHLEN];
-	char *home = NULL;
-
-	if(!path) {
-		home = get_home_folder();
-		strcpy(buf, home);
-		strcat(buf, "/.config/transmission");
-		path = strdup(buf);
-		am_free(home);
-	}
-	return path;
-}
-
-char* get_temp_folder() {
-	static char *dir = NULL;
-
-	if(!dir) {
-		if(getenv("TEMPDIR")) {
-			dir = strdup(getenv( "TEMPDIR" ));
-		} else if(getenv("TMPDIR")) {
-			dir = strdup(getenv( "TMPDIR" ));
-		} else {
-			dir = strdup("/tmp");
-		}
-	}
-	return dir;
-}
-
-static uint8_t has_been_downloaded(linked_list bucket, char *url) {
+static uint8_t has_been_downloaded(bucket_list bucket, char *url) {
 	uint8_t res;
 
-	res = hasURL(url, bucket);
+	res = bucket_hasURL(url, bucket);
 	if(res)
 		dbg_printf(P_INFO2, "Torrent has already been downloaded");
 	return res;
@@ -186,37 +118,41 @@ static void check_for_downloads(void) {
 	int err;
 	regex_t preg;
 	char erbuf[100];
-	linked_list current_rss_item, current_regex;
+	char *regex_str;
+	rss_list current_rss_item, current_regex;
+	rss_item x;
 
 	current_regex = session->regex_patterns;
-	while (current_regex != NULL && current_regex->item != NULL) {
-		dbg_printf(P_INFO2, "Current regex: %s", current_regex->item->name);
-		err = regcomp(&preg, current_regex->item->name, REG_EXTENDED|REG_ICASE);
+	while (current_regex != NULL && current_regex->data != NULL) {
+		regex_str = (char*)current_regex->data;
+		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
+		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
 		if(err) {
 			regerror(err, &preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
-			current_regex = current_regex->pNext;
+			current_regex = current_regex->next;
 			continue;
 		}
 		current_rss_item = rss_items;
-		while (current_rss_item != NULL && current_rss_item->item != NULL) {
-			dbg_printf(P_INFO2, "Current rss_item: %s", current_rss_item->item->name);
-			err = regexec(&preg, current_rss_item->item->name, 0, NULL, 0);
-			if(!err && !has_been_downloaded(session->bucket, current_rss_item->item->url)) {			/* regex matches and it hasn't been downloaded before */
-				download_torrent(session, current_rss_item->item);
+		while (current_rss_item != NULL && current_rss_item->data != NULL) {
+			x = (rss_item)current_rss_item->data;
+			dbg_printf(P_INFO2, "Current rss_item: %s", x->name);
+			err = regexec(&preg, x->name, 0, NULL, 0);
+			if(!err && !has_been_downloaded(session->bucket, x->url)) {			/* regex matches and it hasn't been downloaded before */
+				download_torrent(session, current_rss_item->data);
 			} else if(err != REG_NOMATCH && err != 0){
 				regerror(err, &preg, erbuf, sizeof(erbuf));
 				dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
 			}
-			current_rss_item = current_rss_item->pNext;
+			current_rss_item = current_rss_item->next;
 		}
 		regfree(&preg);
-		current_regex = current_regex->pNext;
+		current_regex = current_regex->next;
 	}
 }
 
 static void do_cleanup(auto_handle *as) {
-	cleanupList(&rss_items);
+	rss_freeList(&rss_items);
 	ah_free(as);
 	cd_preg_free();
 }
@@ -343,9 +279,9 @@ static void ah_free(auto_handle *as) {
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
-		cleanupList(&as->url_list);
-		cleanupList(&as->bucket);
-		cleanupList(&as->regex_patterns);
+		rss_freeList(&as->url_list);
+		freeList( &as->bucket, NULL);
+		freeList(&as->regex_patterns, NULL);
 		am_free(as);
 	}
 }
@@ -356,7 +292,6 @@ uint8_t am_get_verbose() {
 
 const char *am_get_statefile() {
 	if(session && session->statefile)
-/* 		return strdup(session->statefile); */
 		return session->statefile;
 	else
 		return NULL;
@@ -394,31 +329,6 @@ void am_set_bucket_size(uint8_t size) {
 	}
 }
 
-void* am_malloc( size_t size ) {
-	void *tmp;
-	if(size > 0) {
-		tmp = malloc(size);
-		dbg_printf(P_DBG, "Allocated %d bytes (%p)", size, tmp);
-		return tmp;
-	}
-	return NULL;
-}
-
-void* am_realloc(void *p, size_t size) {
-	if(!p)
-		return am_malloc(size);
-	else
-		return realloc(p, size);
-}
-
-void am_free(void * p) {
-	if(p) {
-		/*fprintf(stderr, "Freeing %p\n", p);*/
-		free(p);
-		p = NULL;
-	}
-}
-
 int main(int argc, char **argv) {
    char* config_file = NULL;
 	int daemonized = 0;
@@ -427,11 +337,12 @@ int main(int argc, char **argv) {
 	WebData *wdata = NULL;
 	NODE *current = NULL;
 	int count;
+	char *feed_url;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
 	if(!config_file) {
-		config_file = strdup(AM_DEFAULT_CONFIGFILE);
+		config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
 	}
 	strncpy(AutoConfigFile, config_file, strlen(config_file));
 
@@ -488,17 +399,18 @@ int main(int argc, char **argv) {
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
 		current = session->url_list;
 		count = 0;
-		while(current && current->item && current->item->url) {
+		while(current && current->data) {
+			feed_url = (char*)current->data;
 			++count;
 			dbg_printf(P_MSG, "Checking feed %d ...", count);
-			wdata = getHTTPData(current->item->url);
+			wdata = getHTTPData(feed_url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
 				parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
 			}
 			WebData_free(wdata);
 			check_for_downloads();
-			cleanupList(&rss_items);
-			current = current->pNext;
+			rss_freeList(&rss_items);
+			current = current->next;
 		}
  		sleep(session->check_interval * 60);
 	}

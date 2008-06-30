@@ -9,8 +9,10 @@
 #include <libxml/xpathInternals.h>
 
 #include "automatic.h"
-#include "list.h"
+#include "rss_list.h"
+#include "bucket_list.h"
 #include "output.h"
+#include "utils.h"
 
 struct rssNode {
 	char *url;
@@ -32,19 +34,13 @@ void freeNode(rssNode *rss) {
 
 int getNodeText(xmlNodePtr child, char **dest) {
 	xmlChar * textNode;
-	int len;
 	int result = 0;
 
 	textNode = xmlNodeGetContent(child);
-	if(textNode) {
-		len = strlen((char*)textNode) + 1;
-		*dest = am_malloc(len);
-		if(*dest) {
-			strncpy(*dest, (char*)textNode, len);
-			result = 1;
-		}
-	}
+	*dest = am_strdup((char*)textNode);
 	xmlFree(textNode);
+	if(*dest)
+		result = 1;
 	return result;
 }
 
@@ -85,7 +81,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 				child = cur->children;
 				url_set = 0;
 				name_set = 0;
-				item = newRSSItem();
+				item = rss_newItem();
 				while(child) {
 					if((strcmp((char*)child->name, "title") == 0)) {
 						name_set = getNodeText(child->children, &item->name);
@@ -100,7 +96,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 								if(item->url) {
 									am_free(item->url);
 								}
-								item->url = strdup(enclosure->url);
+								item->url = am_strdup(enclosure->url);
 								url_set = 1;
 								is_torrent_feed = 1;
 								freeNode(enclosure);
@@ -109,14 +105,14 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 					}
 					child = child->next;
 				}
-				if(name_set && url_set && is_torrent_feed) {
-					addItem(item, rss_items);
-				} else if(is_torrent_feed == 0) {
+				if(is_torrent_feed == 0) {
 					dbg_printf(P_MSG, "Is this really a torrent feed?");
-					freeRSSItem(item);
-				} else {
-					freeRSSItem(item);
 				}
+				if(name_set && url_set) {
+					rss_addItem(item->name, item->url, rss_items);
+				}
+				rss_freeItem(item);
+
 				child = cur = NULL;
 			}
 		} else {

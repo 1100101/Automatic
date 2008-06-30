@@ -47,6 +47,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_automatic_OBJECTS = automatic.$(OBJEXT) config_parser.$(OBJEXT) \
 	list.$(OBJEXT) output.$(OBJEXT) state.$(OBJEXT) web.$(OBJEXT) \
+	rss_list.$(OBJEXT) bucket_list.$(OBJEXT) utils.$(OBJEXT) \
 	xml_parser.$(OBJEXT)
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
@@ -176,6 +177,9 @@ automatic_SOURCES = \
    output.c         \
    state.c          \
    web.c            \
+   rss_list.c       \
+   bucket_list.c    \
+   utils.c          \
 	xml_parser.c
 
 noinst_HEADERS = \
@@ -185,6 +189,9 @@ noinst_HEADERS = \
    output.h         \
    state.h          \
    web.h            \
+   rss_list.h       \
+   bucket_list.h    \
+   utils.h          \
    xml_parser.h
 
 dist_sysconf_DATA = automatic.conf-sample
@@ -266,10 +273,13 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bucket_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rss_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/web.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml_parser.Po@am__quote@
 

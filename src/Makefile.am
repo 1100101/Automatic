@@ -9,6 +9,9 @@ automatic_SOURCES = \
    output.c         \
    state.c          \
    web.c            \
+   rss_list.c       \
+   bucket_list.c    \
+   utils.c          \
 	xml_parser.c
 
 noinst_HEADERS =    \
@@ -18,6 +21,9 @@ noinst_HEADERS =    \
    output.h         \
    state.h          \
    web.h            \
+   rss_list.h       \
+   bucket_list.h    \
+   utils.h          \
    xml_parser.h
 
 dist_sysconf_DATA = automatic.conf-sample

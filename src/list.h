@@ -26,32 +26,24 @@
 
 
 typedef struct NODE NODE;
-typedef struct rss_obj* rss_item;
 typedef NODE* linked_list;
 
-struct rss_obj {
-	char *name;
-	char *url;
-};
-
 struct NODE {
-   NODE *pNext;
-   rss_item item;
+   NODE *next;
+   void *data;
 };
 
-/* read-only functions */
-unsigned int listCount(linked_list head);
-int hasURL(const char *url, linked_list head);
-void printList(linked_list list);
+typedef void (*listFuncPtr)(void *);
+
+int addItem(void *elem, NODE **head);
+
+void freeList( NODE **head, listFuncPtr freeFunc );
+void removeFirst(NODE  **head, listFuncPtr freeFunc);
+void removeLast(NODE *head, listFuncPtr freeFunc);
+
+
+unsigned int listCount(NODE* head);
 void reverseList(NODE **list);
-
-/* list modifiers */
-void freeRSSItem(rss_item listItem);
-int addItem(rss_item elem, NODE **head);
-void freeList(NODE **head);
-rss_item newRSSItem();
-int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items);
-void cleanupList(NODE **list);
-
+NODE* getLastNode(NODE *ptr_to_head);
 
 #endif

@@ -29,18 +29,20 @@
 #include <sys/param.h>
 
 #include "automatic.h"
+#include "utils.h"
 #include "config_parser.h"
 #include "output.h"
-#include "list.h"
+#include "rss_list.h"
 
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	2000
 
 static const char *delim = ";;";
 
-static int set_regex_patterns(auto_handle *as, const char *pattern_str);
-static int set_urls(auto_handle *session, const char *urls);
+/*static int set_regex_patterns(auto_handle *as, const char *pattern_str);
+static int set_urls(auto_handle *session, const char *urls);*/
 static char* shorten(const char *str);
+static int writeToList(NODE **head, const char* strlist);
 
 void write_string(char *src, char **dst) {
 	char *tmp;
@@ -49,7 +51,7 @@ void write_string(char *src, char **dst) {
 		tmp = resolve_path(src);
 		if(tmp) {
 			am_free(*dst);
-			*dst = strdup(tmp);
+			*dst = am_strdup(tmp);
 			am_free(tmp);
 		}
 	}
@@ -64,7 +66,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
 		/*write_string(param, &as->feed_url);*/
-		set_urls(as, param);
+		writeToList(&as->url_list, param);
 	} else if(!strcmp(opt, "transmission-home")) {
 		write_string(param, &as->transmission_path);
 	} else if(!strcmp(opt, "torrent-folder")) {
@@ -96,62 +98,27 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
-		set_regex_patterns(as, param);
+		writeToList(&as->regex_patterns, param);
 	} else {
 		dbg_printf(P_ERROR, "Unknown option: %s", opt);
 	}
 	return 0;
 }
 
-static int set_regex_patterns(auto_handle *session, const char *patterns) {
-	rss_item re;
-	char *buf, *p;
-	int len;
-	char *pattern_str = shorten(patterns);
-	cleanupList(&session->regex_patterns);
-	buf = calloc(1, strlen(pattern_str) + 1);
-	strncpy(buf, pattern_str, strlen(pattern_str) + 1);
+static int writeToList(NODE **head, const char* strlist) {
+	char *buf = NULL, *p = NULL;
+	char *str = shorten(strlist);
+	assert(*head == NULL);
+	rss_freeList(head);
+	buf = am_malloc(strlen(str) + 1);
+	strncpy(buf, str, strlen(str) + 1);
 	p = strtok(buf, delim);
 	while (p) {
-		len = strlen(p);
-		re = newRSSItem();
-		re->name = am_malloc(len + 1);
-		if(re->name) {
-			strcpy(re->name, p);
-			addItem(re, &session->regex_patterns);
-		} else {
-			dbg_printf(P_ERROR, "Error allocating memory for regular expression");
-		}
+		addItem(am_strdup(p), head);
 		p = strtok(NULL, delim);
 	}
 	am_free(buf);
-	am_free(pattern_str);
-	return 0;
-}
-
-static int set_urls(auto_handle *session, const char *urls) {
-	rss_item re;
-	char *buf, *p;
-	int len;
-	char *url_str = shorten(urls);
-	cleanupList(&session->url_list);
-	buf = calloc(1, strlen(url_str) + 1);
-	strncpy(buf, url_str, strlen(url_str) + 1);
-	p = strtok(buf, delim);
-	while (p) {
-		len = strlen(p);
-		re = newRSSItem();
-		re->url = am_malloc(len + 1);
-		if(re->url) {
-			strcpy(re->url, p);
-			addItem(re, &session->url_list);
-		} else {
-			dbg_printf(P_ERROR, "Error allocating memory for regular expression");
-		}
-		p = strtok(NULL, delim);
-	}
-	am_free(buf);
-	am_free(url_str);
+	am_free(str);
 	return 0;
 }
 
@@ -389,5 +356,5 @@ static char* shorten(const char *str) {
 		}
 		tmp[tmp_pos] = '\0';
 		assert(strlen(tmp) < MAX_PARAM_LEN);
-		return strdup(tmp);
+		return am_strdup(tmp);
 }

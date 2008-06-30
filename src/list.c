@@ -26,90 +26,52 @@
 #include <stdint.h>
 
 #include "list.h"
-#include "automatic.h"
+#include "utils.h"
 #include "output.h"
+
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
+
 
 void pushNode(NODE **ptr_to_head, NODE *newnode) {
 
 	if(*ptr_to_head == NULL) {					/* empty list */
-		*ptr_to_head = newnode;					/* new item becomes head of list */
-		newnode->pNext = NULL;
+		*ptr_to_head = newnode;
+		newnode->next = NULL;
 	} else {
-		newnode->pNext = *ptr_to_head;
+		newnode->next = *ptr_to_head;
 		*ptr_to_head = newnode;
 	}
 }
 
-void deleteLast(NODE **ptr_to_head) {
-	NODE *p = *ptr_to_head, *prev = NULL;
-	while(p && p->pNext != NULL) {
-		prev = p;
-		p = p->pNext;
-	}
-	if(prev) {
-		prev->pNext = NULL;
-	}
-	freeRSSItem(p->item);
-	am_free(p);
-	p = NULL;
-}
-
-void deleteHead(NODE **ptr_to_head) {
-	NODE *p;
-
-	if(*ptr_to_head != NULL) {
-		p = *ptr_to_head;
-		*ptr_to_head = p->pNext;
-		freeRSSItem(p->item);
-		am_free(p);
-		p = NULL;
-	}
-}
 
 /* public functions */
 
 void reverseList( NODE **list ) {
-	NODE *next;
+	NODE *nextnode;
 	NODE *current ;
 	NODE *result = NULL;
 	current = *list;
 
-	while(current != NULL )	{
-		next = current->pNext;
-		current->pNext = result;
+	while(current != NULL ) {
+		nextnode = current->next;
+		current->next = result;
 		result = current;
-		current = next;
+		current = nextnode;
 	}
 	*list = result;
 }
 
-int addItem(rss_item elem, NODE **head) {
-	NODE *pNode;
+void deleteFirst(NODE **ptr_to_head) {
+	NODE *p;
 
-	if(elem != NULL) {
-		pNode = (NODE*)am_malloc(sizeof(struct NODE));
-
-		if(pNode != NULL) {
-			pNode->item = elem;
-			pNode->pNext = NULL;
-			pushNode(head, pNode);
-			return 0;
-		}
-		return 1;
+	if(*ptr_to_head != NULL) {
+		p = *ptr_to_head;
+		*ptr_to_head = p->next;
+		am_free(p);
+		p = NULL;
 	}
-	return 1;
-}
-
-int hasURL(const char *url, NODE *head) {
-	NODE *p = head;
-
-	while (p != NULL) {
-		if(strcmp(p->item->url, url) == 0) {
-			return 1;
-		}
-		p = p->pNext;
-	}
-	return 0;
 }
 
 unsigned int listCount(NODE *head) {
@@ -117,89 +79,81 @@ unsigned int listCount(NODE *head) {
 	NODE *current = head;
 	while (current != NULL) {
 		++c;
-		current = current->pNext;
+		current = current->next;
 	}
 	return c;
 }
 
-int add_to_bucket(rss_item elem, NODE **b, int max_bucket_items) {
-	rss_item newelem;
-	int name_set = 0, url_set = 0;
+int addItem(void* elem, NODE **head) {
+	NODE *newnode;
 
-	/* copy element - original will be deleted later */
 	if(elem != NULL) {
-		newelem = newRSSItem();
-		if(elem->name) {
-			newelem->name = malloc(strlen(elem->name) + 1);
-			strncpy(newelem->name, elem->name, strlen(elem->name) + 1);
-			name_set = 1;
+		newnode = (NODE*)am_malloc(sizeof(struct NODE));
+
+		if(newnode != NULL) {
+			newnode->data = elem;
+			newnode->next = NULL;
+			pushNode(head, newnode);
+			return 0;
 		}
-		if(elem->url) {
-			newelem->url = malloc(strlen(elem->url) + 1);
-			strncpy(newelem->url, elem->url, strlen(elem->url) + 1);
-			url_set = 1;
-		}
-		if(name_set || url_set) {			/* don't add empty elements */
-			addItem(newelem, b);
-		}
-		if(max_bucket_items > 0 && listCount(*b) > max_bucket_items) {
-			dbg_printf(P_INFO2, "[add_to_bucket] bucket gets too large, deleting head item...\n");
-			deleteLast(b);
-		}
-		return 0;
+		return 1;
 	}
 	return 1;
 }
 
-void cleanupList(NODE **list) {
-	dbg_printf(P_INFO2, "[cleanupList] size before: %d", listCount(*list));
-	while (*list != NULL) {
-		deleteHead(list);
-	}
-	dbg_printf(P_INFO2, "[cleanupList] size after: %d", listCount(*list));
-}
+NODE* getLastNode(NODE *ptr_to_head) {
+	NODE *current = ptr_to_head;
 
-void printList(linked_list list) {
-	NODE *cur = list;
-	while(cur != NULL && cur->item != NULL) {
-		dbg_printf(P_DBG, "item: (%p)", (void*)cur->item);
-		if(cur->item->name != NULL) {
-			dbg_printf(P_DBG, "  name: %s (%p)", cur->item->name, (void*)cur->item->name);
-		}
-		if(cur->item->url != NULL) {
-			dbg_printf(P_DBG, "  url: %s (%p)", cur->item->url, (void*)cur->item->url);
-		}
-		dbg_printf(P_DBG, "  next: (%p)", (void*)cur->pNext);
-		cur = cur->pNext;
+	while(current !=NULL && current->next != NULL) {
+		current = current->next;
 	}
+	return current;
 }
 
 
+void deleteLast(NODE **ptr_to_head) {
+	NODE *p = *ptr_to_head, *prev = NULL;
 
-
-rss_item newRSSItem(void) {
-	rss_item i = (rss_item)am_malloc(sizeof(struct rss_obj));
-	if(i != NULL) {
-		i->name = NULL;
-		i->url = NULL;
+	while(p && p->next != NULL) {
+		prev = p;
+		p = p->next;
 	}
-	return i;
+	if(prev) {
+		prev->next = NULL;
+	}
+	am_free(p);
+	p = NULL;
 }
 
-void freeRSSItem(rss_item listItem) {
+void freeList( NODE **head, listFuncPtr freeFunc ) {
+	NODE* node = NULL;
 
-	if(listItem != NULL) {
-		if(listItem->name != NULL) {
-			dbg_printf(P_DBG, "freeing name: %s (%p)", listItem->name, (void*)listItem->name);
-			am_free(listItem->name);
-			listItem->name = NULL;
+	dbg_printf(P_INFO2, "[cleanupList] size before: %d\n", listCount(*head));
+	while (*head != NULL) {
+		node = *head;
+		*head = (*head)->next;
+		if(freeFunc != NULL) {
+			freeFunc(node->data);
+		} else {
+			am_free(node->data);
 		}
-		if(listItem->url != NULL) {
-			dbg_printf(P_DBG, "freeing url: %s (%p)", listItem->url, (void*)listItem->url);
-			am_free(listItem->url);
-			listItem->url = NULL;
-		}
-		am_free(listItem);
-		listItem = NULL;
+		am_free(node);
 	}
+	dbg_printf(P_INFO2, "[cleanupList] size after: %d\n", listCount(*head));
+}
+void removeLast(NODE *head, listFuncPtr freeFunc) {
+	NODE *lastNode;
+	dbg_printf(P_DBG, "Removing last item...\n");
+	lastNode = getLastNode(head);
+	if(lastNode->data)
+		freeFunc(lastNode->data);
+	deleteLast(&head);
+}
+
+void removeFirst(NODE  **head, listFuncPtr freeFunc) {
+	dbg_printf(P_DBG, "Removing first item...\n");
+	if(freeFunc) {
+		freeFunc((*head)->data);
+	}
+	deleteFirst(head);
 }
