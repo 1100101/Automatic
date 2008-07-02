@@ -10,6 +10,7 @@ automatic_SOURCES = \
    state.c          \
    web.c            \
    rss_list.c       \
+   rss_feed.c       \
    bucket_list.c    \
    utils.c          \
 	xml_parser.c
@@ -22,6 +23,7 @@ noinst_HEADERS =    \
    state.h          \
    web.h            \
    rss_list.h       \
+   rss_feed.h       \
    bucket_list.h    \
    utils.h          \
    xml_parser.h

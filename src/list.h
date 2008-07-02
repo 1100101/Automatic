@@ -26,7 +26,7 @@
 
 
 typedef struct NODE NODE;
-typedef NODE* linked_list;
+typedef struct NODE* simple_list;
 
 struct NODE {
    NODE *next;

@@ -28,15 +28,16 @@
 #include <stdint.h>
 #include "bucket_list.h"
 #include "rss_list.h"
+#include "rss_feed.h"
 
 struct auto_handle {
 
 	char *transmission_path;
 	char *statefile;
 	char *torrent_folder;
-	rss_list url_list;
-	bucket_list bucket;
-	rss_list regex_patterns;
+	rss_feeds feeds;
+	simple_list downloads;
+	simple_list filters;
 	uint8_t max_bucket_items;
 	uint8_t bucket_changed;
 	uint8_t check_interval;

@@ -27,7 +27,7 @@
 #include "list.h"
 
 typedef struct rss_item *rss_item;
-typedef linked_list rss_list;
+typedef simple_list rss_list;
 
 struct rss_item {
 	char *name;

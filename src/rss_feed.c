@@ -24,8 +24,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "rss_feed.h"
 #include "list.h"
-#include "rss_list.h"
 #include "utils.h"
 #include "output.h"
 
@@ -34,38 +34,20 @@
 #endif
 
 
-int rss_hasURL(const char *url, NODE *head) {
-	NODE *p = head;
-	rss_item x;
-
-	while (p != NULL) {
-		x = (rss_item)p->data;
-		if(strcmp(x->url, url) == 0) {
-			return 1;
-		}
-		p = p->next;
-	}
-	return 0;
-}
-
-void rss_freeList(NODE **head) {
-	freeList(head, rss_freeItem);
-}
-
-void rss_printList(simple_list list) {
+void feed_printList(simple_list list) {
 #ifdef DEBUG
 	NODE *cur = list;
-	rss_item x;
+	rss_feed x;
+
 	dbg_printf(P_INFO2, "------- start -------------\n");
 	while(cur != NULL && cur->data != NULL) {
 		dbg_printf(P_INFO2, "data: (%p)\n", (void*)cur->data);
-		x = (rss_item)cur->data;
-		if(x->name != NULL) {
-			dbg_printf(P_INFO2, "  name: %s (%p)\n", x->name, (void*)x->name);
-		}
+		x = (rss_feed)cur->data;
 		if(x->url != NULL) {
 			dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
 		}
+		dbg_printf(P_INFO2, "  ttl: %d\n", x->ttl);
+		dbg_printf(P_INFO2, "  count: %d\n", x->count);
 		dbg_printf(P_INFO2, "  next: (%p)\n", (void*)cur->next);
 		cur = cur->next;
 	}
@@ -73,42 +55,31 @@ void rss_printList(simple_list list) {
 #endif
 }
 
-void rss_removeLast(NODE *head) {
-	removeLast(head, rss_freeItem);
-}
 
-void rss_removeFirst(NODE  **head) {
-	removeFirst(head, rss_freeItem);
-}
-
-void rss_addItem(char *title, char* url, NODE **head) {
-	rss_item x = rss_newItem();
-
-	x->name = am_strdup(title);
-	x->url = am_strdup(url);
-	dbg_printf(P_DBG, "[addItem] name: %s,\turl: %s", x->name, x->url);
-	addItem(x, head);
-}
-
-
-rss_item rss_newItem(void) {
-	rss_item i = (rss_item)am_malloc(sizeof(struct rss_item));
+rss_feed feed_new(void) {
+	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
 	if(i != NULL) {
-		i->name = NULL;
 		i->url = NULL;
+		i->ttl = -1;
+		i->count = -1;
 	}
 	return i;
 }
 
-void rss_freeItem(void* listItem) {
-	rss_item x = (rss_item)listItem;
+void feed_add(char *url, NODE **head) {
+	rss_feed x = feed_new();
+
+	x->url = am_strdup(url);
+	addItem(x, head);
+}
+
+
+void feed_free(void* listItem) {
+	rss_feed x = (rss_feed)listItem;
 
 	if(x != NULL) {
-		if(x->name != NULL) {
-			am_free(x->name);
-			x->name = NULL;
-		}
 		if(x->url != NULL) {
+			dbg_printf(P_MSG, "freeing feed URL: %s (%p)", x->url, (void*)x->url);
 			am_free(x->url);
 			x->url = NULL;
 		}

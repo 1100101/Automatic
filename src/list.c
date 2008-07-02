@@ -94,10 +94,6 @@ int addItem(void* elem, NODE **head) {
 			newnode->data = elem;
 			newnode->next = NULL;
 			pushNode(head, newnode);
-			if(maxBucketItems > 0 && listCount(*head) > maxBucketItems) {
-				dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting head item...\n");
-				removeLast(*head, NULL);
-			}
 			return 0;
 		}
 		return 1;

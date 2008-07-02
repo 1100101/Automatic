@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "list.h"
-#include "bucket_list.h"
 #include "utils.h"
 #include "output.h"
 
@@ -37,11 +36,11 @@
 
 int bucket_hasURL(const char *url, NODE *head) {
 	NODE *p = head;
-	bucket_item x;
+	char *x;
 
 	while (p != NULL) {
-		x = (bucket_item)p->data;
-		if(strcmp(x->identifier, url) == 0) {
+		x = (char*)p->data;
+		if(strcmp(x, url) == 0) {
 			return 1;
 		}
 		p = p->next;

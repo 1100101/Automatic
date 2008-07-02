@@ -314,7 +314,7 @@ void download_torrent(auto_handle *ah, rss_item item) {
 				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
 				unlink(fname);
 			} else {
-				if(addToBucket(item->url, &ah->bucket, ah->max_bucket_items) == 0) {
+				if(addToBucket(item->url, &ah->downloads, ah->max_bucket_items) == 0) {
 					ah->bucket_changed = 1;
 				} else {
 					dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->name);

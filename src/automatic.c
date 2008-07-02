@@ -105,7 +105,7 @@ void readargs( int argc, char ** argv, char **c_file, uint8_t * nofork, uint8_t 
 }
 
 
-static uint8_t has_been_downloaded(bucket_list bucket, char *url) {
+static uint8_t has_been_downloaded(simple_list bucket, char *url) {
 	uint8_t res;
 
 	res = bucket_hasURL(url, bucket);
@@ -122,7 +122,7 @@ static void check_for_downloads(void) {
 	rss_list current_rss_item, current_regex;
 	rss_item x;
 
-	current_regex = session->regex_patterns;
+	current_regex = session->filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
 		regex_str = (char*)current_regex->data;
 		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
@@ -138,7 +138,7 @@ static void check_for_downloads(void) {
 			x = (rss_item)current_rss_item->data;
 			dbg_printf(P_INFO2, "Current rss_item: %s", x->name);
 			err = regexec(&preg, x->name, 0, NULL, 0);
-			if(!err && !has_been_downloaded(session->bucket, x->url)) {			/* regex matches and it hasn't been downloaded before */
+			if(!err && !has_been_downloaded(session->downloads, x->url)) {			/* regex matches and it hasn't been downloaded before */
 				download_torrent(session, current_rss_item->data);
 			} else if(err != REG_NOMATCH && err != 0){
 				regerror(err, &preg, erbuf, sizeof(erbuf));
@@ -161,7 +161,7 @@ void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG,"%s: Shutting down daemon", getlogtime_str(time_str));
 	if(as && as->bucket_changed)
-		save_state(&as->bucket);
+		save_state(&as->downloads);
 	do_cleanup(as);
 	exit(0);
 }
@@ -267,9 +267,9 @@ auto_handle* session_init(void) {
 	ses->statefile = am_malloc(strlen(path) + 1);
 	strncpy(ses->statefile, path, strlen(path) + 1);
 	ses->torrent_folder = get_temp_folder();
-	ses->bucket = NULL;
-	ses->regex_patterns = NULL;
-	ses->url_list = NULL;
+	ses->downloads = NULL;
+	ses->filters = NULL;
+	ses->feeds = NULL;
 	am_free(home);
 	return ses;
 }
@@ -279,9 +279,9 @@ static void ah_free(auto_handle *as) {
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
-		rss_freeList(&as->url_list);
-		freeList( &as->bucket, NULL);
-		freeList(&as->regex_patterns, NULL);
+		freeList(&as->feeds, feed_free);
+		freeList( &as->downloads, NULL);
+		freeList(&as->filters, NULL);
 		am_free(as);
 	}
 }
@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
 	WebData *wdata = NULL;
 	NODE *current = NULL;
 	int count;
-	char *feed_url;
+	rss_feed feed;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -358,12 +358,12 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	if(listCount(session->url_list) == 0)  {
+	if(listCount(session->feeds) == 0)  {
 		fprintf(stderr, "No feed URL specified in automatic.conf!\n");
 		shutdown_daemon(session);
 	}
 
-	if(listCount(session->regex_patterns) == 0)  {
+	if(listCount(session->filters) == 0)  {
 		fprintf(stderr, "No patterns specified in automatic.conf!\n");
 		shutdown_daemon(session);
 	}
@@ -389,21 +389,21 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
 	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
-	dbg_printf(P_INFO, "feed URLs: %d", listCount(session->url_list));
-	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->regex_patterns));
+	dbg_printf(P_INFO, "feed URLs: %d", listCount(session->feeds));
+	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
 
-	load_state(&session->bucket);
+	load_state(&session->downloads);
 
 	while(1) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
-		current = session->url_list;
+		current = session->feeds;
 		count = 0;
 		while(current && current->data) {
-			feed_url = (char*)current->data;
+			feed = (rss_feed)current->data;
 			++count;
 			dbg_printf(P_MSG, "Checking feed %d ...", count);
-			wdata = getHTTPData(feed_url);
+			wdata = getHTTPData(feed->url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
 				parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
 			}

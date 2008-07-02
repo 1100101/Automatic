@@ -33,14 +33,14 @@
 #include "config_parser.h"
 #include "output.h"
 #include "rss_list.h"
+#include "rss_feed.h"
 
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	2000
 
 static const char *delim = ";;";
 
-/*static int set_regex_patterns(auto_handle *as, const char *pattern_str);
-static int set_urls(auto_handle *session, const char *urls);*/
+static int getFeeds(NODE **head, const char* strlist);
 static char* shorten(const char *str);
 static int writeToList(NODE **head, const char* strlist);
 
@@ -65,8 +65,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
-		/*write_string(param, &as->feed_url);*/
-		writeToList(&as->url_list, param);
+		getFeeds(&as->feeds, param);
 	} else if(!strcmp(opt, "transmission-home")) {
 		write_string(param, &as->transmission_path);
 	} else if(!strcmp(opt, "torrent-folder")) {
@@ -98,7 +97,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
-		writeToList(&as->regex_patterns, param);
+		writeToList(&as->filters, param);
 	} else {
 		dbg_printf(P_ERROR, "Unknown option: %s", opt);
 	}
@@ -106,18 +105,33 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 }
 
 static int writeToList(NODE **head, const char* strlist) {
-	char *buf = NULL, *p = NULL;
-	char *str = shorten(strlist);
+	char *p = NULL;
+	char *str = NULL;
+
 	assert(*head == NULL);
+
+	str = shorten(strlist);
 	rss_freeList(head);
-	buf = am_malloc(strlen(str) + 1);
-	strncpy(buf, str, strlen(str) + 1);
-	p = strtok(buf, delim);
+	p = strtok(str, delim);
 	while (p) {
 		addItem(am_strdup(p), head);
 		p = strtok(NULL, delim);
 	}
-	am_free(buf);
+	am_free(str);
+	return 0;
+}
+
+static int getFeeds(NODE **head, const char* strlist) {
+	char *p = NULL;
+	char *str;
+	str = shorten(strlist);
+	assert(*head == NULL);
+	freeList(head, feed_free);
+	p = strtok(str, delim);
+	while (p) {
+		feed_add(p, head);
+		p = strtok(NULL, delim);
+	}
 	am_free(str);
 	return 0;
 }
