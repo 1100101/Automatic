@@ -28,7 +28,7 @@
 #include "automatic.h"
 #include "output.h"
 #include "utils.h"
-#include "bucket_list.h"
+#include "downloads.h"
 
 #ifdef MEMWATCH
 	#include "memwatch.h"

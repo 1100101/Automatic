@@ -1,5 +1,5 @@
-#ifndef AUTOMATIC_H__
-#define AUTOMATIC_H__
+#ifndef UTILS_H__
+#define UTILS_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -25,33 +25,15 @@
 #endif
 
 
-#include <stdint.h>
-#include "downloads.h"
-#include "feed_item.h"
-#include "rss_feed.h"
+void* am_malloc(size_t size);
+void* am_realloc(void *p, size_t size);
+void am_free(void *p);
+char* am_strdup(char *str);
+char* am_strndup(char *str, int len);
 
-struct auto_handle {
-
-	char *transmission_path;
-	char *statefile;
-	char *torrent_folder;
-	rss_feeds feeds;
-	simple_list downloads;
-	simple_list filters;
-	uint8_t max_bucket_items;
-	uint8_t bucket_changed;
-	uint8_t check_interval;
-	uint8_t use_transmission;
-};
-
-typedef struct auto_handle auto_handle;
-
-const char* am_get_statefile(void);
-uint8_t am_get_verbose(void);
-uint8_t am_get_nofork(void);
-uint8_t am_get_bucket_size(void);
-void am_set_bucket_size(uint8_t size);
-void am_set_interval(int interval);
-int am_get_interval(void);
+char* resolve_path(char *path);
+char* get_home_folder(void);
+char* get_temp_folder(void);
+char* get_tr_folder();
 
 #endif

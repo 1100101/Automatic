@@ -25,7 +25,7 @@
 #include <stdint.h>
 
 #include "list.h"
-#include "rss_list.h"
+#include "feed_item.h"
 #include "utils.h"
 #include "output.h"
 

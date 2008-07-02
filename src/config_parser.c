@@ -32,7 +32,7 @@
 #include "utils.h"
 #include "config_parser.h"
 #include "output.h"
-#include "rss_list.h"
+#include "feed_item.h"
 #include "rss_feed.h"
 
 #define MAX_OPT_LEN	50

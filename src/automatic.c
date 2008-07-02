@@ -50,7 +50,7 @@
 #include "xml_parser.h"
 #include "state.h"
 #include "utils.h"
-#include "rss_list.h"
+#include "feed_item.h"
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);

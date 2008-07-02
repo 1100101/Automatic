@@ -9,8 +9,8 @@
 #include <libxml/xpathInternals.h>
 
 #include "automatic.h"
-#include "rss_list.h"
-#include "bucket_list.h"
+#include "feed_item.h"
+#include "downloads.h"
 #include "output.h"
 #include "utils.h"
 
