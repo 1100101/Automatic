@@ -43,5 +43,5 @@ typedef struct WebData WebData;
 WebData* getHTTPData(const char *url);
 void WebData_free(struct WebData *data);
 void cd_preg_free(void);
-void download_torrent(auto_handle *ses, rss_item item);
+void download_torrent(auto_handle *ses, feed_item item);
 #endif

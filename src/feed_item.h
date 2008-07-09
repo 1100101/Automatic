@@ -26,22 +26,14 @@
 
 #include "list.h"
 
-typedef struct rss_item *rss_item;
-typedef simple_list rss_list;
+typedef struct feed_item *feed_item;
 
-struct rss_item {
+struct feed_item {
 	char *name;
 	char *url;
 };
 
-int 		rss_hasURL(const char *url, rss_list head);
-void 		rss_printList(rss_list list);
-void 		rss_freeItem(void* listItem);
-void rss_addItem(char *name, char* url, NODE **head);
-
-rss_item rss_newItem(void);
-void 		rss_freeList(NODE **head);
-void 		rss_removeLast(NODE *head);
-void 		rss_removeFirst(NODE **head);
+void freeFeedItem(feed_item item);
+feed_item newFeedItem(void);
 
 #endif

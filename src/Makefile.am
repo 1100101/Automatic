@@ -1,6 +1,8 @@
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS)
 
-bin_PROGRAMS = automatic
+bin_PROGRAMS =   \
+  automatic      \
+	automatic-mw
 
 automatic_SOURCES = \
    automatic.c      \
@@ -27,6 +29,19 @@ noinst_HEADERS =    \
    downloads.h      \
    utils.h          \
    xml_parser.h
+
+automatic_mw_SOURCES =  \
+   $(automatic_SOURCES) \
+	 memwatch.c
+
+automatic_mw_HEADERS =  \
+   $(noinst_HEADERS)    \
+   memwatch.h
+
+
+automatic_mwdir = .
+
+automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG
 
 dist_sysconf_DATA = automatic.conf-sample
 

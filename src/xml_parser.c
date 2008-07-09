@@ -13,6 +13,7 @@
 #include "downloads.h"
 #include "output.h"
 #include "utils.h"
+#include "web.h"
 
 struct rssNode {
 	char *url;
@@ -59,10 +60,10 @@ rssNode* getNodeAttributes(xmlNodePtr child) {
 	return tmp;
 }
 
-static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
+static void extract_feed_items(xmlNodeSetPtr nodes) {
 	xmlNodePtr cur, child;
 	int size, i;
-	rss_item item;
+	feed_item item;
 	uint8_t name_set, url_set, is_torrent_feed = 0;
 	rssNode *enclosure;
 	size = (nodes) ? nodes->nodeNr : 0;
@@ -81,7 +82,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 				child = cur->children;
 				url_set = 0;
 				name_set = 0;
-				item = rss_newItem();
+				item = newFeedItem();
 				while(child) {
 					if((strcmp((char*)child->name, "title") == 0)) {
 						name_set = getNodeText(child->children, &item->name);
@@ -109,10 +110,9 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 					dbg_printf(P_MSG, "Is this really a torrent feed?");
 				}
 				if(name_set && url_set) {
-					rss_addItem(item->name, item->url, rss_items);
+					applyFilters(item);
 				}
-				rss_freeItem(item);
-
+				freeFeedItem(item);
 				child = cur = NULL;
 			}
 		} else {
@@ -123,7 +123,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes, NODE **rss_items) {
 	dbg_printf(P_INFO2, "== Done extracting RSS items ==");
 }
 
-int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
+int parse_xmldata(const char* buffer, int size) {
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	xmlXPathObjectPtr xpathObj;
@@ -184,7 +184,7 @@ int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
 		xmlCleanupParser();
 		return -1;
 	}
-	extract_feed_items(xpathObj->nodesetval, rss_items);
+	extract_feed_items(xpathObj->nodesetval);
 
 	/* Cleanup */
 	xmlXPathFreeObject(xpathObj);
@@ -194,3 +194,4 @@ int parse_xmldata(const char* buffer, int size, NODE **rss_items) {
 	xmlCleanupParser();
 	return 0;
 }
+

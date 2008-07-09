@@ -23,6 +23,6 @@
  */
 
 
-int parse_xmldata(const char* buffer, int size, NODE **rss_items);
+int parse_xmldata(const char* buffer, int size);
 
 #endif

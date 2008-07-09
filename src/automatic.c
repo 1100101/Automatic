@@ -18,14 +18,14 @@
  */
 
 
-#define AM_LOCKFILE  					"/tmp/automatic.pid"
-#define AM_DEFAULT_CONFIGFILE  		"/etc/automatic.conf"
-#define AM_DEFAULT_STATEFILE  		".automatic.state"
-#define AM_DEFAULT_VERBOSE 			P_MSG
-#define AM_DEFAULT_NOFORK 				0
-#define AM_DEFAULT_MAXBUCKET 			10
+#define AM_LOCKFILE  								"/tmp/automatic.pid"
+#define AM_DEFAULT_CONFIGFILE 			"/etc/automatic.conf"
+#define AM_DEFAULT_STATEFILE  			".automatic.state"
+#define AM_DEFAULT_VERBOSE 					P_MSG
+#define AM_DEFAULT_NOFORK 					0
+#define AM_DEFAULT_MAXBUCKET 				10
 #define AM_DEFAULT_USETRANSMISSION 	1
-#define AM_DEFAULT_INTERVAL 			30
+#define AM_DEFAULT_INTERVAL 				30
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,8 +54,6 @@
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
-
-static rss_list rss_items = NULL;
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -114,45 +112,8 @@ static uint8_t has_been_downloaded(simple_list bucket, char *url) {
 	return res;
 }
 
-static void check_for_downloads(void) {
-	int err;
-	regex_t preg;
-	char erbuf[100];
-	char *regex_str;
-	rss_list current_rss_item, current_regex;
-	rss_item x;
-
-	current_regex = session->filters;
-	while (current_regex != NULL && current_regex->data != NULL) {
-		regex_str = (char*)current_regex->data;
-		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
-		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
-		if(err) {
-			regerror(err, &preg, erbuf, sizeof(erbuf));
-			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
-			current_regex = current_regex->next;
-			continue;
-		}
-		current_rss_item = rss_items;
-		while (current_rss_item != NULL && current_rss_item->data != NULL) {
-			x = (rss_item)current_rss_item->data;
-			dbg_printf(P_INFO2, "Current rss_item: %s", x->name);
-			err = regexec(&preg, x->name, 0, NULL, 0);
-			if(!err && !has_been_downloaded(session->downloads, x->url)) {			/* regex matches and it hasn't been downloaded before */
-				download_torrent(session, current_rss_item->data);
-			} else if(err != REG_NOMATCH && err != 0){
-				regerror(err, &preg, erbuf, sizeof(erbuf));
-				dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
-			}
-			current_rss_item = current_rss_item->next;
-		}
-		regfree(&preg);
-		current_regex = current_regex->next;
-	}
-}
 
 static void do_cleanup(auto_handle *as) {
-	rss_freeList(&rss_items);
 	ah_free(as);
 	cd_preg_free();
 }
@@ -389,7 +350,7 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
 	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
-	dbg_printf(P_INFO, "feed URLs: %d", listCount(session->feeds));
+	dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
 	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
 
 	load_state(&session->downloads);
@@ -405,14 +366,46 @@ int main(int argc, char **argv) {
 			dbg_printf(P_MSG, "Checking feed %d ...", count);
 			wdata = getHTTPData(feed->url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
-				parse_xmldata(wdata->response->data, wdata->response->size, &rss_items);
+				parse_xmldata(wdata->response->data, wdata->response->size);
 			}
 			WebData_free(wdata);
-			check_for_downloads();
-			rss_freeList(&rss_items);
+/*			rss_freeList(&rss_items); */
 			current = current->next;
 		}
  		sleep(session->check_interval * 60);
 	}
 	return 0;
+}
+
+void applyFilters(feed_item item) {
+	int err;
+	regex_t preg;
+	char erbuf[100];
+	char *regex_str;
+	simple_list current_regex;
+
+	assert(session != NULL);
+
+	current_regex = session->filters;
+	while (current_regex != NULL && current_regex->data != NULL) {
+		regex_str = (char*)current_regex->data;
+		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
+		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
+		if(err) {
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
+			current_regex = current_regex->next;
+			continue;
+		}
+		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
+		err = regexec(&preg, item->name, 0, NULL, 0);
+		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
+			download_torrent(session, item);
+		} else if(err != REG_NOMATCH && err != 0){
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
+		}
+		regfree(&preg);
+		current_regex = current_regex->next;
+	}
 }

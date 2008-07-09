@@ -111,7 +111,7 @@ static int writeToList(NODE **head, const char* strlist) {
 	assert(*head == NULL);
 
 	str = shorten(strlist);
-	rss_freeList(head);
+	freeList(head, NULL);
 	p = strtok(str, delim);
 	while (p) {
 		addItem(am_strdup(p), head);

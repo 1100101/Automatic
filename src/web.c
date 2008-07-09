@@ -287,8 +287,7 @@ static int call_transmission(const char* transmission_path, const char *filename
 	}
 }
 
-
-void download_torrent(auto_handle *ah, rss_item item) {
+void download_torrent(auto_handle *ah, feed_item item) {
 	char fname[MAXPATHLEN];
 	int torrent;
 	int res;
