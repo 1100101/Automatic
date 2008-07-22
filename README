@@ -1,0 +1,15 @@
+Automatic - RSS downloader for Tranmission
+===========================================
+
+Automatic is a RSS daemon that downloads torrent files matching regular expression patterns
+at certain intervals.
+
+It is capable of adding downloaded torrents directly to Transmission (www.transmissionbt.com), making
+it a auto-downloader.
+
+Automatic is configured via a configuration file (by default placed at /etc/automatic.conf)
+
+The file contains further instructions on how to configure the tool.
+
+If you have questions, suggestions or you think you found a bug,
+you can contact me at 1100101+automatic<at>gmail<dot>com or at http://forum.transmissionbt.com

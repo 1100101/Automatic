@@ -1,0 +1,28 @@
+# URL of the RSS feed
+url = ""
+
+# interval in minutes between checks for new downloads/episodes
+interval = 30
+
+# path to the logfile. Use empty string "" to disable logging functionality
+logfile = "/tmp/automatic.log"
+
+# Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
+use-transmission = yes
+
+# Path to the Transmission configuration files
+transmission-home = "~/.config/transmission"
+
+# path where Automatic will store downloaded torrents
+torrent-folder = "/tmp"
+
+# path to the file which stores information about already downloaded torrents (so they don't get readded to Transmission)
+statefile = "~/.config/automatic.state"
+
+# patterns contains a number of regular expressions which are matched against the RSS feed entries
+# please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
+# letter-casing does not matter
+
+patterns =  { "Name of Something I Want to Download Automatically.*HDTV"
+              "Something else to download.*HDTV"
+            }
