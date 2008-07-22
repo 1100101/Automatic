@@ -180,36 +180,52 @@ static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *da
 	return realsize;
 }
 
+static struct HTTPData* HTTPData_new(void) {
+	HTTPData* data;
+
+	data = am_malloc(sizeof(struct HTTPData));
+	if(!data) {
+		return NULL;
+	}
+	data->data = NULL;
+	data->size = 0;
+	return data;
+}
+
+static void HTTPData_free(HTTPData* data) {
+	if(data)
+		am_free(data->data);
+	am_free(data);
+}
+
 struct WebData* WebData_new(const char *url) {
 	WebData *data;
-	int len;
 
 	data = am_malloc(sizeof(WebData));
 	if(!data)
 		return NULL;
-	if(url) {
-		len = strlen(url);
-		data->url = am_malloc(len + 1);
-		strncpy(data->url, url, len);
-		data->url[len] = '\0';
-	}
+
+	data->url = NULL;
 	data->content_filename = NULL;
 	data->content_length = -1;
-	data->header = am_malloc(sizeof(HTTPData));
+	data->header = NULL;
+	data->response = NULL;
+
+	if(url) {
+		data->url = am_strdup((char*)url);
+	}
+
+	data->header = HTTPData_new();
 	if(!data->header) {
-		am_free(data);
+		WebData_free(data);
 		return NULL;
 	}
-	data->header->data = NULL;
-	data->header->size = 0;
-	data->response = am_malloc(sizeof(HTTPData));
+
+	data->response = HTTPData_new();
 	if(!data->response) {
-		am_free(data->header);
-		am_free(data);
+		WebData_free(data);
 		return NULL;
 	}
-	data->response->data = NULL;
-	data->response->size = 0;
 	return data;
 }
 
@@ -217,14 +233,8 @@ void WebData_free(struct WebData *data) {
 	if(data) {
 		am_free(data->url);
 		am_free(data->content_filename);
-		if(data->response) {
-			am_free(data->response->data);
-			am_free(data->response);
-		}
-		if(data->header){
-			am_free(data->header->data);
-			am_free(data->header);
-		}
+		HTTPData_free(data->header);
+		HTTPData_free(data->response);
 		am_free(data);
 		data = NULL;
 	}
@@ -243,7 +253,7 @@ WebData* getHTTPData(const char *url) {
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
- 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+ 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, write_header_callback);
@@ -254,6 +264,7 @@ WebData* getHTTPData(const char *url) {
 	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
 	dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", rc);
 	curl_easy_cleanup(curl_handle);
+
 	if(rc != 200) {
 		dbg_printf(P_ERROR, "[getHTTPData] Failed to get '%s' [response: %ld]", url, rc);
 		WebData_free(data);
@@ -295,7 +306,7 @@ void download_torrent(auto_handle *ah, feed_item item) {
 
 	dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
 	wdata = getHTTPData(item->url);
-	if(wdata && wdata->response) {
+	if(wdata != NULL && wdata->response != NULL) {
 		get_filename(wdata, fname, ah->torrent_folder);
 		torrent = open(fname,O_RDWR|O_CREAT, 00644);
 		if(torrent == -1) {
@@ -320,8 +331,6 @@ void download_torrent(auto_handle *ah, feed_item item) {
 				}
 			}
 		}
-	} else {
-		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p)", (void*)wdata, (void*)(wdata->response));
 	}
 	WebData_free(wdata);
 }
