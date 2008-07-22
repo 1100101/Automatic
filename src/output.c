@@ -32,52 +32,20 @@
 
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
-   char tmp[MSGSIZE_MAX];
-	int print_msg = 0;
-	FILE *fp = stdout;
+  char tmp[MSGSIZE_MAX];
+	FILE *fp = stderr;
 
 	uint8_t verbose = am_get_verbose();
 
-	switch(type) {
-		case P_ERROR: {
-			print_msg = 1;
-			fp = stderr;
-			break;
-		}
-		case P_MSG: {
-			print_msg = 1;
-			break;
-		}
-		case P_INFO: {
-			if(verbose > 1) {
-				print_msg = 1;
-			}
-			break;
-		}
-		case P_DBG: {
-#ifdef DEBUG
-			if(verbose > 2) {
-				print_msg = 1;
-				fp = stderr;
-			}
-#endif
-			break;
-		}
-		default: {
-			if(verbose > 2)
-				print_msg = 1;
-			break;
-		}
-	}
-	if(print_msg) {
+	if(verbose >= type) {
 		va_start(va, format);
 		vsnprintf(tmp, MSGSIZE_MAX, format, va);
 		va_end(va);
 		tmp[MSGSIZE_MAX-1] = '\0';
 
-		if(fp == NULL) {
+		if(fp == NULL)
 			fp = stderr;
-		}
+
 		fprintf(fp,"%s\n", tmp);
 		fflush(fp);
 	}

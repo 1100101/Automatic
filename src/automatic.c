@@ -54,6 +54,7 @@
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
+static char* readXMLFile(char *name);
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -127,12 +128,11 @@ void shutdown_daemon(auto_handle *as) {
 	exit(0);
 }
 
-int daemonize() {
-	int i, lfp;
-	int fd;
-	char str[10];
 
-	if(getppid() == 1) {
+int daemonize() {
+	int fd;
+
+ 	if(getppid() == 1) {
 		return -1;
 	}
 
@@ -140,36 +140,27 @@ int daemonize() {
 		case 0:
          break;
       case -1:
-         dbg_printf(P_ERROR, "Error daemonizing (fork)! %d - %s", errno, strerror(errno));
+         fprintf( stderr, "Error daemonizing (fork)! %d - %s", errno, strerror(errno));
          return -1;
       default:
          _exit(0);
 	}
 
 	if( setsid() < 0 ) {
-      dbg_printf(P_ERROR, "Error daemonizing (setsid)! %d - %s", errno, strerror(errno) );
+      fprintf( stderr, "Error daemonizing (setsid)! %d - %s", errno, strerror(errno) );
       return -1;
 	}
 
-	/* first instance continues */
-	lfp = open(AM_LOCKFILE, O_RDWR|O_CREAT, 0640);
-
-	if (lfp < 0) {
-		dbg_printf(P_ERROR, "Failed to open lockfile (%s). Aborting...\n", strerror(errno));
-		exit(1); /* can not open */
+	switch( fork( ) ) {
+			case 0:
+					break;
+			case -1:
+					fprintf( stderr, "Error daemonizing (fork2)! %d - %s\n", errno, strerror(errno) );
+					return -1;
+			default:
+					_exit(0);
 	}
 
-	if (lockf(lfp,F_TLOCK,0) < 0) {
-		dbg_printf(P_ERROR, "Cannot lock pid file. Another instance running? Aborting...\n");
-		exit(0); /* can not lock */
-	}
-
-	sprintf(str, "%d\n", getpid());
-	write(lfp, str, strlen(str)); /* record pid to lockfile */
-
-	for(i = getdtablesize(); i >= 0; --i) {
-		close(i); /* close all descriptors */
-	}
 
 	fd = open("/dev/null", O_RDONLY);
 	if( fd != 0 ) {
@@ -188,10 +179,9 @@ int daemonize() {
 		dup2( fd, 2 );
 		close( fd );
 	}
-
-	umask(027); /* set newly created file permissions */
 	return 0;
 }
+
 
 void signal_handler(int sig) {
 	switch(sig) {
@@ -291,7 +281,11 @@ void am_set_bucket_size(uint8_t size) {
 }
 
 int main(int argc, char **argv) {
-   char* config_file = NULL;
+  char* config_file = NULL;
+#ifdef DEBUG
+	char *xmldata = NULL;
+	int fileLen = 0;
+#endif
 	int daemonized = 0;
 	char erbuf[100];
 	char time_str[TIME_STR_SIZE];
@@ -350,7 +344,7 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
 	dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
 	dbg_printf(P_INFO, "state file: %s", session->statefile);
-	dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
+	dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
 	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
 
 	load_state(&session->downloads);
@@ -358,6 +352,14 @@ int main(int argc, char **argv) {
 	while(1) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
+#if 0
+		xmldata = readXMLFile("feed.xml");
+		if(xmldata != NULL) {
+			fileLen = strlen(xmldata);
+			parse_xmldata(xmldata, fileLen);
+			am_free(xmldata);
+		}
+#else
 		current = session->feeds;
 		count = 0;
 		while(current && current->data) {
@@ -369,12 +371,40 @@ int main(int argc, char **argv) {
 				parse_xmldata(wdata->response->data, wdata->response->size);
 			}
 			WebData_free(wdata);
-/*			rss_freeList(&rss_items); */
 			current = current->next;
 		}
+#endif
  		sleep(session->check_interval * 60);
 	}
 	return 0;
+}
+
+static char* readXMLFile(char *name) {
+	FILE *file;
+	char *buffer = NULL;
+	unsigned long fileLen;
+
+	file = fopen(name, "rb");
+	if (!file) {
+		dbg_printf(P_ERROR, "Cannot open feed file: %s", strerror(errno));
+		return NULL;
+	}
+
+	fseek(file, 0, SEEK_END);
+	fileLen = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	buffer = am_malloc(fileLen+1);
+	if (!buffer) {
+		dbg_printf(P_ERROR, "Cannot allocate memory: %s", strerror(errno));
+		fclose(file);
+		return NULL;
+	}
+
+	fread(buffer, fileLen, 1, file);
+	buffer[fileLen] = '\0';
+	fclose(file);
+	return buffer;
 }
 
 void applyFilters(feed_item item) {
