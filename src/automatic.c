@@ -113,7 +113,7 @@ char* get_home_folder() {
 		if(getenv("HOME")) {
 			dir = strdup(getenv( "HOME" ));
 		} else {
-			if(pw = getpwuid(getuid())) {
+			if((pw = getpwuid(getuid())) != NULL) {
 				dir = strdup(pw->pw_dir);
 				endpwent();
 			} else {
@@ -168,7 +168,6 @@ char* get_temp_folder() {
 			dir = strdup("/tmp");
 		}
 	}
-	fprintf(stderr, "dir8: %p\n", (void*)dir);
 	return dir;
 }
 

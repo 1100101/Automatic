@@ -320,8 +320,6 @@ void download_torrent(auto_handle *ah,rss_item item) {
 				}
 			}
 		}
-	} else {
-		dbg_printf(P_ERROR, "Error downloading torrent file (wdata: %p, wdata->response: %p)", (void*)wdata, (void*)(wdata->response));
 	}
 	WebData_free(wdata);
 }
