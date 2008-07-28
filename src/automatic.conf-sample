@@ -4,8 +4,10 @@ url =
 # interval in minutes between checks for new downloads/episodes
 interval = 30
 
+## DISABLED OPTION
 # path to the logfile. Use empty string "" to disable logging functionality
-logfile = "/tmp/automatic.log"
+# logfile = "/tmp/automatic.log"
+##
 
 # Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
 use-transmission = yes
