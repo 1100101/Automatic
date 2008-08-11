@@ -26,6 +26,8 @@
 #define AM_DEFAULT_MAXBUCKET 				10
 #define AM_DEFAULT_USETRANSMISSION 	1
 
+#define FROM_XML_FILE 0
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -53,7 +55,10 @@
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
+
+#if FROM_XML_FILE
 static char* readXMLFile(char *name);
+#endif
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -285,11 +290,13 @@ void am_set_bucket_size(uint8_t size) {
 
 int main(int argc, char **argv) {
   char* config_file = NULL;
-#ifdef DEBUG
+#if FROM_XML_FILE
 	char *xmldata = NULL;
 	int fileLen = 0;
 #endif
 	int daemonized = 0;
+	int first_run = 1;
+	uint32_t ret;
 	char erbuf[100];
 	char time_str[TIME_STR_SIZE];
 	WebData *wdata = NULL;
@@ -358,7 +365,7 @@ int main(int argc, char **argv) {
 	while(1) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
-#if 0
+#if FROM_XML_FILE
 		xmldata = readXMLFile("feed.xml");
 		if(xmldata != NULL) {
 			fileLen = strlen(xmldata);
@@ -374,17 +381,27 @@ int main(int argc, char **argv) {
 			dbg_printf(P_MSG, "Checking feed %d ...", count);
 			wdata = getHTTPData(feed->url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
-				parse_xmldata(wdata->response->data, wdata->response->size);
+				ret = parse_xmldata(wdata->response->data, wdata->response->size);
+				if(first_run == 1 && ret != -1) {
+					if(count == 1) {            /* first feed count replaces default value */
+						session->max_bucket_items = ret;
+					} else {
+						session->max_bucket_items += ret;
+					}
+					dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+				}
 			}
 			WebData_free(wdata);
 			current = current->next;
 		}
+		first_run = 0;
 #endif
  		sleep(session->check_interval * 60);
 	}
 	return 0;
 }
 
+#if FROM_XML_FILE
 static char* readXMLFile(char *name) {
 	FILE *file;
 	char *buffer = NULL;
@@ -412,6 +429,7 @@ static char* readXMLFile(char *name) {
 	fclose(file);
 	return buffer;
 }
+#endif
 
 void applyFilters(feed_item item) {
 	int err;

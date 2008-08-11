@@ -253,7 +253,7 @@ WebData* getHTTPData(const char *url) {
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
- 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1);
+ 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, write_header_callback);

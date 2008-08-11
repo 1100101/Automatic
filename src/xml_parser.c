@@ -62,16 +62,17 @@ rssNode* getNodeAttributes(xmlNodePtr child) {
 
 static void extract_feed_items(xmlNodeSetPtr nodes) {
 	xmlNodePtr cur, child;
-	int size, i;
+	uint32_t size, i;
 	feed_item item;
 	uint8_t name_set, url_set, is_torrent_feed = 0;
 	rssNode *enclosure;
 	size = (nodes) ? nodes->nodeNr : 0;
 
-	if(size > am_get_bucket_size()) {
+/*	if(size > am_get_bucket_size()) {
 		dbg_printf(P_INFO2, "bucketsize_changed: %d", size);
 		am_set_bucket_size(size);
 	}
+*/
 
  	dbg_printf(P_INFO, "%d items in XML", size);
 	for(i = 0; i < size; ++i) {
@@ -130,6 +131,7 @@ int parse_xmldata(const char* buffer, int size) {
 	xmlNodeSetPtr ttlNode;
 
 	static int ttl = 0;
+	uint32_t item_count = 0;
 	const xmlChar* ttlExpr = (xmlChar*)"//channel/ttl";
 	const xmlChar* itemExpr = (xmlChar*)"//item";
 	LIBXML_TEST_VERSION
@@ -184,6 +186,8 @@ int parse_xmldata(const char* buffer, int size) {
 		xmlCleanupParser();
 		return -1;
 	}
+
+	item_count = xpathObj->nodesetval ? xpathObj->nodesetval->nodeNr : 0;
 	extract_feed_items(xpathObj->nodesetval);
 
 	/* Cleanup */
@@ -192,6 +196,6 @@ int parse_xmldata(const char* buffer, int size) {
 	xmlFreeDoc(doc);
 	/* Shutdown libxml */
 	xmlCleanupParser();
-	return 0;
+	return item_count;
 }
 
