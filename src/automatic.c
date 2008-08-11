@@ -25,7 +25,6 @@
 #define AM_DEFAULT_NOFORK 					0
 #define AM_DEFAULT_MAXBUCKET 				10
 #define AM_DEFAULT_USETRANSMISSION 	1
-#define AM_DEFAULT_INTERVAL 				30
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -212,13 +211,16 @@ auto_handle* session_init(void) {
 	ses->bucket_changed = 0;
 	ses->check_interval = AM_DEFAULT_INTERVAL;
 	ses->use_transmission = AM_DEFAULT_USETRANSMISSION;
+	ses->transmission_version = AM_TRANSMISSION_1_3;
 	ses->transmission_path = get_tr_folder();
+	ses->rpc_port = AM_DEFAULT_RPCPORT;
 	home = get_home_folder();
 	sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
 	ses->statefile = am_malloc(strlen(path) + 1);
 	strncpy(ses->statefile, path, strlen(path) + 1);
 	ses->torrent_folder = get_temp_folder();
 	ses->downloads = NULL;
+	ses->auth = NULL;
 	ses->filters = NULL;
 	ses->feeds = NULL;
 	am_free(home);
@@ -230,6 +232,7 @@ static void ah_free(auto_handle *as) {
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
+		am_free(as->auth);
 		freeList(&as->feeds, feed_free);
 		freeList( &as->downloads, NULL);
 		freeList(&as->filters, NULL);
@@ -338,6 +341,9 @@ int main(int argc, char **argv) {
 	}
 
 	dbg_printf(P_INFO, "verbose level: %d", verbose);
+	dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
+	dbg_printf(P_INFO, "RPC port: %d", session->rpc_port);
+	dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
 	dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "true" : "false");
 	dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
 	dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);

@@ -276,14 +276,24 @@ WebData* getHTTPData(const char *url) {
 	}
 }
 
-static int call_transmission(const char* transmission_path, const char *filename) {
+static int call_transmission(auto_handle *ah, const char *filename) {
 	char buf[MAXPATHLEN];
 	int8_t status;
 
 	if(filename && strlen(filename) > 1) {
-		sprintf(buf, "transmission-remote -g \"%s\" -a \"%s\"", transmission_path, filename);
+		if(ah->transmission_version == AM_TRANSMISSION_1_2) {
+			snprintf(buf, MAXPATHLEN, "transmission-remote -g \"%s\" -a \"%s\"", ah->transmission_path, filename);
+		} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
+			if(ah->auth != NULL) {
+				snprintf(buf, MAXPATHLEN, "transmission-remote %d -n %s -a \"%s\"", ah->rpc_port, ah->auth, filename);
+			} else {
+				snprintf(buf, MAXPATHLEN, "transmission-remote %d -a \"%s\"", ah->rpc_port, filename);
+			}
+		}
 		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
+		dbg_printf(P_INFO, "[call_transmission] call: %s", buf);
 		status = system(buf);
+
 		dbg_printf(P_INFO, "[call_transmission] WEXITSTATUS(status): %d", WEXITSTATUS(status));
 		if(status == -1) {
 			dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s", strerror(errno));
@@ -320,7 +330,7 @@ void download_torrent(auto_handle *ah, feed_item item) {
 			}
 			fchmod(torrent, 0644);
 			close(torrent);
-			if(ah->use_transmission && call_transmission(ah->transmission_path, fname) == -1) {
+			if(ah->use_transmission && call_transmission(ah, fname) == -1) {
 				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
 				unlink(fname);
 			} else {

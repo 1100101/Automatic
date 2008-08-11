@@ -24,17 +24,24 @@
 	#include "memwatch.h"
 #endif
 
+#define AM_DEFAULT_INTERVAL				30
+#define AM_DEFAULT_RPCPORT 				9091
+#define AM_TRANSMISSION_1_2				2
+#define AM_TRANSMISSION_1_3				3
 
 #include <stdint.h>
 #include "downloads.h"
 #include "feed_item.h"
 #include "rss_feed.h"
 
+
+
 struct auto_handle {
 
 	char *transmission_path;
 	char *statefile;
 	char *torrent_folder;
+	char *auth;
 	rss_feeds feeds;
 	simple_list downloads;
 	simple_list filters;
@@ -42,6 +49,8 @@ struct auto_handle {
 	uint8_t bucket_changed;
 	uint8_t check_interval;
 	uint8_t use_transmission;
+	uint32_t rpc_port;
+	uint8_t transmission_version;
 };
 
 typedef struct auto_handle auto_handle;

@@ -43,6 +43,7 @@ static const char *delim = ";;";
 static int getFeeds(NODE **head, const char* strlist);
 static char* shorten(const char *str);
 static int writeToList(NODE **head, const char* strlist);
+static int parseNumber(const char *str);
 
 void write_string(char *src, char **dst) {
 	char *tmp;
@@ -59,7 +60,6 @@ void write_string(char *src, char **dst) {
 
 
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
-	int i;
 	int numval;
 	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
 
@@ -68,12 +68,41 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		getFeeds(&as->feeds, param);
 	} else if(!strcmp(opt, "transmission-home")) {
 		write_string(param, &as->transmission_path);
+	} else if(!strcmp(opt, "transmission-version")) {
+		if(strlen(param) >= 3) {
+			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
+				as->transmission_version = AM_TRANSMISSION_1_2;
+			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
+				as->transmission_version = AM_TRANSMISSION_1_3;
+			}
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
 	} else if(!strcmp(opt, "torrent-folder")) {
 		write_string(param, &as->torrent_folder);
 	} else if(!strcmp(opt, "statefile")) {
 		write_string(param, &as->statefile);
+	} else if(!strcmp(opt, "transmission-auth")) {
+		as->auth = am_strdup(param);
+	} else if(!strcmp(opt, "rpc-port")) {
+		numval = parseNumber(param);
+		if (numval > 1024 && numval < 65535) {
+			as->rpc_port = numval;
+		} else if(numval != -1) {
+			dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
 	} else if(!strcmp(opt, "interval")) {
-		numval = 1;
+		numval = parseNumber(param);
+		if(numval > 0) {
+			as->check_interval = numval;
+		} else if(numval != -1) {
+			dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+/*	numval = 1;
 		for(i = 0; i < strlen(param); i++) {
 			if(isdigit(param[i]) == 0)
 				numval--;
@@ -88,6 +117,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		} else {
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
+*/
 	} else if(!strcmp(opt, "use-transmission")) {
 		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
 			as->use_transmission = 0;
@@ -102,6 +132,20 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		dbg_printf(P_ERROR, "Unknown option: %s", opt);
 	}
 	return 0;
+}
+
+static int parseNumber(const char *str) {
+	int is_num = 1;
+	int i;
+
+	for(i = 0; i < strlen(str); i++) {
+		if(isdigit(str[i]) == 0)
+			is_num--;
+	}
+	if(is_num == 1 && atoi(str) > 0) {
+		return atoi(str);
+	}
+	return -1;
 }
 
 static int writeToList(NODE **head, const char* strlist) {
