@@ -41,12 +41,14 @@
 #include "web.h"
 #include "output.h"
 #include "utils.h"
+#include "base64.h"
 
 #define DATA_BUFFER 1024 * 100
 #define HEADER_BUFFER 500
 
 static regex_t *content_disp_preg = NULL;
 static void get_filename(WebData *data, char *file_name, const char *path);
+static char* parseResponse(char* response);
 
 int is_torrent(const char *str) {
 	if(strstr(str, ".torrent"))
@@ -276,19 +278,110 @@ WebData* getHTTPData(const char *url) {
 	}
 }
 
+int uploadData(const char *url, int port, const char* auth, void *data, uint32_t data_size) {
+	CURL *curl_handle;
+	CURLcode res;
+	char errorBuffer[CURL_ERROR_SIZE];
+	long rc;
+	struct curl_slist *headers = NULL;
+	char *response_str = NULL;
+	int ret = -1;
+	WebData* response_data = NULL;
+
+	if(!data) {
+		return -1;
+	}
+
+	response_data = WebData_new(NULL);
+
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	curl_global_init(CURL_GLOBAL_ALL);
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	curl_easy_setopt(curl_handle, CURLOPT_PORT, port);
+	if(auth) {
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
+		curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
+	}
+	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
+	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
+
+	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+ 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+
+	res = curl_easy_perform(curl_handle);
+	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
+	dbg_printf(P_INFO2, "[uploadData] response code: %ld", rc);
+	curl_easy_cleanup(curl_handle);
+	curl_slist_free_all(headers);
+
+	if(rc != 200) {
+		dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s' [response: %ld]", url, rc);
+		ret = -1;
+	} else {
+		dbg_printf(P_DBG, "Response: %s", response_data->response->data);
+		response_str = parseResponse(response_data->response->data);
+		if(!strncmp(response_str, "success", 7)) {
+			dbg_printf(P_MSG, "Torrent upload successful!");
+			ret = 0;
+		} else {
+			dbg_printf(P_ERROR, "Error uploading torrent: %s", response_str);
+			ret = -1;
+		}
+	}
+	am_free(response_str);
+	WebData_free(response_data);
+	return ret;
+}
+
+static char* parseResponse(char* response) {
+	int err, len;
+	char erbuf[100];
+	regmatch_t pmatch[2];
+ 	const char* result_regex = "\"result\": \"(.+)\"\n";
+	regex_t *result_preg = am_malloc(sizeof(regex_t));
+	char *result_str = NULL;
+
+	err = regcomp(result_preg, result_regex, REG_EXTENDED|REG_ICASE);
+	if(err) {
+		regerror(err, result_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[parseResponse] regcomp: Error compiling regular expression: %s", erbuf);
+	}
+	err = regexec(result_preg, response, 2, pmatch, 0);
+	if(!err) {			/* regex matches */
+		len = pmatch[1].rm_eo - pmatch[1].rm_so;
+		dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, pmatch[1].rm_eo, pmatch[1].rm_so);
+		result_str = am_strndup(response + pmatch[1].rm_so, len);
+	} else {
+		len = regerror(err, result_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[parseResponse] regexec error: %s", erbuf);
+	}
+	regfree(result_preg);
+	am_free(result_preg);
+	return result_str;
+}
+
 static int call_transmission(auto_handle *ah, const char *filename) {
 	char buf[MAXPATHLEN];
 	int8_t status;
 
 	if(filename && strlen(filename) > 1) {
-		if(ah->transmission_version == AM_TRANSMISSION_1_2) {
-			snprintf(buf, MAXPATHLEN, "transmission-remote -g \"%s\" -a \"%s\"", ah->transmission_path, filename);
-		} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
+		if(ah->transmission_version == AM_TRANSMISSION_1_3) {
+			/** FIXME
+			uploadTorrent(ah, torrent, tsize);
+			*/
 			if(ah->auth != NULL) {
 				snprintf(buf, MAXPATHLEN, "transmission-remote %d -n %s -a \"%s\"", ah->rpc_port, ah->auth, filename);
 			} else {
 				snprintf(buf, MAXPATHLEN, "transmission-remote %d -a \"%s\"", ah->rpc_port, filename);
 			}
+		} else if(ah->transmission_version == AM_TRANSMISSION_1_2) {
+			snprintf(buf, MAXPATHLEN, "transmission-remote -g \"%s\" -a \"%s\"", ah->transmission_path, filename);
 		}
 		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
 		dbg_printf(P_INFO, "[call_transmission] call: %s", buf);
@@ -306,6 +399,42 @@ static int call_transmission(auto_handle *ah, const char *filename) {
 		dbg_printf(P_ERROR, "[call_transmission] Error: invalid filename (addr: %p)", (void*)filename);
 		return -1;
 	}
+}
+
+int uploadTorrent(auto_handle *ah, void *torrent, uint32_t tsize) {
+
+	char *encoded = NULL;
+	uint32_t enc_size, json_size;
+	char *buf = NULL;
+	int buf_size;
+	const char *JSONstr =
+		"{\n"
+		"\"method\": \"torrent-add\",\n"
+		"\"arguments\": {\n"
+		"\"metainfo\": \"%s\"\n"
+		"}\n"
+		"}";
+
+	if(torrent != NULL) {
+		encoded = base64_encode(torrent, tsize, &enc_size);
+	}
+	if(encoded && enc_size > 0) {
+		buf_size = enc_size + 70;
+		buf = am_malloc(buf_size);
+		json_size = snprintf(buf, buf_size, JSONstr, encoded);
+		if(json_size  < 0 || json_size  >= buf_size) {
+			dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+			am_free(encoded);
+			am_free(buf);
+			return -1;
+		}
+		buf[json_size] = '\0';
+		uploadData("localhost:31339/transmission/rpc", ah->rpc_port, ah->auth, (void*) buf, json_size);
+		am_free(encoded);
+		am_free(buf);
+		return 0;
+	}
+	return -1;
 }
 
 void download_torrent(auto_handle *ah, feed_item item) {

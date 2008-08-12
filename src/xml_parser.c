@@ -68,12 +68,6 @@ static void extract_feed_items(xmlNodeSetPtr nodes) {
 	rssNode *enclosure;
 	size = (nodes) ? nodes->nodeNr : 0;
 
-/*	if(size > am_get_bucket_size()) {
-		dbg_printf(P_INFO2, "bucketsize_changed: %d", size);
-		am_set_bucket_size(size);
-	}
-*/
-
  	dbg_printf(P_INFO, "%d items in XML", size);
 	for(i = 0; i < size; ++i) {
 		assert(nodes->nodeTab[i]);

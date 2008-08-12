@@ -49,7 +49,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_automatic_OBJECTS = automatic.$(OBJEXT) config_parser.$(OBJEXT) \
 	list.$(OBJEXT) output.$(OBJEXT) state.$(OBJEXT) web.$(OBJEXT) \
 	feed_item.$(OBJEXT) rss_feed.$(OBJEXT) downloads.$(OBJEXT) \
-	utils.$(OBJEXT) xml_parser.$(OBJEXT)
+	utils.$(OBJEXT) base64.$(OBJEXT) xml_parser.$(OBJEXT)
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -61,6 +61,7 @@ am__objects_1 = automatic_mw-automatic.$(OBJEXT) \
 	automatic_mw-feed_item.$(OBJEXT) \
 	automatic_mw-rss_feed.$(OBJEXT) \
 	automatic_mw-downloads.$(OBJEXT) automatic_mw-utils.$(OBJEXT) \
+	automatic_mw-base64.$(OBJEXT) \
 	automatic_mw-xml_parser.$(OBJEXT)
 am_automatic_mw_OBJECTS = $(am__objects_1) \
 	automatic_mw-memwatch.$(OBJEXT)
@@ -199,7 +200,8 @@ automatic_SOURCES = \
    rss_feed.c       \
    downloads.c      \
    utils.c          \
-	xml_parser.c
+   base64.c         \
+	 xml_parser.c
 
 noinst_HEADERS = \
    automatic.h      \
@@ -212,6 +214,7 @@ noinst_HEADERS = \
    rss_feed.h       \
    downloads.h      \
    utils.h          \
+   base64.h         \
    xml_parser.h
 
 automatic_mw_SOURCES = \
@@ -307,6 +310,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-automatic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-base64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-downloads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-feed_item.Po@am__quote@
@@ -318,6 +322,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-web.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-xml_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/downloads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/feed_item.Po@am__quote@
@@ -482,6 +487,20 @@ automatic_mw-utils.obj: utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='utils.c' object='automatic_mw-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-utils.obj `if test -f 'utils.c'; then $(CYGPATH_W) 'utils.c'; else $(CYGPATH_W) '$(srcdir)/utils.c'; fi`
+
+automatic_mw-base64.o: base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.o -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
+
+automatic_mw-base64.obj: base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.obj -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
 
 automatic_mw-xml_parser.o: xml_parser.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-xml_parser.o -MD -MP -MF $(DEPDIR)/automatic_mw-xml_parser.Tpo -c -o automatic_mw-xml_parser.o `test -f 'xml_parser.c' || echo '$(srcdir)/'`xml_parser.c

@@ -44,4 +44,5 @@ WebData* getHTTPData(const char *url);
 void WebData_free(struct WebData *data);
 void cd_preg_free(void);
 void download_torrent(auto_handle *ses, feed_item item);
+int uploadTorrent(auto_handle *ah, void *torrent, uint32_t tsize);
 #endif

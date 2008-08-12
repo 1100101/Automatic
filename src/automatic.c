@@ -27,6 +27,7 @@
 #define AM_DEFAULT_USETRANSMISSION 	1
 
 #define FROM_XML_FILE 0
+#define TESTING 0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,9 +57,7 @@
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
 
-#if FROM_XML_FILE
-static char* readXMLFile(char *name);
-#endif
+static char* readFile(char *fname, uint32_t * setme_len);
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -288,6 +287,97 @@ void am_set_bucket_size(uint8_t size) {
 	}
 }
 
+static char* readFile(char *fname, uint32_t * setme_len) {
+	FILE *file;
+	char *buffer = NULL;
+	uint32_t fileLen;
+
+	file = fopen(fname, "rb");
+	if (!file) {
+		dbg_printf(P_ERROR, "Cannot open feed file '%s': %s", fname, strerror(errno));
+		return NULL;
+	}
+
+	fseek(file, 0, SEEK_END);
+	fileLen = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	buffer = am_malloc(fileLen + 1);
+	if (!buffer) {
+		dbg_printf(P_ERROR, "Cannot allocate memory: %s", strerror(errno));
+		fclose(file);
+		return NULL;
+	}
+
+	fread(buffer, fileLen, 1, file);
+	buffer[fileLen] = '\0';
+	fclose(file);
+	if(setme_len) {
+		*setme_len = fileLen;
+	}
+	return buffer;
+}
+
+void applyFilters(feed_item item) {
+	int err;
+	regex_t preg;
+	char erbuf[100];
+	char *regex_str;
+	simple_list current_regex;
+
+	assert(session != NULL);
+
+	current_regex = session->filters;
+	while (current_regex != NULL && current_regex->data != NULL) {
+		regex_str = (char*)current_regex->data;
+		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
+		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
+		if(err) {
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
+			current_regex = current_regex->next;
+			continue;
+		}
+		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
+		err = regexec(&preg, item->name, 0, NULL, 0);
+		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
+			download_torrent(session, item);
+		} else if(err != REG_NOMATCH && err != 0){
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
+		}
+		regfree(&preg);
+		current_regex = current_regex->next;
+	}
+}
+
+
+#if TESTING
+int main(int argc, char **argv) {
+	char *data = NULL;
+	uint32_t fileLen = 0;
+	uint32_t ret;
+	static auto_handle *session;
+
+	session = session_init();
+	session->rpc_port = 31339;
+	session->auth = am_strdup("KyleK:testpw");
+
+	dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
+	dbg_printf(P_INFO, "RPC port: %d", session->rpc_port);
+	dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
+
+
+	/* Loading torrent from file */
+	data = readFile("test.torrent", &fileLen);
+	if(data != NULL && fileLen > 0) {
+		ret = uploadTorrent(session, data, fileLen);
+		am_free(data);
+	}
+	do_cleanup(session);
+	return 0;
+}
+#else
 int main(int argc, char **argv) {
   char* config_file = NULL;
 #if FROM_XML_FILE
@@ -366,7 +456,7 @@ int main(int argc, char **argv) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
 #if FROM_XML_FILE
-		xmldata = readXMLFile("feed.xml");
+		xmldata = readFile("feed.xml", &fileLen);
 		if(xmldata != NULL) {
 			fileLen = strlen(xmldata);
 			parse_xmldata(xmldata, fileLen);
@@ -400,66 +490,4 @@ int main(int argc, char **argv) {
 	}
 	return 0;
 }
-
-#if FROM_XML_FILE
-static char* readXMLFile(char *name) {
-	FILE *file;
-	char *buffer = NULL;
-	unsigned long fileLen;
-
-	file = fopen(name, "rb");
-	if (!file) {
-		dbg_printf(P_ERROR, "Cannot open feed file: %s", strerror(errno));
-		return NULL;
-	}
-
-	fseek(file, 0, SEEK_END);
-	fileLen = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	buffer = am_malloc(fileLen+1);
-	if (!buffer) {
-		dbg_printf(P_ERROR, "Cannot allocate memory: %s", strerror(errno));
-		fclose(file);
-		return NULL;
-	}
-
-	fread(buffer, fileLen, 1, file);
-	buffer[fileLen] = '\0';
-	fclose(file);
-	return buffer;
-}
 #endif
-
-void applyFilters(feed_item item) {
-	int err;
-	regex_t preg;
-	char erbuf[100];
-	char *regex_str;
-	simple_list current_regex;
-
-	assert(session != NULL);
-
-	current_regex = session->filters;
-	while (current_regex != NULL && current_regex->data != NULL) {
-		regex_str = (char*)current_regex->data;
-		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
-		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
-		if(err) {
-			regerror(err, &preg, erbuf, sizeof(erbuf));
-			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s", erbuf);
-			current_regex = current_regex->next;
-			continue;
-		}
-		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
-		err = regexec(&preg, item->name, 0, NULL, 0);
-		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
-			download_torrent(session, item);
-		} else if(err != REG_NOMATCH && err != 0){
-			regerror(err, &preg, erbuf, sizeof(erbuf));
-			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
-		}
-		regfree(&preg);
-		current_regex = current_regex->next;
-	}
-}

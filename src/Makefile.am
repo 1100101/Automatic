@@ -15,7 +15,8 @@ automatic_SOURCES = \
    rss_feed.c       \
    downloads.c      \
    utils.c          \
-	xml_parser.c
+   base64.c         \
+	 xml_parser.c
 
 noinst_HEADERS =    \
    automatic.h      \
@@ -28,6 +29,7 @@ noinst_HEADERS =    \
    rss_feed.h       \
    downloads.h      \
    utils.h          \
+   base64.h         \
    xml_parser.h
 
 automatic_mw_SOURCES =  \

@@ -1756,6 +1756,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+
 am__api_version='1.10'
 
 ac_aux_dir=
@@ -2400,11 +2401,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for LIBCURL" >&5
 echo $ECHO_N "checking for LIBCURL... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBCURL_CFLAGS"; then
-        pkg_cv_LIBCURL_CFLAGS="$LIBCURL_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBCURL_CFLAGS"; then
+    pkg_cv_LIBCURL_CFLAGS="$LIBCURL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libcurl >= \$CURL_MINIMUM\"") >&5
   ($PKG_CONFIG --exists --print-errors "libcurl >= $CURL_MINIMUM") 2>&5
   ac_status=$?
@@ -2414,15 +2414,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBCURL_LIBS"; then
-        pkg_cv_LIBCURL_LIBS="$LIBCURL_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBCURL_LIBS"; then
+    pkg_cv_LIBCURL_LIBS="$LIBCURL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libcurl >= \$CURL_MINIMUM\"") >&5
   ($PKG_CONFIG --exists --print-errors "libcurl >= $CURL_MINIMUM") 2>&5
   ac_status=$?
@@ -2432,9 +2430,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -2447,9 +2444,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBCURL_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "libcurl >= $CURL_MINIMUM"`
+	        LIBCURL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libcurl >= $CURL_MINIMUM" 2>&1`
         else
-	        LIBCURL_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "libcurl >= $CURL_MINIMUM"`
+	        LIBCURL_PKG_ERRORS=`$PKG_CONFIG --print-errors "libcurl >= $CURL_MINIMUM" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBCURL_PKG_ERRORS" >&5
@@ -2511,11 +2508,10 @@ pkg_failed=no
 { echo "$as_me:$LINENO: checking for LIBXML" >&5
 echo $ECHO_N "checking for LIBXML... $ECHO_C" >&6; }
 
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBXML_CFLAGS"; then
-        pkg_cv_LIBXML_CFLAGS="$LIBXML_CFLAGS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBXML_CFLAGS"; then
+    pkg_cv_LIBXML_CFLAGS="$LIBXML_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libxml-2.0 >= \$LIBXML2_MINIMUM\"") >&5
   ($PKG_CONFIG --exists --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM") 2>&5
   ac_status=$?
@@ -2525,15 +2521,13 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
-if test -n "$PKG_CONFIG"; then
-    if test -n "$LIBXML_LIBS"; then
-        pkg_cv_LIBXML_LIBS="$LIBXML_LIBS"
-    else
-        if test -n "$PKG_CONFIG" && \
+if test -n "$LIBXML_LIBS"; then
+    pkg_cv_LIBXML_LIBS="$LIBXML_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libxml-2.0 >= \$LIBXML2_MINIMUM\"") >&5
   ($PKG_CONFIG --exists --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM") 2>&5
   ac_status=$?
@@ -2543,9 +2537,8 @@ if test -n "$PKG_CONFIG"; then
 else
   pkg_failed=yes
 fi
-    fi
-else
-	pkg_failed=untried
+ else
+    pkg_failed=untried
 fi
 
 
@@ -2558,9 +2551,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBXML_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM"`
+	        LIBXML_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM" 2>&1`
         else
-	        LIBXML_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM"`
+	        LIBXML_PKG_ERRORS=`$PKG_CONFIG --print-errors "libxml-2.0 >= $LIBXML2_MINIMUM" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBXML_PKG_ERRORS" >&5
@@ -9297,4 +9290,5 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
+
 
