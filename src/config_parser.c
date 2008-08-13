@@ -40,12 +40,12 @@
 
 static const char *delim = ";;";
 
-static int getFeeds(NODE **head, const char* strlist);
+/*static int getFeeds(NODE **head, const char* strlist);
 static char* shorten(const char *str);
-static int writeToList(NODE **head, const char* strlist);
-static int parseNumber(const char *str);
+static int addToList(NODE **head, const char* strlist);
+static int parseUInt(const char *str);*/
 
-void write_string(char *src, char **dst) {
+static void create_path(char *src, char **dst) {
 	char *tmp;
 
 	if(src && strlen(src) < MAXPATHLEN) {
@@ -59,82 +59,7 @@ void write_string(char *src, char **dst) {
 }
 
 
-static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
-	int numval;
-	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
-
-	assert(as != NULL);
-	if(!strcmp(opt, "url")) {
-		getFeeds(&as->feeds, param);
-	} else if(!strcmp(opt, "transmission-home")) {
-		write_string(param, &as->transmission_path);
-	} else if(!strcmp(opt, "transmission-version")) {
-		if(strlen(param) >= 3) {
-			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
-				as->transmission_version = AM_TRANSMISSION_1_2;
-			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
-				as->transmission_version = AM_TRANSMISSION_1_3;
-			}
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "torrent-folder")) {
-		write_string(param, &as->torrent_folder);
-	} else if(!strcmp(opt, "statefile")) {
-		write_string(param, &as->statefile);
-	} else if(!strcmp(opt, "transmission-auth")) {
-		as->auth = am_strdup(param);
-	} else if(!strcmp(opt, "rpc-port")) {
-		numval = parseNumber(param);
-		if (numval > 1024 && numval < 65535) {
-			as->rpc_port = numval;
-		} else if(numval != -1) {
-			dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "interval")) {
-		numval = parseNumber(param);
-		if(numval > 0) {
-			as->check_interval = numval;
-		} else if(numval != -1) {
-			dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-/*	numval = 1;
-		for(i = 0; i < strlen(param); i++) {
-			if(isdigit(param[i]) == 0)
-				numval--;
-		}
-		if(numval == 1) {
-			if(atoi(param) > 0) {
-				as->check_interval = atoi(param);
-			} else {
-				dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (10min)\n\t%s=%s", opt, param);
-				as->check_interval = 10;
-			}
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-*/
-	} else if(!strcmp(opt, "use-transmission")) {
-		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
-			as->use_transmission = 0;
-		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
-			as->use_transmission = 1;
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "patterns")) {
-		writeToList(&as->filters, param);
-	} else {
-		dbg_printf(P_ERROR, "Unknown option: %s", opt);
-	}
-	return 0;
-}
-
-static int parseNumber(const char *str) {
+static int parseUInt(const char *str) {
 	int is_num = 1;
 	int i;
 
@@ -148,7 +73,48 @@ static int parseNumber(const char *str) {
 	return -1;
 }
 
-static int writeToList(NODE **head, const char* strlist) {
+static char* shorten(const char *str) {
+		char tmp[MAX_PARAM_LEN + 1];
+		int tmp_pos;
+		char c;
+		int line_pos = 0, i;
+		int len = strlen(str);
+
+		for(i = 0; i < sizeof(tmp); ++i)
+			tmp[i] = '\0';
+
+		while (isspace(str[line_pos])) {
+			++line_pos;
+		}
+		tmp_pos = 0;
+		while(line_pos < len) {
+			/* case 1: quoted strings */
+			if(tmp_pos != 0) {
+				for(i = 0; i < strlen(delim); ++i)
+					tmp[tmp_pos++] = delim[i];
+			}
+			if (str[line_pos] == '"' || str[line_pos] == '\'') {
+				c = str[line_pos];
+				++line_pos;  /* skip quote */
+				for (; str[line_pos] != c; /* NOTHING */) {
+						tmp[tmp_pos++] = str[line_pos++];
+				}
+				line_pos++;	/* skip the closing " or ' */
+			} else {
+				for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
+					tmp[tmp_pos++] = str[line_pos++];
+				}
+			}
+			while (isspace(str[line_pos])) {
+				++line_pos;
+			}
+		}
+		tmp[tmp_pos] = '\0';
+		assert(strlen(tmp) < MAX_PARAM_LEN);
+		return am_strdup(tmp);
+}
+
+static int addToList(NODE **head, const char* strlist) {
 	char *p = NULL;
 	char *str = NULL;
 
@@ -177,6 +143,67 @@ static int getFeeds(NODE **head, const char* strlist) {
 		p = strtok(NULL, delim);
 	}
 	am_free(str);
+	return 0;
+}
+
+static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
+	int numval;
+	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
+
+	assert(as != NULL);
+	if(!strcmp(opt, "url")) {
+		getFeeds(&as->feeds, param);
+	} else if(!strcmp(opt, "transmission-home")) {
+		create_path(param, &as->transmission_path);
+	} else if(!strcmp(opt, "transmission-version")) {
+		if(strlen(param) >= 3) {
+			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
+				as->transmission_version = AM_TRANSMISSION_1_2;
+			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
+				as->transmission_version = AM_TRANSMISSION_1_3;
+			}
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+	} else if(!strcmp(opt, "torrent-folder")) {
+		create_path(param, &as->torrent_folder);
+	} else if(!strcmp(opt, "statefile")) {
+		create_path(param, &as->statefile);
+	} else if(!strcmp(opt, "rpc-host")) {
+		as->host = am_strdup(param);
+	} else if(!strcmp(opt, "rpc-auth")) {
+		as->auth = am_strdup(param);
+	} else if(!strcmp(opt, "rpc-port")) {
+		numval = parseUInt(param);
+		if (numval > 1024 && numval < 65535) {
+			as->rpc_port = numval;
+		} else if(numval != -1) {
+			dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+	} else if(!strcmp(opt, "interval")) {
+		numval = parseUInt(param);
+		if(numval > 0) {
+			as->check_interval = numval;
+		} else if(numval != -1) {
+			dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+	} else if(!strcmp(opt, "use-transmission")) {
+		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
+			as->use_transmission = 0;
+		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
+			as->use_transmission = 1;
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+	} else if(!strcmp(opt, "patterns")) {
+		addToList(&as->filters, param);
+	} else {
+		dbg_printf(P_ERROR, "Unknown option: %s", opt);
+	}
 	return 0;
 }
 
@@ -375,44 +402,3 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 	}
 }
 
-
-static char* shorten(const char *str) {
-		char tmp[MAX_PARAM_LEN + 1];
-		int tmp_pos;
-		char c;
-		int line_pos = 0, i;
-		int len = strlen(str);
-
-		for(i = 0; i < sizeof(tmp); ++i)
-			tmp[i] = '\0';
-
-		while (isspace(str[line_pos])) {
-			++line_pos;
-		}
-		tmp_pos = 0;
-		while(line_pos < len) {
-			/* case 1: quoted strings */
-			if(tmp_pos != 0) {
-				for(i = 0; i < strlen(delim); ++i)
-					tmp[tmp_pos++] = delim[i];
-			}
-			if (str[line_pos] == '"' || str[line_pos] == '\'') {
-				c = str[line_pos];
-				++line_pos;  /* skip quote */
-				for (; str[line_pos] != c; /* NOTHING */) {
-						tmp[tmp_pos++] = str[line_pos++];
-				}
-				line_pos++;	/* skip the closing " or ' */
-			} else {
-				for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
-					tmp[tmp_pos++] = str[line_pos++];
-				}
-			}
-			while (isspace(str[line_pos])) {
-				++line_pos;
-			}
-		}
-		tmp[tmp_pos] = '\0';
-		assert(strlen(tmp) < MAX_PARAM_LEN);
-		return am_strdup(tmp);
-}

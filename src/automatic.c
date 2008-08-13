@@ -224,6 +224,7 @@ auto_handle* session_init(void) {
 	strncpy(ses->statefile, path, strlen(path) + 1);
 	ses->torrent_folder = get_temp_folder();
 	ses->downloads = NULL;
+	ses->host = NULL;
 	ses->auth = NULL;
 	ses->filters = NULL;
 	ses->feeds = NULL;
@@ -236,6 +237,7 @@ static void ah_free(auto_handle *as) {
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
+		am_free(as->host);
 		am_free(as->auth);
 		freeList(&as->feeds, feed_free);
 		freeList( &as->downloads, NULL);
@@ -341,6 +343,7 @@ void applyFilters(feed_item item) {
 		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
 		err = regexec(&preg, item->name, 0, NULL, 0);
 		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
+			dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
 			download_torrent(session, item);
 		} else if(err != REG_NOMATCH && err != 0){
 			regerror(err, &preg, erbuf, sizeof(erbuf));
@@ -439,6 +442,7 @@ int main(int argc, char **argv) {
 
 	dbg_printf(P_INFO, "verbose level: %d", verbose);
 	dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
+	dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);
 	dbg_printf(P_INFO, "RPC port: %d", session->rpc_port);
 	dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
 	dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "true" : "false");
