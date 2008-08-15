@@ -1,5 +1,4 @@
 2008-07-28 v0.1.4
-            Logging to specific logfile caused problems, 	disabled for now (you can redirect stdout & stderr though)
             Fixed segmentation fault when torrent download was unsuccessful (when HTTP/302 redirect occured)
 
 2008-06-25 v0.1.3.1
