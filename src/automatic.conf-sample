@@ -23,14 +23,11 @@ transmission-version = "1.3"
 #####################
 
 
-# URL of the RSS feed
+# list of feed URLs. You can specify one or more feeds, in case of the latter use curly brackets (see the "patterns" option for an example)
 url = ""
 
-# interval in minutes between checks for new downloads/episodes
+# interval in minutes between checks for new downloads
 interval = 30
-
-# path to the logfile. Use empty string "" to disable logging functionality
-logfile = "/tmp/automatic.log"
 
 # Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
 use-transmission = yes
