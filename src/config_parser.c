@@ -38,14 +38,17 @@
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	2000
 
+struct am_option {
+  const char *name;
+  void *data;
+  option_type type;
+};
+
+typedef struct am_option am_option_t;
+
 static const char *delim = ";;";
 
-/*static int getFeeds(NODE **head, const char* strlist);
-static char* shorten(const char *str);
-static int addToList(NODE **head, const char* strlist);
-static int parseUInt(const char *str);*/
-
-static void create_path(char *src, char **dst) {
+static void set_path(char *src, char **dst) {
 	char *tmp;
 
 	if(src && strlen(src) < MAXPATHLEN) {
@@ -146,6 +149,28 @@ static int getFeeds(NODE **head, const char* strlist) {
 	return 0;
 }
 
+/** Work in progress **/
+
+/* static void set_option2(auto_handle *as, const char *opt, char *param) {
+
+	int x,y,z;
+
+	am_option_t conf[] = {
+    {"url"                 , &x, CONF_TYPE_STRINGLIST},
+    {"transmission-home"   , &y, CONF_TYPE_STRING},
+    {"transmission-version", &z, CONF_TYPE_INT},
+		{NULL, NULL, 0}
+	};
+	int i;
+
+	for(i = 0; conf[i].name != NULL; i++) {
+		if(!strcmp(conf[i].name, opt)) {
+			printf("this apparently works\n");
+		}
+	}
+}
+*/
+
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int numval;
 	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
@@ -154,21 +179,23 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 	if(!strcmp(opt, "url")) {
 		getFeeds(&as->feeds, param);
 	} else if(!strcmp(opt, "transmission-home")) {
-		create_path(param, &as->transmission_path);
+		set_path(param, &as->transmission_path);
 	} else if(!strcmp(opt, "transmission-version")) {
 		if(strlen(param) >= 3) {
 			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
 				as->transmission_version = AM_TRANSMISSION_1_2;
 			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
 				as->transmission_version = AM_TRANSMISSION_1_3;
+			} else {
+				dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 			}
 		} else {
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "torrent-folder")) {
-		create_path(param, &as->torrent_folder);
+		set_path(param, &as->torrent_folder);
 	} else if(!strcmp(opt, "statefile")) {
-		create_path(param, &as->statefile);
+		set_path(param, &as->statefile);
 	} else if(!strcmp(opt, "rpc-host")) {
 		as->host = am_strdup(param);
 	} else if(!strcmp(opt, "rpc-auth")) {
@@ -333,7 +360,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 			}
 			if(parse_error == 0) {
 				line_pos++;	/* skip the closing " or ' */
-				type = STRING_TYPE;
+				type = CONF_TYPE_STRING;
 			} else {
 				break;
 			}
@@ -356,7 +383,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 			dbg_printf(P_INFO2, "multiline param: param_good=%d", param_good);
 			if(parse_error == 0) {
 				line_pos++;	/* skip the closing '}' */
-				type = STRINGLIST_TYPE;
+				type = CONF_TYPE_STRINGLIST;
 			} else {
 				break;
 			}
@@ -373,7 +400,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 				}
 			}
 			if(parse_error == 0) {
-				type = INT_TYPE;
+				type = CONF_TYPE_INT;
 			} else {
 				break;
 			}

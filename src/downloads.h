@@ -1,5 +1,5 @@
-#ifndef BUCKET_LIST_H__
-#define BUCKET_LIST_H__
+#ifndef DOWNLOADS_H__
+#define DOWNLOADS_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -28,6 +28,6 @@
 
 
 int bucket_hasURL(const char *url, simple_list head);
-int addToBucket(char* identifier, NODE **head, int maxBucketItems);
+int addToBucket(const char* identifier, NODE **head, int maxBucketItems);
 
 #endif

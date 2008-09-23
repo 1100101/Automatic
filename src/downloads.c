@@ -48,7 +48,7 @@ int bucket_hasURL(const char *url, NODE *head) {
 	return 0;
 }
 
-int addToBucket(char* identifier, NODE **head, int maxBucketItems) {
+int addToBucket(const char* identifier, NODE **head, int maxBucketItems) {
 
 	addItem(am_strdup(identifier), head);
 	if(maxBucketItems > 0 && listCount(*head) > maxBucketItems) {

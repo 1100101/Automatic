@@ -40,7 +40,7 @@
 #include <signal.h>
 #include <getopt.h>
 #include <regex.h>
-#include <sys/stat.h>
+/*#include <sys/stat.h>*/
 #include <sys/param.h>
 
 #include <sys/wait.h>
@@ -57,7 +57,7 @@
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
 
-static char* readFile(char *fname, uint32_t * setme_len);
+static char* readFile(const char *fname, uint32_t * setme_len);
 
 static auto_handle *session;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
@@ -106,7 +106,6 @@ void readargs( int argc, char ** argv, char **c_file, uint8_t * nofork, uint8_t 
 	}
 }
 
-
 static uint8_t has_been_downloaded(simple_list bucket, char *url) {
 	uint8_t res;
 
@@ -115,7 +114,6 @@ static uint8_t has_been_downloaded(simple_list bucket, char *url) {
 		dbg_printf(P_INFO2, "Torrent has already been downloaded");
 	return res;
 }
-
 
 static void do_cleanup(auto_handle *as) {
 	ah_free(as);
@@ -289,14 +287,14 @@ void am_set_bucket_size(uint8_t size) {
 	}
 }
 
-static char* readFile(char *fname, uint32_t * setme_len) {
+static char* readFile(const char *fname, uint32_t * setme_len) {
 	FILE *file;
 	char *buffer = NULL;
 	uint32_t fileLen;
 
 	file = fopen(fname, "rb");
 	if (!file) {
-		dbg_printf(P_ERROR, "Cannot open feed file '%s': %s", fname, strerror(errno));
+		dbg_printf(P_ERROR, "Cannot open file '%s': %s", fname, strerror(errno));
 		return NULL;
 	}
 
@@ -320,7 +318,7 @@ static char* readFile(char *fname, uint32_t * setme_len) {
 	return buffer;
 }
 
-void applyFilters(feed_item item) {
+void findMatch(feed_item item) {
 	int err;
 	regex_t preg;
 	char erbuf[100];
@@ -344,7 +342,7 @@ void applyFilters(feed_item item) {
 		err = regexec(&preg, item->name, 0, NULL, 0);
 		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
 			dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
-			download_torrent(session, item);
+			getTorrent(session, item->url);
 		} else if(err != REG_NOMATCH && err != 0){
 			regerror(err, &preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
@@ -355,11 +353,12 @@ void applyFilters(feed_item item) {
 }
 
 
-#if TESTING
+/*
 int main(int argc, char **argv) {
 	char *data = NULL;
 	uint32_t fileLen = 0;
 	uint32_t ret;
+
 	static auto_handle *session;
 
 	session = session_init();
@@ -371,7 +370,7 @@ int main(int argc, char **argv) {
 	dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
 
 
-	/* Loading torrent from file */
+	// Loading torrent from file
 	data = readFile("test.torrent", &fileLen);
 	if(data != NULL && fileLen > 0) {
 		ret = uploadTorrent(session, data, fileLen);
@@ -380,7 +379,8 @@ int main(int argc, char **argv) {
 	do_cleanup(session);
 	return 0;
 }
-#else
+*/
+
 int main(int argc, char **argv) {
   char* config_file = NULL;
 #if FROM_XML_FILE
@@ -395,6 +395,7 @@ int main(int argc, char **argv) {
 	WebData *wdata = NULL;
 	NODE *current = NULL;
 	int count;
+	int status;
 	rss_feed feed;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
@@ -454,44 +455,54 @@ int main(int argc, char **argv) {
 	dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
 	dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
 
-	load_state(&session->downloads);
 
-	while(1) {
-		getlogtime_str(time_str);
-		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
-#if FROM_XML_FILE
-		xmldata = readFile("feed.xml", &fileLen);
-		if(xmldata != NULL) {
-			fileLen = strlen(xmldata);
-			parse_xmldata(xmldata, fileLen);
-			am_free(xmldata);
+	status = fork();
+
+	if(status == -1) {
+		fprintf( stderr, "Error forking for watchdog! %d - %s", errno, strerror(errno));
+	} else if(status == 0) {		/* folder watch process */
+		while(1) {
+			printf("folder watch\n");
+			sleep(5);
 		}
-#else
-		current = session->feeds;
-		count = 0;
-		while(current && current->data) {
-			feed = (rss_feed)current->data;
-			++count;
-			dbg_printf(P_MSG, "Checking feed %d ...", count);
-			wdata = getHTTPData(feed->url);
-			if(wdata && wdata->response && wdata->response->size > 0) {
-				ret = parse_xmldata(wdata->response->data, wdata->response->size);
-				if(first_run == 1 && ret != -1) {
-					if(count == 1) {            /* first feed count replaces default value */
-						session->max_bucket_items = ret;
-					} else {
-						session->max_bucket_items += ret;
-					}
-					dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
-				}
+	} else {		/* RSS feed watching process */
+		load_state(&session->downloads);
+		while(1) {
+			getlogtime_str(time_str);
+			dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
+	#if FROM_XML_FILE
+			xmldata = readFile("feed.xml", &fileLen);
+			if(xmldata != NULL) {
+				fileLen = strlen(xmldata);
+				parse_xmldata(xmldata, fileLen);
+				am_free(xmldata);
 			}
-			WebData_free(wdata);
-			current = current->next;
+	#else
+			current = session->feeds;
+			count = 0;
+			while(current && current->data) {
+				feed = (rss_feed)current->data;
+				++count;
+				dbg_printf(P_MSG, "Checking feed %d ...", count);
+				wdata = getHTTPData(feed->url);
+				if(wdata && wdata->response && wdata->response->size > 0) {
+					ret = parse_xmldata(wdata->response->data, wdata->response->size);
+					if(first_run == 1 && ret != -1) {
+						if(count == 1) {            /* first feed count replaces default value */
+							session->max_bucket_items = ret;
+						} else {
+							session->max_bucket_items += ret;
+						}
+						dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+					}
+				}
+				WebData_free(wdata);
+				current = current->next;
+			}
+			first_run = 0;
+	#endif
+			sleep(session->check_interval * 60);
 		}
-		first_run = 0;
-#endif
- 		sleep(session->check_interval * 60);
 	}
 	return 0;
 }
-#endif

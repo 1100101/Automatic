@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdint.h>
+
 #include "output.h"
 #include "utils.h"
 
@@ -130,72 +131,3 @@ char *base64_decode(const char *encoded_string, uint32_t in_len, uint32_t * setm
 
   return ret;
 }
-
-
-/*
-int main(int argc, char **argv) {
-	FILE *in, *out;
-	char *raw_data, *encoded, *decoded;
-	struct stat fs;
-	int enc_len = 0, dec_len = 0;
-
-	if(stat("test.torrent", &fs) == -1)  {
-		return -1;
-	}
-
-	if ((raw_data = am_malloc(fs.st_size + 1)) == NULL) {
-		return -1;
-	}
-	printf("file size: %d\n", (uint32_t)fs.st_size);
-
-	if ((in = fopen("test.torrent", "rb")) == NULL) {
-		perror("fopen");
-		am_free(raw_data);
-		return -1;
-	}
-
-	if(fread(raw_data, fs.st_size, 1, in) != 1) {
-		perror("fread");
-		fclose(in);
-		am_free(raw_data);
-		return -1;
-	}
-	if(in)
-		fclose(in);
-
-	encoded = base64_encode(raw_data, fs.st_size, &enc_len);
-	printf("encode successful: %d\n", enc_len);
-	if ((out = fopen("test_torrent.b64", "wb")) == NULL) {
-		perror("fopen");
-		am_free(raw_data);
-		return -1;
-	}
-	if(fwrite(encoded, strlen(encoded), 1, out) != 1) {
-		perror("fwrite");
-		fclose(out);
-		am_free(raw_data);
-		return -1;
-	}
-	fclose(out);
-	printf("written encoded data\n");
-	decoded = base64_decode(encoded, &dec_len);
-	printf("decode successful: %d\n", dec_len);
-	if ((out = fopen("decoded.torrent", "wb")) == NULL) {
-		perror("fopen");
-		return -1;
-	}
-	if(fwrite(decoded, dec_len, 1, out) != 1) {
-		perror("fwrite");
-		fclose(out);
-		am_free(raw_data);
-		return -1;
-	}
-	printf("written decoded data\n");
-	fclose(out);
-	am_free(raw_data);
-	am_free(encoded);
-	am_free(decoded);
-
-	return 0;
-}
-*/

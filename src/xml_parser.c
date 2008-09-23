@@ -105,7 +105,7 @@ static void extract_feed_items(xmlNodeSetPtr nodes) {
 					dbg_printf(P_MSG, "Is this really a torrent feed?");
 				}
 				if(name_set && url_set) {
-					applyFilters(item);
+					findMatch(item);
 				}
 				freeFeedItem(item);
 				child = cur = NULL;

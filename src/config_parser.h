@@ -24,9 +24,9 @@
 #include "automatic.h"
 
 enum option_type {
-	STRING_TYPE,
-	INT_TYPE,
-	STRINGLIST_TYPE
+	CONF_TYPE_STRING,
+	CONF_TYPE_INT,
+	CONF_TYPE_STRINGLIST
 };
 
 typedef enum option_type option_type;

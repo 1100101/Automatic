@@ -64,5 +64,5 @@ uint8_t am_get_bucket_size(void);
 void am_set_bucket_size(uint8_t size);
 void am_set_interval(int interval);
 int am_get_interval(void);
-void applyFilters(feed_item item);
+void findMatch(feed_item item);
 #endif

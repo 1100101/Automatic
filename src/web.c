@@ -265,7 +265,7 @@ WebData* getHTTPData(const char *url) {
 	dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", rc);
 	curl_easy_cleanup(curl_handle);
 	if(res != 0) {
-			dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s': %s", url, curl_easy_strerror(res));
+			dbg_printf(P_ERROR, "[getHTTPData] '%s': %s", url, curl_easy_strerror(res));
 			WebData_free(data);
 			return NULL;
 	} else {
@@ -357,7 +357,7 @@ static int saveFile(const char *name, void *data, uint32_t size) {
 	} else {
 		ret = write(torrent, data, size);
 		if(ret != size) {
-			dbg_printf(P_ERROR, "[download_torrent] Error writing torrent file: %s", strerror(errno));
+			dbg_printf(P_ERROR, "[saveFile] Error writing torrent file: %s", strerror(errno));
 			ret = -1;
 		} else {
 			dbg_printf(P_INFO, "Saved torrent file '%s'", name);
@@ -462,6 +462,7 @@ static int uploadData(const char *host, int port, const char* auth, void *data, 
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
 		}
+
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
@@ -504,11 +505,22 @@ static int uploadData(const char *host, int port, const char* auth, void *data, 
 	return ret;
 }
 
-void processTorrent(auto_handle *ah, WebData *wdata, char *torrent_url) {
+uint8_t uploadTorrent(auto_handle *ses, void* t_data, int t_size) {
+	char *packet = NULL;
+	uint32_t packet_size = 0;
+	uint8_t res = 1;
+
+	packet = makeJSON(t_data, t_size, &packet_size);
+	if(packet != NULL) {
+		res = uploadData(ses->host != NULL ? ses->host : AM_DEFAULT_HOST,ses->rpc_port, ses->auth, packet, packet_size);
+		am_free(packet);
+	}
+	return res;
+}
+
+void processTorrent(auto_handle *ah, WebData *wdata, const char *torrent_url) {
 	char fname[MAXPATHLEN];
 	int res, success = 0;
-	char *packet = NULL;
-	uint32_t packet_size;
 
 	if(!ah->use_transmission) {
 		get_filename(wdata, fname, ah->torrent_folder);
@@ -516,25 +528,20 @@ void processTorrent(auto_handle *ah, WebData *wdata, char *torrent_url) {
 		if(res == 0) {
 			success = 1;
 		}
-	} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
-			packet = makeJSON(wdata->response->data, wdata->response->size, &packet_size);
-			if(packet != NULL) {
-				res = uploadData(ah->host != NULL ? ah->host : AM_DEFAULT_HOST, ah->rpc_port, ah->auth, packet, packet_size);
-				if(res == 0) {
-					success = 1;
-				}
-				am_free(packet);
-			}
 	} else if(ah->transmission_version == AM_TRANSMISSION_1_2) {
 		get_filename(wdata, fname, ah->torrent_folder);
 		res = saveFile(fname, wdata->response->data, wdata->response->size);
 		if(res == 0) {
 			if(call_transmission(ah, fname) == -1) {
-				dbg_printf(P_ERROR, "[download_torrent] error adding torrent '%s' to Transmission");
+				dbg_printf(P_ERROR, "[processTorrent] error adding torrent '%s' to Transmission");
 			} else {
 				success = 1;
 			}
 			unlink(fname);
+		}
+	} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
+		if(uploadTorrent(ah, wdata->response->data, wdata->response->size) == 0) {
+			success = 1;
 		}
 	}
 
@@ -547,12 +554,12 @@ void processTorrent(auto_handle *ah, WebData *wdata, char *torrent_url) {
 	}
 }
 
-void download_torrent(auto_handle *ah, feed_item item) {
+void getTorrent(auto_handle *ah, const char *url) {
 	WebData *wdata;
 
-	wdata = getHTTPData(item->url);
+	wdata = getHTTPData(url);
 	if(wdata != NULL && wdata->response != NULL) {
-		processTorrent(ah, wdata, item->url);
+		processTorrent(ah, wdata, url);
 	}
 	WebData_free(wdata);
 }

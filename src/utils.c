@@ -55,7 +55,7 @@ void am_free(void * p) {
 	}
 }
 
-char* am_strdup(char *str) {
+char* am_strdup(const char *str) {
 	int len;
 	char *buf = NULL;
 	if(str) {
@@ -67,7 +67,7 @@ char* am_strdup(char *str) {
 	return buf;
 }
 
-char* am_strndup(char *str, int len) {
+char* am_strndup(const char *str, int len) {
 	char *buf = NULL;
 	if(str) {
 		buf = am_malloc(len + 1);
@@ -96,7 +96,7 @@ char* get_home_folder() {
 	return dir;
 }
 
-char* resolve_path(char *path) {
+char* resolve_path(const char *path) {
 	char new_dir[MAXPATHLEN];
 	char *homedir = NULL;
 

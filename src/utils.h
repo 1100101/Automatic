@@ -28,12 +28,12 @@
 void* am_malloc(size_t size);
 void* am_realloc(void *p, size_t size);
 void am_free(void *p);
-char* am_strdup(char *str);
-char* am_strndup(char *str, int len);
+char* am_strdup(const char *str);
+char* am_strndup(const char *str, int len);
 
-char* resolve_path(char *path);
+char* resolve_path(const char *path);
 char* get_home_folder(void);
 char* get_temp_folder(void);
-char* get_tr_folder();
+char* get_tr_folder(void);
 
 #endif
