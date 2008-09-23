@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  */
 
+#include <unistd.h>
+
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif

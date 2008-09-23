@@ -84,6 +84,16 @@ unsigned int listCount(NODE *head) {
 	return c;
 }
 
+void printList(NODE *head) {
+	NODE *current = head;
+	while (current != NULL) {
+		if(current->data) {
+			printf("%s\n", current->data);
+		}
+		current = current->next;
+	}
+}
+
 int addItem(void	*elem, NODE **head) {
 	NODE *newnode = NULL;
 
@@ -145,15 +155,25 @@ void removeLast(NODE *head, listFuncPtr freeFunc) {
 	NODE *lastNode = NULL;
 	dbg_printf(P_DBG, "Removing last item...\n");
 	lastNode = getLastNode(head);
-	if(lastNode->data)
-		freeFunc(lastNode->data);
+
+	if(lastNode) {
+		if(freeFunc) {
+			freeFunc(lastNode->data);
+		} else {
+			am_free(lastNode->data);
+		}
+	}
 	deleteLast(&head);
 }
 
 void removeFirst(NODE  **head, listFuncPtr freeFunc) {
 	dbg_printf(P_DBG, "Removing first item...\n");
-	if(freeFunc) {
-		freeFunc((*head)->data);
+	if (*head != NULL) {
+		if(freeFunc) {
+			freeFunc((*head)->data);
+		} else {
+			am_free((*head)->data);
+		}
 	}
 	deleteFirst(head);
 }

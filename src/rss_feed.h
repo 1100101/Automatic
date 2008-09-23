@@ -38,6 +38,6 @@ struct rss_feed {
 void     feed_free(void* listItem);
 rss_feed feed_new(void);
 void     feed_printList(simple_list list);
-void feed_add(char *url, NODE **head);
+void 		feed_add(char *url, NODE **head);
 
 #endif

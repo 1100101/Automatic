@@ -43,7 +43,7 @@ automatic_mw_HEADERS =  \
 
 automatic_mwdir = .
 
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG
+automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -g
 
 dist_sysconf_DATA = automatic.conf-sample
 
