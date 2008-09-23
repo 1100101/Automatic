@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
 		while(current && current->data) {
 			feed = (rss_feed)current->data;
 			++count;
-			dbg_printf(P_MSG, "Checking feed %d ...", count);
+			printf("Checking feed %d ... ", count);
 			wdata = getHTTPData(feed->url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
 				ret = parse_xmldata(wdata->response->data, wdata->response->size);
@@ -485,6 +485,7 @@ int main(int argc, char **argv) {
 					dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
 				}
 			}
+			dbg_printf(P_MSG, "Done");
 			WebData_free(wdata);
 			current = current->next;
 		}

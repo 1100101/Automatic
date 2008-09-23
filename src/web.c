@@ -82,9 +82,9 @@ void cd_preg_free() {
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
-	char *buf;
+	char *buf = NULL;
 	char tmp[20];
-	char *p;
+	char *p = NULL;
 	char erbuf[100];
 	int content_length = 0, len, err;
 	int i;
@@ -181,7 +181,7 @@ static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *da
 }
 
 static struct HTTPData* HTTPData_new(void) {
-	HTTPData* data;
+	HTTPData *data = NULL;
 
 	data = am_malloc(sizeof(struct HTTPData));
 	if(!data) {
@@ -199,8 +199,9 @@ static void HTTPData_free(HTTPData* data) {
 }
 
 struct WebData* WebData_new(const char *url) {
-	WebData *data;
+	WebData *data = NULL;
 
+	dbg_printf(P_INFO, "alloc WebData\n");
 	data = am_malloc(sizeof(WebData));
 	if(!data)
 		return NULL;
@@ -241,7 +242,7 @@ void WebData_free(struct WebData *data) {
 }
 
 WebData* getHTTPData(const char *url) {
-	CURL *curl_handle;
+	CURL *curl_handle = NULL;
 	CURLcode res;
 	char errorBuffer[CURL_ERROR_SIZE];
 	long rc;
@@ -304,7 +305,6 @@ static int call_transmission(auto_handle *ah, const char *filename) {
 		return -1;
 	}
 }
-
 
 static char* makeJSON(void *data, uint32_t tsize, uint32_t *setme_size) {
 
@@ -369,9 +369,9 @@ static int saveFile(const char *name, void *data, uint32_t size) {
 	return ret;
 }
 
-
 static void get_filename(WebData *data, char *file_name, const char *path) {
-	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
+	char *p = NULL;
+	char tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
 	int len;
 
 #ifdef DEBUG
@@ -427,15 +427,14 @@ static char* parseResponse(char* response) {
 	return result_str;
 }
 
-
 static int uploadData(const char *host, int port, const char* auth, void *data, uint32_t data_size) {
-	CURL *curl_handle;
+	CURL *curl_handle = NULL;
 	CURLcode res;
 	long rc;
 	struct curl_slist *headers = NULL;
-	WebData* response_data = NULL;
+	WebData *response_data = NULL;
 	char *response_str = NULL;
-	char * url = NULL;
+	char *url = NULL;
 	int ret = -1;
 	int url_length;
 
@@ -458,7 +457,7 @@ static int uploadData(const char *host, int port, const char* auth, void *data, 
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 
 		if(auth) {
-			dbg_printf(P_INFO2, "aut: %s", auth);
+			dbg_printf(P_INFO2, "auth: %s", auth);
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
 		}
@@ -523,6 +522,7 @@ void processTorrent(auto_handle *ah, WebData *wdata, char *torrent_url) {
 				if(res == 0) {
 					success = 1;
 				}
+				dbg_printf(P_INFO, "Freeing packet (%p)\n", (void*)packet);
 				am_free(packet);
 			}
 	} else if(ah->transmission_version == AM_TRANSMISSION_1_2) {
@@ -548,7 +548,7 @@ void processTorrent(auto_handle *ah, WebData *wdata, char *torrent_url) {
 }
 
 void download_torrent(auto_handle *ah, feed_item item) {
-	WebData *wdata;
+	WebData *wdata = NULL;
 
 	wdata = getHTTPData(item->url);
 	if(wdata != NULL && wdata->response != NULL) {

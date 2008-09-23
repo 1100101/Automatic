@@ -32,8 +32,8 @@ struct WebData {
 	long responseCode;
 	size_t content_length;
 	char *content_filename;
-	struct HTTPData* header;
-	struct HTTPData* response;
+	struct HTTPData *header;
+	struct HTTPData *response;
 };
 
 
