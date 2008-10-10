@@ -49,8 +49,8 @@ void pushNode(NODE **ptr_to_head, NODE *newnode) {
 /* public functions */
 
 void reverseList( NODE **list ) {
-	NODE *nextnode;
-	NODE *current ;
+	NODE *nextnode = NULL;
+	NODE *current = NULL;
 	NODE *result = NULL;
 	current = *list;
 
@@ -64,7 +64,7 @@ void reverseList( NODE **list ) {
 }
 
 void deleteFirst(NODE **ptr_to_head) {
-	NODE *p;
+	NODE *p = NULL;
 
 	if(*ptr_to_head != NULL) {
 		p = *ptr_to_head;
@@ -84,8 +84,19 @@ unsigned int listCount(NODE *head) {
 	return c;
 }
 
+/* highly dangerous and only for debugging purposes! */
+void printList(NODE *head) {
+	NODE *current = head;
+	while (current != NULL) {
+		if(current->data) {
+			dbg_printf(P_DBG, "%s\n", current->data);
+		}
+		current = current->next;
+	}
+}
+
 int addItem(void* elem, NODE **head) {
-	NODE *newnode;
+	NODE *newnode = NULL;
 
 	if(elem != NULL) {
 		newnode = (NODE*)am_malloc(sizeof(struct NODE));
@@ -109,7 +120,6 @@ NODE* getLastNode(NODE *ptr_to_head) {
 	}
 	return current;
 }
-
 
 void deleteLast(NODE **ptr_to_head) {
 	NODE *p = *ptr_to_head, *prev = NULL;
@@ -141,19 +151,30 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
 	}
 	dbg_printf(P_INFO2, "[cleanupList] size after: %d\n", listCount(*head));
 }
+
 void removeLast(NODE *head, listFuncPtr freeFunc) {
-	NODE *lastNode;
+	NODE *lastNode = NULL;
 	dbg_printf(P_DBG, "Removing last item...\n");
 	lastNode = getLastNode(head);
-	if(lastNode->data)
-		freeFunc(lastNode->data);
+
+	if(lastNode) {
+		if(freeFunc) {
+			freeFunc(lastNode->data);
+		} else {
+			am_free(lastNode->data);
+		}
+	}
 	deleteLast(&head);
 }
 
 void removeFirst(NODE  **head, listFuncPtr freeFunc) {
 	dbg_printf(P_DBG, "Removing first item...\n");
-	if(freeFunc) {
-		freeFunc((*head)->data);
+	if (*head != NULL) {
+		if(freeFunc) {
+			freeFunc((*head)->data);
+		} else {
+			am_free((*head)->data);
+		}
 	}
 	deleteFirst(head);
 }

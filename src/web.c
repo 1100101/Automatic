@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
+ * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
