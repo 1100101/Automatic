@@ -6,30 +6,32 @@ bin_PROGRAMS =   \
 
 automatic_SOURCES = \
    automatic.c      \
+   base64.c         \
    config_parser.c  \
+   downloads.c      \
+   feed_item.c      \
+   file.c           \
    list.c           \
    output.c         \
+   rss_feed.c       \
    state.c          \
    web.c            \
-   feed_item.c      \
-   rss_feed.c       \
-   downloads.c      \
    utils.c          \
-   base64.c         \
 	 xml_parser.c
 
 noinst_HEADERS =    \
    automatic.h      \
+   base64.h         \
    config_parser.h  \
+   downloads.h      \
+   feed_item.h      \
+   file.h           \
    list.h           \
    output.h         \
+   rss_feed.h       \
    state.h          \
    web.h            \
-   feed_item.h      \
-   rss_feed.h       \
-   downloads.h      \
    utils.h          \
-   base64.h         \
    xml_parser.h
 
 automatic_mw_SOURCES =  \

@@ -17,18 +17,7 @@
  * 02111-1307, USA.
  */
 
-
-#include <sys/time.h>
-#include <sys/types.h>
-#include <regex.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/param.h>
-#include <signal.h>
-#include <sys/wait.h>
 #include <errno.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -37,23 +26,14 @@
 #include <curl/curl.h>
 #include <stdint.h>
 
-#include "automatic.h"
 #include "web.h"
 #include "output.h"
 #include "utils.h"
-#include "base64.h"
 
 #define DATA_BUFFER 1024 * 100
 #define HEADER_BUFFER 500
 
 static regex_t *content_disp_preg = NULL;
-
-int is_torrent(const char *str) {
-	if(strstr(str, ".torrent"))
-		return 1;
-	else
-		return 0;
-}
 
 static void init_cd_preg() {
 	int err;
@@ -281,289 +261,59 @@ WebData* getHTTPData(const char *url) {
 	}
 }
 
-
-static int call_transmission(auto_handle *ah, const char *filename) {
-	char buf[MAXPATHLEN];
-	int8_t status;
-
-	if(filename && strlen(filename) > 1) {
-		snprintf(buf, MAXPATHLEN, "transmission-remote -g \"%s\" -a \"%s\"", ah->transmission_path, filename);
-		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
-		dbg_printf(P_INFO2, "[call_transmission] call: %s", buf);
-		status = system(buf);
-		dbg_printf(P_DBG, "[call_transmission] WEXITSTATUS(status): %d", WEXITSTATUS(status));
-		if(status == -1) {
-			dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s", strerror(errno));
-			return -1;
-		} else {
-			dbg_printf(P_INFO, "[call_transmission] Success");
-			return 0;
-		}
-	} else {
-		dbg_printf(P_ERROR, "[call_transmission] Error: invalid filename (addr: %p)", (void*)filename);
-		return -1;
-	}
-}
-
-
-static char* makeJSON(void *data, uint32_t tsize, uint32_t *setme_size) {
-
-	char *encoded = NULL;
-	uint32_t enc_size, json_size;
-	char *buf = NULL;
-	int buf_size;
-	const char *JSONstr =
-		"{\n"
-		"\"method\": \"torrent-add\",\n"
-		"\"arguments\": {\n"
-		"\"metainfo\": \"%s\"\n"
-		"}\n"
-		"}";
-
-	if(data != NULL) {
-		encoded = base64_encode(data, tsize, &enc_size);
-		if(encoded && enc_size > 0) {
-			buf_size = enc_size + 70;
-			buf = am_malloc(buf_size);
-			json_size = snprintf(buf, buf_size, JSONstr, encoded);
-			if(json_size < 0 || json_size >= buf_size) {
-				dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
-				am_free(encoded);
-				am_free(buf);
-				return NULL;
-			}
-			buf[json_size] = '\0';
-			if(setme_size) {
-				*setme_size = json_size;
-			}
-			am_free(encoded);
-			return buf;
-		}
-	}
-	return NULL;
-}
-
-static int saveFile(const char *name, void *data, uint32_t size) {
-	int torrent, ret = -1;
-
-	if(!name  || !data) {
-		return -1;
-	}
-
-	torrent = open(name, O_RDWR|O_CREAT, 00644);
-	if(torrent == -1) {
-		dbg_printf(P_ERROR, "Error opening file for writing: %s", strerror(errno));
-		ret = -1;
-	} else {
-		ret = write(torrent, data, size);
-		if(ret != size) {
-			dbg_printf(P_ERROR, "[saveFile] Error writing torrent file: %s", strerror(errno));
-			ret = -1;
-		} else {
-			dbg_printf(P_INFO, "Saved torrent file '%s'", name);
-		}
-		fchmod(torrent, 0644);
-		close(torrent);
-		ret = 0;
-	}
-	return ret;
-}
-
-
-static void get_filename(WebData *data, char *file_name, const char *path) {
-	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
-	int len;
-
-#ifdef DEBUG
-	assert(data);
-	assert(path);
-#endif
-
-	if(data->content_filename) {
-		strncpy(buf, data->content_filename, strlen(data->content_filename) + 1);
-	} else {
-		strcpy(tmp, data->url);
-		p = strtok(tmp, "/");
-		while (p) {
-			len = strlen(p);
-			if(len < MAXPATHLEN)
-				strcpy(buf, p);
-			p = strtok(NULL, "/");
-		}
-	}
-	strcpy(fname, path);
-	strcat(fname, "/");
-	strcat(fname, buf);
-	if(!is_torrent(buf)) {
-		strcat(fname, ".torrent");
-	}
-	strcpy(file_name, fname);
-}
-
-static char* parseResponse(char* response) {
-	int err, len;
-	char erbuf[100];
-	regmatch_t pmatch[2];
- 	const char* result_regex = "\"result\": \"(.+)\"\n";
-	regex_t *result_preg = am_malloc(sizeof(regex_t));
-	char *result_str = NULL;
-
-	err = regcomp(result_preg, result_regex, REG_EXTENDED|REG_ICASE);
-	if(err) {
-		regerror(err, result_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[parseResponse] regcomp: Error compiling regular expression: %s", erbuf);
-	}
-	err = regexec(result_preg, response, 2, pmatch, 0);
-	if(!err) {			/* regex matches */
-		len = pmatch[1].rm_eo - pmatch[1].rm_so;
-		dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, pmatch[1].rm_eo, pmatch[1].rm_so);
-		result_str = am_strndup(response + pmatch[1].rm_so, len);
-	} else {
-		len = regerror(err, result_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[parseResponse] regexec error: %s", erbuf);
-	}
-	regfree(result_preg);
-	am_free(result_preg);
-	return result_str;
-}
-
-
-static int uploadData(const char *host, int port, const char* auth, void *data, uint32_t data_size) {
-	CURL *curl_handle;
+char *sendHTTPData(const char *url, const char* auth, void *data, uint32_t data_size) {
+	CURL *curl_handle = NULL;
 	CURLcode res;
 	long rc;
 	struct curl_slist *headers = NULL;
 	WebData* response_data = NULL;
-	char *response_str = NULL;
-	char * url = NULL;
-	int ret = -1;
-	int url_length;
+	char *ret = NULL;
 
-	if(!data || !host) {
-		return -1;
+	if(!data || !url) {
+	  return NULL;
 	}
 
-	url_length = strlen(host) + 32;
-	url = am_malloc(url_length);
 
-	if(url) {
-		snprintf( url, url_length, "http://%s:%d/transmission/rpc", host, port );
+	response_data = WebData_new(url);
 
-		response_data = WebData_new(NULL);
+	headers = curl_slist_append(headers, "Content-Type: application/json");
 
-		headers = curl_slist_append(headers, "Content-Type: application/json");
+	curl_global_init(CURL_GLOBAL_ALL);
+	curl_handle = curl_easy_init();
+	curl_easy_setopt(curl_handle, CURLOPT_URL, response_data->url);
 
-		curl_global_init(CURL_GLOBAL_ALL);
-		curl_handle = curl_easy_init();
-		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	if(auth) {
+		dbg_printf(P_INFO2, "aut: %s", auth);
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+		curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
+	}
 
-		if(auth) {
-			dbg_printf(P_INFO2, "aut: %s", auth);
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
-		}
+	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
 
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
+	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
 
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-		curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+	res = curl_easy_perform(curl_handle);
 
-		res = curl_easy_perform(curl_handle);
-
-		if(res != 0) {
-				dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s': %s", url, curl_easy_strerror(res));
-				ret = -1;
+	if(res != 0) {
+			dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s': %s", url, curl_easy_strerror(res));
+			ret = NULL;
+	} else {
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
+		dbg_printf(P_INFO2, "[uploadData] response code: %ld", rc);
+		if(rc != 200) {
+			dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s' [response: %ld]", url, rc);
+			ret = NULL;
 		} else {
-			curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
-			dbg_printf(P_INFO2, "[uploadData] response code: %ld", rc);
-			if(rc != 200) {
-				dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s' [response: %ld]", url, rc);
-				ret = -1;
-			} else {
-				response_str = parseResponse(response_data->response->data);
-				if(!strncmp(response_str, "success", 7)) {
-					dbg_printf(P_MSG, "Torrent upload successful!");
-					ret = 0;
-				}else if(!strncmp(response_str, "duplicate torrent", 17)) {
-					dbg_printf(P_MSG, "Duplicate Torrent");
-					ret = 0;
-				} else {
-					dbg_printf(P_ERROR, "Error uploading torrent: %s", response_str);
-					ret = -1;
-				}
-			}
+			ret = am_strndup(response_data->response->data, response_data->response->size);
 		}
-		curl_easy_cleanup(curl_handle);
-		curl_slist_free_all(headers);
-		am_free(response_str);
-		am_free(url);
-		WebData_free(response_data);
 	}
+	curl_easy_cleanup(curl_handle);
+	curl_slist_free_all(headers);
+	WebData_free(response_data);
 	return ret;
 }
-
-uint8_t uploadTorrent(auto_handle *ses, void* t_data, int t_size) {
-	char *packet = NULL;
-	uint32_t packet_size = 0;
-	uint8_t res = 1;
-
-	packet = makeJSON(t_data, t_size, &packet_size);
-	if(packet != NULL) {
-		res = uploadData(ses->host != NULL ? ses->host : AM_DEFAULT_HOST,ses->rpc_port, ses->auth, packet, packet_size);
-		am_free(packet);
-	}
-	return res;
-}
-
-void processTorrent(auto_handle *ah, WebData *wdata, const char *torrent_url) {
-	char fname[MAXPATHLEN];
-	int res, success = 0;
-
-	if(!ah->use_transmission) {
-		get_filename(wdata, fname, ah->torrent_folder);
-		res = saveFile(fname, wdata->response->data, wdata->response->size);
-		if(res == 0) {
-			success = 1;
-		}
-	} else if(ah->transmission_version == AM_TRANSMISSION_1_2) {
-		get_filename(wdata, fname, ah->torrent_folder);
-		res = saveFile(fname, wdata->response->data, wdata->response->size);
-		if(res == 0) {
-			if(call_transmission(ah, fname) == -1) {
-				dbg_printf(P_ERROR, "[processTorrent] error adding torrent '%s' to Transmission");
-			} else {
-				success = 1;
-			}
-			unlink(fname);
-		}
-	} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
-		if(uploadTorrent(ah, wdata->response->data, wdata->response->size) == 0) {
-			success = 1;
-		}
-	}
-
-	if(success == 1) {
-		if(addToBucket(torrent_url, &ah->downloads, ah->max_bucket_items) == 0) {
-			ah->bucket_changed = 1;
-		} else {
-			dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent_url);
-		}
-	}
-}
-
-void getTorrent(auto_handle *ah, const char *url) {
-	WebData *wdata;
-
-	wdata = getHTTPData(url);
-	if(wdata != NULL && wdata->response != NULL) {
-		processTorrent(ah, wdata, url);
-	}
-	WebData_free(wdata);
-}
-
-
-
 

@@ -25,7 +25,7 @@
 #endif
 
 #define AM_DEFAULT_INTERVAL				30
-#define AM_DEFAULT_HOST  						"localhost"
+#define AM_DEFAULT_HOST  				"localhost"
 #define AM_DEFAULT_RPCPORT 				9091
 #define AM_TRANSMISSION_1_2				2
 #define AM_TRANSMISSION_1_3				3

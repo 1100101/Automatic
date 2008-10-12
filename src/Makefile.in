@@ -46,22 +46,23 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sysconfdir)" \
 	"$(DESTDIR)$(automatic_mwdir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_automatic_OBJECTS = automatic.$(OBJEXT) config_parser.$(OBJEXT) \
-	list.$(OBJEXT) output.$(OBJEXT) state.$(OBJEXT) web.$(OBJEXT) \
-	feed_item.$(OBJEXT) rss_feed.$(OBJEXT) downloads.$(OBJEXT) \
-	utils.$(OBJEXT) base64.$(OBJEXT) xml_parser.$(OBJEXT)
+am_automatic_OBJECTS = automatic.$(OBJEXT) base64.$(OBJEXT) \
+	config_parser.$(OBJEXT) downloads.$(OBJEXT) \
+	feed_item.$(OBJEXT) file.$(OBJEXT) list.$(OBJEXT) \
+	output.$(OBJEXT) rss_feed.$(OBJEXT) state.$(OBJEXT) \
+	web.$(OBJEXT) utils.$(OBJEXT) xml_parser.$(OBJEXT)
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 automatic_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__objects_1 = automatic_mw-automatic.$(OBJEXT) \
-	automatic_mw-config_parser.$(OBJEXT) \
-	automatic_mw-list.$(OBJEXT) automatic_mw-output.$(OBJEXT) \
-	automatic_mw-state.$(OBJEXT) automatic_mw-web.$(OBJEXT) \
-	automatic_mw-feed_item.$(OBJEXT) \
-	automatic_mw-rss_feed.$(OBJEXT) \
-	automatic_mw-downloads.$(OBJEXT) automatic_mw-utils.$(OBJEXT) \
 	automatic_mw-base64.$(OBJEXT) \
+	automatic_mw-config_parser.$(OBJEXT) \
+	automatic_mw-downloads.$(OBJEXT) \
+	automatic_mw-feed_item.$(OBJEXT) automatic_mw-file.$(OBJEXT) \
+	automatic_mw-list.$(OBJEXT) automatic_mw-output.$(OBJEXT) \
+	automatic_mw-rss_feed.$(OBJEXT) automatic_mw-state.$(OBJEXT) \
+	automatic_mw-web.$(OBJEXT) automatic_mw-utils.$(OBJEXT) \
 	automatic_mw-xml_parser.$(OBJEXT)
 am_automatic_mw_OBJECTS = $(am__objects_1) \
 	automatic_mw-memwatch.$(OBJEXT)
@@ -192,30 +193,32 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS)
 automatic_SOURCES = \
    automatic.c      \
+   base64.c         \
    config_parser.c  \
+   downloads.c      \
+   feed_item.c      \
+   file.c           \
    list.c           \
    output.c         \
+   rss_feed.c       \
    state.c          \
    web.c            \
-   feed_item.c      \
-   rss_feed.c       \
-   downloads.c      \
    utils.c          \
-   base64.c         \
 	 xml_parser.c
 
 noinst_HEADERS = \
    automatic.h      \
+   base64.h         \
    config_parser.h  \
+   downloads.h      \
+   feed_item.h      \
+   file.h           \
    list.h           \
    output.h         \
+   rss_feed.h       \
    state.h          \
    web.h            \
-   feed_item.h      \
-   rss_feed.h       \
-   downloads.h      \
    utils.h          \
-   base64.h         \
    xml_parser.h
 
 automatic_mw_SOURCES = \
@@ -315,6 +318,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-downloads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-feed_item.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-output.Po@am__quote@
@@ -327,6 +331,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/downloads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/feed_item.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rss_feed.Po@am__quote@
@@ -363,6 +368,20 @@ automatic_mw-automatic.obj: automatic.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-automatic.obj `if test -f 'automatic.c'; then $(CYGPATH_W) 'automatic.c'; else $(CYGPATH_W) '$(srcdir)/automatic.c'; fi`
 
+automatic_mw-base64.o: base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.o -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
+
+automatic_mw-base64.obj: base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.obj -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
+
 automatic_mw-config_parser.o: config_parser.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-config_parser.o -MD -MP -MF $(DEPDIR)/automatic_mw-config_parser.Tpo -c -o automatic_mw-config_parser.o `test -f 'config_parser.c' || echo '$(srcdir)/'`config_parser.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-config_parser.Tpo $(DEPDIR)/automatic_mw-config_parser.Po
@@ -376,6 +395,48 @@ automatic_mw-config_parser.obj: config_parser.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config_parser.c' object='automatic_mw-config_parser.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-config_parser.obj `if test -f 'config_parser.c'; then $(CYGPATH_W) 'config_parser.c'; else $(CYGPATH_W) '$(srcdir)/config_parser.c'; fi`
+
+automatic_mw-downloads.o: downloads.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-downloads.o -MD -MP -MF $(DEPDIR)/automatic_mw-downloads.Tpo -c -o automatic_mw-downloads.o `test -f 'downloads.c' || echo '$(srcdir)/'`downloads.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-downloads.Tpo $(DEPDIR)/automatic_mw-downloads.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='downloads.c' object='automatic_mw-downloads.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-downloads.o `test -f 'downloads.c' || echo '$(srcdir)/'`downloads.c
+
+automatic_mw-downloads.obj: downloads.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-downloads.obj -MD -MP -MF $(DEPDIR)/automatic_mw-downloads.Tpo -c -o automatic_mw-downloads.obj `if test -f 'downloads.c'; then $(CYGPATH_W) 'downloads.c'; else $(CYGPATH_W) '$(srcdir)/downloads.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-downloads.Tpo $(DEPDIR)/automatic_mw-downloads.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='downloads.c' object='automatic_mw-downloads.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-downloads.obj `if test -f 'downloads.c'; then $(CYGPATH_W) 'downloads.c'; else $(CYGPATH_W) '$(srcdir)/downloads.c'; fi`
+
+automatic_mw-feed_item.o: feed_item.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-feed_item.o -MD -MP -MF $(DEPDIR)/automatic_mw-feed_item.Tpo -c -o automatic_mw-feed_item.o `test -f 'feed_item.c' || echo '$(srcdir)/'`feed_item.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-feed_item.Tpo $(DEPDIR)/automatic_mw-feed_item.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='feed_item.c' object='automatic_mw-feed_item.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-feed_item.o `test -f 'feed_item.c' || echo '$(srcdir)/'`feed_item.c
+
+automatic_mw-feed_item.obj: feed_item.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-feed_item.obj -MD -MP -MF $(DEPDIR)/automatic_mw-feed_item.Tpo -c -o automatic_mw-feed_item.obj `if test -f 'feed_item.c'; then $(CYGPATH_W) 'feed_item.c'; else $(CYGPATH_W) '$(srcdir)/feed_item.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-feed_item.Tpo $(DEPDIR)/automatic_mw-feed_item.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='feed_item.c' object='automatic_mw-feed_item.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-feed_item.obj `if test -f 'feed_item.c'; then $(CYGPATH_W) 'feed_item.c'; else $(CYGPATH_W) '$(srcdir)/feed_item.c'; fi`
+
+automatic_mw-file.o: file.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-file.o -MD -MP -MF $(DEPDIR)/automatic_mw-file.Tpo -c -o automatic_mw-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-file.Tpo $(DEPDIR)/automatic_mw-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='automatic_mw-file.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
+
+automatic_mw-file.obj: file.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-file.obj -MD -MP -MF $(DEPDIR)/automatic_mw-file.Tpo -c -o automatic_mw-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-file.Tpo $(DEPDIR)/automatic_mw-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='automatic_mw-file.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
 
 automatic_mw-list.o: list.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-list.o -MD -MP -MF $(DEPDIR)/automatic_mw-list.Tpo -c -o automatic_mw-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c
@@ -405,6 +466,20 @@ automatic_mw-output.obj: output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-output.obj `if test -f 'output.c'; then $(CYGPATH_W) 'output.c'; else $(CYGPATH_W) '$(srcdir)/output.c'; fi`
 
+automatic_mw-rss_feed.o: rss_feed.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-rss_feed.o -MD -MP -MF $(DEPDIR)/automatic_mw-rss_feed.Tpo -c -o automatic_mw-rss_feed.o `test -f 'rss_feed.c' || echo '$(srcdir)/'`rss_feed.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-rss_feed.Tpo $(DEPDIR)/automatic_mw-rss_feed.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rss_feed.c' object='automatic_mw-rss_feed.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-rss_feed.o `test -f 'rss_feed.c' || echo '$(srcdir)/'`rss_feed.c
+
+automatic_mw-rss_feed.obj: rss_feed.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-rss_feed.obj -MD -MP -MF $(DEPDIR)/automatic_mw-rss_feed.Tpo -c -o automatic_mw-rss_feed.obj `if test -f 'rss_feed.c'; then $(CYGPATH_W) 'rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/rss_feed.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-rss_feed.Tpo $(DEPDIR)/automatic_mw-rss_feed.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rss_feed.c' object='automatic_mw-rss_feed.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-rss_feed.obj `if test -f 'rss_feed.c'; then $(CYGPATH_W) 'rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/rss_feed.c'; fi`
+
 automatic_mw-state.o: state.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-state.o -MD -MP -MF $(DEPDIR)/automatic_mw-state.Tpo -c -o automatic_mw-state.o `test -f 'state.c' || echo '$(srcdir)/'`state.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-state.Tpo $(DEPDIR)/automatic_mw-state.Po
@@ -433,48 +508,6 @@ automatic_mw-web.obj: web.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-web.obj `if test -f 'web.c'; then $(CYGPATH_W) 'web.c'; else $(CYGPATH_W) '$(srcdir)/web.c'; fi`
 
-automatic_mw-feed_item.o: feed_item.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-feed_item.o -MD -MP -MF $(DEPDIR)/automatic_mw-feed_item.Tpo -c -o automatic_mw-feed_item.o `test -f 'feed_item.c' || echo '$(srcdir)/'`feed_item.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-feed_item.Tpo $(DEPDIR)/automatic_mw-feed_item.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='feed_item.c' object='automatic_mw-feed_item.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-feed_item.o `test -f 'feed_item.c' || echo '$(srcdir)/'`feed_item.c
-
-automatic_mw-feed_item.obj: feed_item.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-feed_item.obj -MD -MP -MF $(DEPDIR)/automatic_mw-feed_item.Tpo -c -o automatic_mw-feed_item.obj `if test -f 'feed_item.c'; then $(CYGPATH_W) 'feed_item.c'; else $(CYGPATH_W) '$(srcdir)/feed_item.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-feed_item.Tpo $(DEPDIR)/automatic_mw-feed_item.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='feed_item.c' object='automatic_mw-feed_item.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-feed_item.obj `if test -f 'feed_item.c'; then $(CYGPATH_W) 'feed_item.c'; else $(CYGPATH_W) '$(srcdir)/feed_item.c'; fi`
-
-automatic_mw-rss_feed.o: rss_feed.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-rss_feed.o -MD -MP -MF $(DEPDIR)/automatic_mw-rss_feed.Tpo -c -o automatic_mw-rss_feed.o `test -f 'rss_feed.c' || echo '$(srcdir)/'`rss_feed.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-rss_feed.Tpo $(DEPDIR)/automatic_mw-rss_feed.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rss_feed.c' object='automatic_mw-rss_feed.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-rss_feed.o `test -f 'rss_feed.c' || echo '$(srcdir)/'`rss_feed.c
-
-automatic_mw-rss_feed.obj: rss_feed.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-rss_feed.obj -MD -MP -MF $(DEPDIR)/automatic_mw-rss_feed.Tpo -c -o automatic_mw-rss_feed.obj `if test -f 'rss_feed.c'; then $(CYGPATH_W) 'rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/rss_feed.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-rss_feed.Tpo $(DEPDIR)/automatic_mw-rss_feed.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rss_feed.c' object='automatic_mw-rss_feed.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-rss_feed.obj `if test -f 'rss_feed.c'; then $(CYGPATH_W) 'rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/rss_feed.c'; fi`
-
-automatic_mw-downloads.o: downloads.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-downloads.o -MD -MP -MF $(DEPDIR)/automatic_mw-downloads.Tpo -c -o automatic_mw-downloads.o `test -f 'downloads.c' || echo '$(srcdir)/'`downloads.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-downloads.Tpo $(DEPDIR)/automatic_mw-downloads.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='downloads.c' object='automatic_mw-downloads.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-downloads.o `test -f 'downloads.c' || echo '$(srcdir)/'`downloads.c
-
-automatic_mw-downloads.obj: downloads.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-downloads.obj -MD -MP -MF $(DEPDIR)/automatic_mw-downloads.Tpo -c -o automatic_mw-downloads.obj `if test -f 'downloads.c'; then $(CYGPATH_W) 'downloads.c'; else $(CYGPATH_W) '$(srcdir)/downloads.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-downloads.Tpo $(DEPDIR)/automatic_mw-downloads.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='downloads.c' object='automatic_mw-downloads.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-downloads.obj `if test -f 'downloads.c'; then $(CYGPATH_W) 'downloads.c'; else $(CYGPATH_W) '$(srcdir)/downloads.c'; fi`
-
 automatic_mw-utils.o: utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-utils.o -MD -MP -MF $(DEPDIR)/automatic_mw-utils.Tpo -c -o automatic_mw-utils.o `test -f 'utils.c' || echo '$(srcdir)/'`utils.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-utils.Tpo $(DEPDIR)/automatic_mw-utils.Po
@@ -488,20 +521,6 @@ automatic_mw-utils.obj: utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='utils.c' object='automatic_mw-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-utils.obj `if test -f 'utils.c'; then $(CYGPATH_W) 'utils.c'; else $(CYGPATH_W) '$(srcdir)/utils.c'; fi`
-
-automatic_mw-base64.o: base64.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.o -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.o `test -f 'base64.c' || echo '$(srcdir)/'`base64.c
-
-automatic_mw-base64.obj: base64.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-base64.obj -MD -MP -MF $(DEPDIR)/automatic_mw-base64.Tpo -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-base64.Tpo $(DEPDIR)/automatic_mw-base64.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64.c' object='automatic_mw-base64.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-base64.obj `if test -f 'base64.c'; then $(CYGPATH_W) 'base64.c'; else $(CYGPATH_W) '$(srcdir)/base64.c'; fi`
 
 automatic_mw-xml_parser.o: xml_parser.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-xml_parser.o -MD -MP -MF $(DEPDIR)/automatic_mw-xml_parser.Tpo -c -o automatic_mw-xml_parser.o `test -f 'xml_parser.c' || echo '$(srcdir)/'`xml_parser.c

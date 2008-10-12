@@ -24,6 +24,7 @@
 	#include "memwatch.h"
 #endif
 
+#include <stdlib.h>
 
 void* am_malloc(size_t size);
 void* am_realloc(void *p, size_t size);

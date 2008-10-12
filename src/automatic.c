@@ -18,13 +18,14 @@
  */
 
 
-#define AM_LOCKFILE  								"/tmp/automatic.pid"
 #define AM_DEFAULT_CONFIGFILE 			"/etc/automatic.conf"
 #define AM_DEFAULT_STATEFILE  			".automatic.state"
-#define AM_DEFAULT_VERBOSE 					P_MSG
-#define AM_DEFAULT_NOFORK 					0
-#define AM_DEFAULT_MAXBUCKET 				10
-#define AM_DEFAULT_USETRANSMISSION 	1
+#define AM_DEFAULT_VERBOSE 				P_MSG
+#define AM_DEFAULT_NOFORK 				0
+#define AM_DEFAULT_MAXBUCKET 			10
+#define AM_DEFAULT_USETRANSMISSION 	    1
+
+#define MAX_URL_LEN 256
 
 #define FROM_XML_FILE 0
 #define TESTING 0
@@ -35,15 +36,13 @@
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
 #include <getopt.h>
 #include <regex.h>
-/*#include <sys/stat.h>*/
 #include <sys/param.h>
-
 #include <sys/wait.h>
+#include <fcntl.h> /* open */
 
 #include "version.h"
 #include "web.h"
@@ -53,13 +52,19 @@
 #include "state.h"
 #include "utils.h"
 #include "feed_item.h"
+#include "base64.h"
+#include "file.h"
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void ah_free(auto_handle *as);
 
-static char* readFile(const char *fname, uint32_t * setme_len);
+static void addTorrentToTM(auto_handle *ah, const char *url);
+static int call_transmission(auto_handle *ah, const char *filename);
+static void get_filename(WebData *data, char *file_name, const char *path);
+static int is_torrent(const char *str);
+static uint8_t uploadTorrent(auto_handle *ses, void* t_data, int t_size);
 
-static auto_handle *session;
+static auto_handle *session = NULL;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
 uint8_t nofork = AM_DEFAULT_NOFORK;
 
@@ -287,37 +292,6 @@ void am_set_bucket_size(uint8_t size) {
 	}
 }
 
-static char* readFile(const char *fname, uint32_t * setme_len) {
-	FILE *file;
-	char *buffer = NULL;
-	uint32_t fileLen;
-
-	file = fopen(fname, "rb");
-	if (!file) {
-		dbg_printf(P_ERROR, "Cannot open file '%s': %s", fname, strerror(errno));
-		return NULL;
-	}
-
-	fseek(file, 0, SEEK_END);
-	fileLen = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	buffer = am_malloc(fileLen + 1);
-	if (!buffer) {
-		dbg_printf(P_ERROR, "Cannot allocate memory: %s", strerror(errno));
-		fclose(file);
-		return NULL;
-	}
-
-	fread(buffer, fileLen, 1, file);
-	buffer[fileLen] = '\0';
-	fclose(file);
-	if(setme_len) {
-		*setme_len = fileLen;
-	}
-	return buffer;
-}
-
 void findMatch(feed_item item) {
 	int err;
 	regex_t preg;
@@ -342,7 +316,7 @@ void findMatch(feed_item item) {
 		err = regexec(&preg, item->name, 0, NULL, 0);
 		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
 			dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
-			getTorrent(session, item->url);
+			addTorrentToTM(session, item->url);
 		} else if(err != REG_NOMATCH && err != 0){
 			regerror(err, &preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
@@ -505,4 +479,207 @@ int main(int argc, char **argv) {
 		}
 	}
 	return 0;
+}
+
+static void processTorrent(auto_handle *ah, WebData *wdata, const char *torrent_url) {
+	char fname[MAXPATHLEN];
+	int res, success = 0;
+
+	if(!ah->use_transmission) {
+		get_filename(wdata, fname, ah->torrent_folder);
+		res = saveFile(fname, wdata->response->data, wdata->response->size);
+		if(res == 0) {
+			success = 1;
+		}
+	} else if(ah->transmission_version == AM_TRANSMISSION_1_2) {
+		get_filename(wdata, fname, ah->torrent_folder);
+		res = saveFile(fname, wdata->response->data, wdata->response->size);
+		if(res == 0) {
+			if(call_transmission(ah, fname) == -1) {
+				dbg_printf(P_ERROR, "[processTorrent] error adding torrent '%s' to Transmission");
+			} else {
+				success = 1;
+			}
+			unlink(fname);
+		}
+	} else if(ah->transmission_version == AM_TRANSMISSION_1_3) {
+		if(uploadTorrent(ah, wdata->response->data, wdata->response->size) == 0) {
+			success = 1;
+		}
+	}
+
+	if(success == 1) {
+		if(addToBucket(torrent_url, &ah->downloads, ah->max_bucket_items) == 0) {
+			ah->bucket_changed = 1;
+		} else {
+			dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent_url);
+		}
+	}
+}
+
+static void addTorrentToTM(auto_handle *ah, const char *url) {
+	WebData *wdata;
+
+	wdata = getHTTPData(url);
+	if(wdata != NULL && wdata->response != NULL) {
+		processTorrent(ah, wdata, url);
+	}
+	WebData_free(wdata);
+}
+
+
+static int call_transmission(auto_handle *ah, const char *filename) {
+	char buf[MAXPATHLEN];
+	int8_t status;
+
+	if(filename && strlen(filename) > 1) {
+		snprintf(buf, MAXPATHLEN, "transmission-remote -g \"%s\" -a \"%s\"", ah->transmission_path, filename);
+		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
+		dbg_printf(P_INFO2, "[call_transmission] call: %s", buf);
+		status = system(buf);
+		dbg_printf(P_DBG, "[call_transmission] WEXITSTATUS(status): %d", WEXITSTATUS(status));
+		if(status == -1) {
+			dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s", strerror(errno));
+			return -1;
+		} else {
+			dbg_printf(P_INFO, "[call_transmission] Success");
+			return 0;
+		}
+	} else {
+		dbg_printf(P_ERROR, "[call_transmission] Error: invalid filename (addr: %p)", (void*)filename);
+		return -1;
+	}
+}
+
+
+static void get_filename(WebData *data, char *file_name, const char *path) {
+	char *p, tmp[MAXPATHLEN], fname[MAXPATHLEN], buf[MAXPATHLEN];
+	int len;
+
+#ifdef DEBUG
+	assert(data);
+	assert(path);
+#endif
+
+	if(data->content_filename) {
+		strncpy(buf, data->content_filename, strlen(data->content_filename) + 1);
+	} else {
+		strcpy(tmp, data->url);
+		p = strtok(tmp, "/");
+		while (p) {
+			len = strlen(p);
+			if(len < MAXPATHLEN)
+				strcpy(buf, p);
+			p = strtok(NULL, "/");
+		}
+	}
+	strcpy(fname, path);
+	strcat(fname, "/");
+	strcat(fname, buf);
+	if(!is_torrent(buf)) {
+		strcat(fname, ".torrent");
+	}
+	strcpy(file_name, fname);
+}
+
+static int is_torrent(const char *str) {
+	if(strstr(str, ".torrent"))
+		return 1;
+	else
+		return 0;
+}
+
+static char* makeJSON(void *data, uint32_t tsize, uint32_t *setme_size) {
+
+	char *encoded = NULL;
+	uint32_t enc_size, json_size;
+	char *buf = NULL;
+	int buf_size;
+	const char *JSONstr =
+		"{\n"
+		"\"method\": \"torrent-add\",\n"
+		"\"arguments\": {\n"
+		"\"metainfo\": \"%s\"\n"
+		"}\n"
+		"}";
+
+	if(data != NULL) {
+		encoded = base64_encode(data, tsize, &enc_size);
+		if(encoded && enc_size > 0) {
+			buf_size = enc_size + 70;
+			buf = am_malloc(buf_size);
+			json_size = snprintf(buf, buf_size, JSONstr, encoded);
+			if(json_size < 0 || json_size >= buf_size) {
+				dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+				am_free(encoded);
+				am_free(buf);
+				return NULL;
+			}
+			buf[json_size] = '\0';
+			if(setme_size) {
+				*setme_size = json_size;
+			}
+			am_free(encoded);
+			return buf;
+		}
+	}
+	return NULL;
+}
+
+
+static char* parseResponse(const char* response) {
+	int err, len;
+	char erbuf[100];
+	regmatch_t pmatch[2];
+ 	const char* result_regex = "\"result\": \"(.+)\"\n";
+	regex_t *result_preg = am_malloc(sizeof(regex_t));
+	char *result_str = NULL;
+
+	err = regcomp(result_preg, result_regex, REG_EXTENDED|REG_ICASE);
+	if(err) {
+		regerror(err, result_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[parseResponse] regcomp: Error compiling regular expression: %s", erbuf);
+	}
+	err = regexec(result_preg, response, 2, pmatch, 0);
+	if(!err) {			/* regex matches */
+		len = pmatch[1].rm_eo - pmatch[1].rm_so;
+		dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, pmatch[1].rm_eo, pmatch[1].rm_so);
+		result_str = am_strndup(response + pmatch[1].rm_so, len);
+	} else {
+		len = regerror(err, result_preg, erbuf, sizeof(erbuf));
+		dbg_printf(P_ERROR, "[parseResponse] regexec error: %s", erbuf);
+	}
+	regfree(result_preg);
+	am_free(result_preg);
+	return result_str;
+}
+
+static uint8_t uploadTorrent(auto_handle *ses, void* t_data, int t_size) {
+	char *packet = NULL, *res = NULL, *response = NULL;
+	uint32_t packet_size = 0, ret = -1;
+	char url[MAX_URL_LEN];
+
+	packet = makeJSON(t_data, t_size, &packet_size);
+	if(packet != NULL) {
+      snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", (ses->host != NULL) ? ses->host : AM_DEFAULT_HOST, ses->rpc_port);
+
+      res = sendHTTPData(url, ses->auth, packet, packet_size);
+      if(res != NULL) {
+          response = parseResponse(res);
+          if(!strncmp(response, "success", 7)) {
+              dbg_printf(P_MSG, "Torrent upload successful!");
+              ret = 0;
+          }else if(!strncmp(response, "duplicate torrent", 17)) {
+              dbg_printf(P_MSG, "Duplicate Torrent");
+              ret = 0;
+          } else {
+              dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
+              ret = -1;
+          }
+          am_free(response);
+          am_free(res);
+      }
+      am_free(packet);
+	}
+	return ret;
 }

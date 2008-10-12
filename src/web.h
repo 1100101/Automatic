@@ -19,7 +19,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  */
-#include "automatic.h"
 
 struct HTTPData {
  char *data;
@@ -39,9 +38,10 @@ struct WebData {
 typedef struct HTTPData HTTPData;
 typedef struct WebData WebData;
 
-WebData* getHTTPData(const char *url);
-void WebData_free(struct WebData *data);
-void cd_preg_free(void);
-void getTorrent(auto_handle *ses, const char* url);
-uint8_t uploadTorrent(auto_handle *ses, void* t_data, int t_size);
-#endif
+WebData* 	getHTTPData(const char *url);
+char* 		sendHTTPData(const char *url, const char* auth, void *data, unsigned int data_size);
+void 		WebData_free(struct WebData *data);
+void 		cd_preg_free(void);
+
+
+#endif /* WEB_H_ */
