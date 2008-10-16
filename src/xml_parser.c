@@ -119,7 +119,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 	return itemList;
 }
 
-simple_list parse_xmldata(const char* data, int size, uint32_t* item_count) {
+simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count) {
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	xmlXPathObjectPtr xpathObj;

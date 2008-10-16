@@ -301,6 +301,29 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 	}
 }
 
+
+void processFeed(auto_handle *session, void *feed_item) {
+	WebData *wdata = NULL;
+	uint32_t bucket_size;
+	static uint8_t first_run = 1;
+
+	wdata = getHTTPData(((rss_feed)feed_item)->url);
+	if (wdata && wdata->response) {
+		simple_list items = parse_xmldata(wdata->response->data,
+				wdata->response->size, &bucket_size);
+		processRSSList(session, items);
+		freeList(&items, freeFeedItem);
+		if (first_run) {
+			session->max_bucket_items = bucket_size;
+		} else {
+			session->max_bucket_items += bucket_size;
+		}
+		first_run = 0;
+	}
+	WebData_free(wdata);
+}
+
+
 /* main function */
 
 int main(int argc, char **argv) {
@@ -311,15 +334,11 @@ int main(int argc, char **argv) {
 	int fileLen = 0;
 #endif
 	int daemonized = 0;
-	int first_run = 1;
-	uint32_t bucket_size;
 	char erbuf[100];
 	char time_str[TIME_STR_SIZE];
-	WebData *wdata = NULL;
 	NODE *current = NULL;
-	int count;
+	uint32_t count = 0;
 	int status;
-	rss_feed feed;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -404,29 +423,12 @@ int main(int argc, char **argv) {
 			current = session->feeds;
 			count = 0;
 			while(current && current->data) {
-
-				/* refactor into local function */
-				feed = (rss_feed)current->data;
 				++count;
 				dbg_printf(P_MSG, "Checking feed %d ...", count);
-				wdata = getHTTPData(feed->url);
-				if(wdata && wdata->response && wdata->response->size> 0) {
-					simple_list items = parse_xmldata(wdata->response->data, wdata->response->size, &bucket_size);
-					processRSSList(session, items);
-					freeList(&items, freeFeedItem);
-					if(first_run == 1 && bucket_size != -1) {
-						if(count == 1) { /* first feed count replaces default value */
-							session->max_bucket_items = bucket_size;
-						} else {
-							session->max_bucket_items += bucket_size;
-						}
-						dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
-					}
-				}
-				WebData_free(wdata);
+				processFeed(session, current->data);
 				current = current->next;
 			}
-			first_run = 0;
+			dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
 #endif
 			sleep(session->check_interval * 60);
 		}
