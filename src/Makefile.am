@@ -1,3 +1,5 @@
+SUBDIRS = . https_test
+
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS)
 
 bin_PROGRAMS =   \

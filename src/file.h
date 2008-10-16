@@ -8,6 +8,7 @@
 #ifndef FILE_H_
 #define FILE_H_
 
+#include <stdint.h>
 
 char* readFile(const char *fname, uint32_t * setme_len);
 int saveFile(const char *name, const void *data, uint32_t size);
