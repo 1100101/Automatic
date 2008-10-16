@@ -21,15 +21,53 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#include <regex.h>
 #include <stdint.h>
 
-#include "list.h"
+
 #include "feed_item.h"
+#include "output.h"
 #include "utils.h"
 
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
+
+uint8_t isMatch(const simple_list filters, const feed_item item) {
+	int err;
+	regex_t preg;
+	char erbuf[100];
+	char *regex_str;
+	simple_list current_regex;
+
+	current_regex = filters;
+	while (current_regex != NULL && current_regex->data != NULL) {
+		regex_str = (char*) current_regex->data;
+		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
+		err = regcomp(&preg, regex_str, REG_EXTENDED | REG_ICASE);
+		if (err) {
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_INFO2, "regcomp: Error compiling regular expression: %s",
+					erbuf);
+			current_regex = current_regex->next;
+			continue;
+		}
+		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
+		err = regexec(&preg, item->name, 0, NULL, 0);
+		// if(!err && !has_been_downloaded(session->downloads, item->url)) {  regex matches and it hasn't been downloaded before
+		if (!err) {
+			regfree(&preg);
+			return 1;
+		} else if (err != REG_NOMATCH && err != 0) {
+			regerror(err, &preg, erbuf, sizeof(erbuf));
+			dbg_printf(P_ERROR, "[check_for_downloads] regexec error: %s", erbuf);
+		}
+		regfree(&preg);
+		current_regex = current_regex->next;
+	}
+	return 0;
+}
+
 
 feed_item newFeedItem(void) {
 	feed_item i = (feed_item)am_malloc(sizeof(struct feed_item));
@@ -40,7 +78,8 @@ feed_item newFeedItem(void) {
 	return i;
 }
 
-void freeFeedItem(feed_item item) {
+void freeFeedItem(void *data) {
+	feed_item item = (feed_item)data;
 	if(item != NULL) {
 		if(item->name != NULL) {
 			am_free(item->name);

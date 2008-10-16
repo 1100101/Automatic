@@ -11,13 +11,16 @@ automatic_SOURCES = \
    downloads.c      \
    feed_item.c      \
    file.c           \
+   json.c           \
    list.c           \
    output.c         \
    rss_feed.c       \
    state.c          \
-   web.c            \
+   torrent.c        \
+   transmission.c   \
    utils.c          \
-	 xml_parser.c
+   web.c            \
+   xml_parser.c
 
 noinst_HEADERS =    \
    automatic.h      \
@@ -26,12 +29,15 @@ noinst_HEADERS =    \
    downloads.h      \
    feed_item.h      \
    file.h           \
+   json.h           \
    list.h           \
    output.h         \
    rss_feed.h       \
    state.h          \
-   web.h            \
+   torrent.h        \
+   transmission.h   \
    utils.h          \
+   web.h            \
    xml_parser.h
 
 automatic_mw_SOURCES =  \

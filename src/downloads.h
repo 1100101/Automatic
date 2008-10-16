@@ -26,8 +26,7 @@
 
 #include "list.h"
 
-
-int bucket_hasURL(const char *url, simple_list head);
 int addToBucket(const char* identifier, NODE **head, int maxBucketItems);
+uint8_t has_been_downloaded(const simple_list bucket, const char *url);
 
 #endif

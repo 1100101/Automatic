@@ -10,6 +10,6 @@
 
 
 char* readFile(const char *fname, uint32_t * setme_len);
-int saveFile(const char *name, void *data, uint32_t size);
+int saveFile(const char *name, const void *data, uint32_t size);
 
 #endif /* FILE_H_ */

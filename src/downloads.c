@@ -34,7 +34,7 @@
 #endif
 
 
-int bucket_hasURL(const char *url, NODE *head) {
+static uint8_t bucket_hasURL(const char *url, NODE *head) {
 	NODE *p = head;
 	char *x;
 
@@ -47,6 +47,17 @@ int bucket_hasURL(const char *url, NODE *head) {
 	}
 	return 0;
 }
+
+uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
+	uint8_t res;
+
+	res = bucket_hasURL(url, bucket);
+	if (res) {
+		dbg_printf(P_INFO2, "Torrent has already been downloaded");
+	}
+	return res;
+}
+
 
 int addToBucket(const char* identifier, NODE **head, int maxBucketItems) {
 

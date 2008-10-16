@@ -33,7 +33,8 @@ struct feed_item {
 	char *url;
 };
 
-void freeFeedItem(feed_item item);
+void freeFeedItem(void *item);
 feed_item newFeedItem(void);
+uint8_t isMatch(const simple_list filters, const feed_item item);
 
 #endif

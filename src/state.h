@@ -19,5 +19,5 @@
 
 
 
-int save_state(NODE **head);
-int load_state(NODE **head);
+int save_state(const char* state_file, NODE **head);
+int load_state(const char* state_file, NODE **head);

@@ -24,18 +24,16 @@
 	#include "memwatch.h"
 #endif
 
-#define AM_DEFAULT_INTERVAL				30
+#define AM_DEFAULT_INTERVAL			30
 #define AM_DEFAULT_HOST  				"localhost"
-#define AM_DEFAULT_RPCPORT 				9091
-#define AM_TRANSMISSION_1_2				2
-#define AM_TRANSMISSION_1_3				3
+#define AM_DEFAULT_RPCPORT 			9091
+#define AM_TRANSMISSION_1_2			2
+#define AM_TRANSMISSION_1_3			3
 
 #include <stdint.h>
-#include "downloads.h"
+
 #include "feed_item.h"
 #include "rss_feed.h"
-
-
 
 struct auto_handle {
 
@@ -44,25 +42,19 @@ struct auto_handle {
 	char *torrent_folder;
 	char *auth;
 	char *host;
-	rss_feeds feeds;
+	rss_feeds 	feeds;
 	simple_list downloads;
 	simple_list filters;
-	uint8_t max_bucket_items;
-	uint8_t bucket_changed;
-	uint8_t check_interval;
-	uint8_t use_transmission;
-	uint32_t rpc_port;
-	uint8_t transmission_version;
+	uint8_t 		max_bucket_items;
+	uint8_t 		bucket_changed;
+	uint8_t 		check_interval;
+	uint8_t 		use_transmission;
+	uint16_t 		rpc_port;
+	uint8_t 		transmission_version;
 };
 
 typedef struct auto_handle auto_handle;
 
-const char* am_get_statefile(void);
 uint8_t am_get_verbose(void);
-uint8_t am_get_nofork(void);
-uint8_t am_get_bucket_size(void);
-void am_set_bucket_size(uint8_t size);
-void am_set_interval(int interval);
-int am_get_interval(void);
-void findMatch(feed_item item);
+
 #endif

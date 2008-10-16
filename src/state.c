@@ -38,11 +38,10 @@
 
 #define MAX_LINE_LEN	300
 
-int save_state(simple_list *downloads) {
+int save_state(const char* state_file, simple_list *downloads) {
 	FILE *fp;
 	char tmp[MAX_LINE_LEN + 1];
 	NODE *current = NULL;
-	const char *state_file = am_get_statefile();
 
 	if(state_file) {
 		reverseList(downloads);
@@ -66,13 +65,11 @@ int save_state(simple_list *downloads) {
 	return 0;
 }
 
-int load_state(NODE **head) {
+int load_state(const char* state_file, NODE **head) {
 	FILE *fp;
 	int len;
 	char line[MAX_LINE_LEN];
 	char *data;
-	const char* state_file = am_get_statefile();
-
 
 	if((fp = fopen(state_file, "rb")) == NULL) {
 		dbg_printf(P_ERROR, "[load_state] Error: Unable to open statefile '%s' for reading: %s", state_file, strerror(errno));
