@@ -1,5 +1,5 @@
-#ifndef WEB_H__
-#define WEB_H__
+#ifndef AUTOMATIC_H__
+#define AUTOMATIC_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -20,30 +20,42 @@
  * 02111-1307, USA.
  */
 
-#include <unistd.h>
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
 
-struct HTTPData {
- char *data;
- size_t size;
+#define AM_DEFAULT_INTERVAL			30
+#define AM_DEFAULT_HOST  				"localhost"
+#define AM_DEFAULT_RPCPORT 			9091
+#define AM_TRANSMISSION_1_2			2
+#define AM_TRANSMISSION_1_3			3
+
+#include <stdint.h>
+
+#include "feed_item.h"
+#include "rss_feed.h"
+
+/** \cond */
+struct auto_handle {
+	char *transmission_path;
+	char *statefile;
+	char *torrent_folder;
+	char *auth;
+	char *host;
+	rss_feeds 	feeds;
+	simple_list downloads;
+	simple_list filters;
+	uint8_t 		max_bucket_items;
+	uint8_t 		bucket_changed;
+	uint8_t 		check_interval;
+	uint8_t 		use_transmission;
+	uint16_t 		rpc_port;
+	uint8_t 		transmission_version;
 };
+/** \endcond */
 
-struct WebData {
-	char *url;
-	long responseCode;
-	size_t content_length;
-	char *content_filename;
-	struct HTTPData* header;
-	struct HTTPData* response;
-};
+typedef struct auto_handle auto_handle;
 
+uint8_t am_get_verbose(void);
 
-typedef struct HTTPData HTTPData;
-typedef struct WebData WebData;
-
-WebData* 	getHTTPData(const char *url);
-char* 		sendHTTPData(const char *url, const char* auth, void *data, unsigned int data_size);
-void 		WebData_free(struct WebData *data);
-void 		cd_preg_free(void);
-
-
-#endif /* WEB_H_ */
+#endif

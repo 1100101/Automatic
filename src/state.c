@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file state.c
+ *
+ * Load and save the download history for Automatic.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
  *
@@ -25,27 +36,34 @@
 #include <errno.h>
 #include <sys/param.h>
 
-#include "automatic.h"
 #include "output.h"
 #include "utils.h"
-#include "downloads.h"
+#include "list.h"
 
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
 
-
-
+/** \cond */
 #define MAX_LINE_LEN	300
+/** \endcond */
 
-int save_state(const char* state_file, simple_list *downloads) {
+/** \brief Store the URLs of the downloaded torrents on disk for later retrieval
+ *
+ * \param state_file Name of the file to save to
+ * \param downloads (bucket)list containing the URLs of all downloaded torrents
+ *
+ * save_state() stores the content of the torrent bucket list on disk so Automatic won't
+ * download old torrents after a restart.
+ */
+int save_state(const char* state_file, const simple_list downloads) {
 	FILE *fp;
 	char tmp[MAX_LINE_LEN + 1];
 	NODE *current = NULL;
 
 	if(state_file) {
-		reverseList(downloads);
-		current = *downloads;
+		current = downloads;
+		reverseList(&current);
 		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(current));
 		if((fp = fopen(state_file, "wb")) == NULL) {
 			dbg_printf(P_ERROR, "Error: Unable to open statefile '%s' for writing: %s", state_file, strerror(errno));
@@ -65,6 +83,14 @@ int save_state(const char* state_file, simple_list *downloads) {
 	return 0;
 }
 
+/** \brief Load an old state from disk.
+ *
+ * \param state_file Path to the state file
+ * \param head Pointer to a (bucket-)list
+ *
+ * load_state() reads the URLs from state_file and stores them in a bucket list.
+ * This way Automatic won't download old torrents again after, e.g. a restart.
+ */
 int load_state(const char* state_file, NODE **head) {
 	FILE *fp;
 	int len;

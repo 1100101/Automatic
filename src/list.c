@@ -1,5 +1,15 @@
-/*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file list.c
+ *
+ * Functions for generic single-linked lists
+ */
+
+/* Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,7 +44,8 @@
 #endif
 
 
-void pushNode(NODE **ptr_to_head, NODE *newnode) {
+/* private functions */
+static void pushNode(NODE **ptr_to_head, NODE *newnode) {
 
 	if(*ptr_to_head == NULL) {					/* empty list */
 		*ptr_to_head = newnode;
@@ -45,8 +56,51 @@ void pushNode(NODE **ptr_to_head, NODE *newnode) {
 	}
 }
 
+static void deleteLast(NODE **ptr_to_head) {
+	NODE *p = *ptr_to_head, *prev = NULL;
+
+	while(p && p->next != NULL) {
+		prev = p;
+		p = p->next;
+	}
+	if(prev) {
+		prev->next = NULL;
+	}
+	am_free(p);
+	p = NULL;
+}
+
+static NODE* getLastNode(NODE *ptr_to_head) {
+	NODE *current = ptr_to_head;
+
+	while(current != NULL && current->next != NULL) {
+		current = current->next;
+	}
+	return current;
+}
+
+static void deleteFirst(NODE **ptr_to_head) {
+	NODE *p = NULL;
+
+	if(*ptr_to_head != NULL) {
+		p = *ptr_to_head;
+		*ptr_to_head = p->next;
+		am_free(p);
+		p = NULL;
+	}
+}
+
+
 
 /* public functions */
+
+/** \brief Reverse the order of a list
+ *
+ * \param[in,out] list The List
+ *
+ * Exchanges the node items within a list so the first element becomes the last
+ * and vice versa.
+ */
 
 void reverseList( NODE **list ) {
 	NODE *nextnode = NULL;
@@ -63,17 +117,11 @@ void reverseList( NODE **list ) {
 	*list = result;
 }
 
-void deleteFirst(NODE **ptr_to_head) {
-	NODE *p = NULL;
-
-	if(*ptr_to_head != NULL) {
-		p = *ptr_to_head;
-		*ptr_to_head = p->next;
-		am_free(p);
-		p = NULL;
-	}
-}
-
+/** \brief Count the elements in a list
+ *
+ * \param[in] head Pointer to a list
+ * \return Number of nodes in the list.
+ */
 unsigned int listCount(NODE *head) {
 	int c = 0;
 	NODE *current = head;
@@ -85,15 +133,34 @@ unsigned int listCount(NODE *head) {
 }
 
 /* highly dangerous and only for debugging purposes! */
-void printList(NODE *head) {
+
+/** \brief Print the content of a list.
+ *
+ * \param[in] head Pointer to a list
+ *
+ * \warning This function expects that the data element of each node points to a string!
+ * If that is not the case it will most likely crash. Use it \b ONLY for debugging and only
+ * if you're certain that it's a list of strings!
+ */
+void printList(const simple_list head) {
 	NODE *current = head;
 	while (current != NULL) {
 		if(current->data) {
-			dbg_printf(P_DBG, "%s\n", current->data);
+			dbg_printf(P_MSG, "\t%d", *(int*)current->data);
 		}
 		current = current->next;
 	}
 }
+
+/** \brief Add a new item to a list.
+ *
+ * \param[in] elem Pointer to data.
+ * \param[in,out] head Pointer to a list
+ * \return 0 if element was successfully added to the list, 1 otherwise.
+ *
+ * The function creates a new list node which points to data. The function does not care
+ * about the type of data.
+ */
 
 int addItem(void* elem, NODE **head) {
 	NODE *newnode = NULL;
@@ -112,29 +179,15 @@ int addItem(void* elem, NODE **head) {
 	return 1;
 }
 
-NODE* getLastNode(NODE *ptr_to_head) {
-	NODE *current = ptr_to_head;
-
-	while(current !=NULL && current->next != NULL) {
-		current = current->next;
-	}
-	return current;
-}
-
-void deleteLast(NODE **ptr_to_head) {
-	NODE *p = *ptr_to_head, *prev = NULL;
-
-	while(p && p->next != NULL) {
-		prev = p;
-		p = p->next;
-	}
-	if(prev) {
-		prev->next = NULL;
-	}
-	am_free(p);
-	p = NULL;
-}
-
+/** \brief Free a list and all memory associated with it
+ *
+ * \param[in,out] head Pointer to a list
+ * \param[in] freeFunc function pointer for freeing the memory of each list item
+ *
+ * The function removes all items from a list, freeing all associated memory.
+ * If freeFunc is NULL, it tries to directly free the data of each node.
+ * For complex nodes (e.g. structs) the user needs to provide a node-specific free() function.
+ */
 void freeList( NODE **head, listFuncPtr freeFunc ) {
 	NODE* node = NULL;
 
@@ -152,6 +205,17 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
 	dbg_printf(P_INFO2, "[cleanupList] size after: %d\n", listCount(*head));
 }
 
+/** \brief Remove the last item of a list
+ *
+ * \param[in,out] head Pointer to a list
+ * \param[in] freeFunc Function pointer for freeing the memory of the list item
+ *
+ * Removes the last element of the given list and frees all associated memory.
+ * If freeFunc is NULL, it tries to directly free the \a data item of each node.
+ * This is useful if \a data is a pointer to a single element (e.g. string, int, ...)
+ * For complex elements (e.g. structs) the user needs to provide a node-specific free() function.
+ * (For example freeFeedItem() )
+ */
 void removeLast(NODE *head, listFuncPtr freeFunc) {
 	NODE *lastNode = NULL;
 	dbg_printf(P_DBG, "Removing last item...\n");
@@ -167,6 +231,15 @@ void removeLast(NODE *head, listFuncPtr freeFunc) {
 	deleteLast(&head);
 }
 
+/** \brief Remove the first item of a list
+ *
+ * \param[in,out] head Pointer to a list
+ * \param[in] freeFunc Function pointer for freeing the memory of the list item
+ *
+ * Removes the first element of the given list and frees all associated memory.
+ * If freeFunc is NULL, it tries to directly free the data of each node.
+ * For complex nodes (e.g. structs) the user needs to provide a node-specific free() function.
+ */
 void removeFirst(NODE  **head, listFuncPtr freeFunc) {
 	dbg_printf(P_DBG, "Removing first item...\n");
 	if (*head != NULL) {
@@ -175,6 +248,6 @@ void removeFirst(NODE  **head, listFuncPtr freeFunc) {
 		} else {
 			am_free((*head)->data);
 		}
+		deleteFirst(head);
 	}
-	deleteFirst(head);
 }

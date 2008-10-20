@@ -1,5 +1,5 @@
-#ifndef RSS_FEED_H__
-#define RSS_FEED_H__
+#ifndef DOWNLOADS_H__
+#define DOWNLOADS_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -26,18 +26,7 @@
 
 #include "list.h"
 
-typedef struct rss_feed* rss_feed;
-typedef struct NODE* rss_feeds;
-
-struct rss_feed {
-	char *url;
-	int ttl;
-	int count;
-};
-
-void     feed_free(void* listItem);
-rss_feed feed_new(void);
-void     feed_printList(simple_list list);
-void feed_add(char *url, NODE **head);
+int addToBucket(const char* identifier, NODE **head, const int maxBucketItems);
+uint8_t has_been_downloaded(const simple_list bucket, const char *url);
 
 #endif

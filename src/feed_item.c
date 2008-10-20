@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file feed_item.c
+ *
+ * RSS Item-specific functions.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -33,7 +44,15 @@
 	#include "memwatch.h"
 #endif
 
-uint8_t isMatch(const simple_list filters, const feed_item item) {
+
+/** \brief Check if the provided rss item is a match for any of the given filters
+ *
+ * \param[in] filters List of regular expressions to check against a given feed item
+ * \param[in] item A feed item.
+ * \return 1 if a filter matched, 0 otherwise.
+ *
+ */
+uint8_t useFilters(const simple_list filters, const feed_item item) {
 	int err;
 	regex_t preg;
 	char erbuf[100];
@@ -54,8 +73,7 @@ uint8_t isMatch(const simple_list filters, const feed_item item) {
 		}
 		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
 		err = regexec(&preg, item->name, 0, NULL, 0);
-		// if(!err && !has_been_downloaded(session->downloads, item->url)) {  regex matches and it hasn't been downloaded before
-		if (!err) {
+		if (!err) { /* regex matches */
 			regfree(&preg);
 			return 1;
 		} else if (err != REG_NOMATCH && err != 0) {
@@ -68,7 +86,10 @@ uint8_t isMatch(const simple_list filters, const feed_item item) {
 	return 0;
 }
 
-
+/** \brief Create a new RSS feed item
+ *
+ * \return New feed item.
+ */
 feed_item newFeedItem(void) {
 	feed_item i = (feed_item)am_malloc(sizeof(struct feed_item));
 	if(i != NULL) {
@@ -78,6 +99,10 @@ feed_item newFeedItem(void) {
 	return i;
 }
 
+/** \brief Free all allocated memory associated with the given feed item
+ *
+ * \param[in] data Pointer to a feed item
+ */
 void freeFeedItem(void *data) {
 	feed_item item = (feed_item)data;
 	if(item != NULL) {

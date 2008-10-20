@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file xml_parser.c
+ *
+ * Parse XML data.
+ */
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -14,12 +25,17 @@
 #include "utils.h"
 #include "web.h"
 
+
+/** \cond */
+
 struct rssNode {
 	char *url;
 	char *type;
 };
 
 typedef struct rssNode rssNode;
+
+/** \endcond */
 
 static void freeNode(rssNode *rss) {
 	if (rss) {
@@ -119,14 +135,25 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 	return itemList;
 }
 
-simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count) {
+/** \brief Walk through given XML data and extract specific items
+ *
+ * \param data The XML data
+ * \param size Size of the XML data
+ * \param item_count number of found RSS nodes in the XML data
+ * \param ttl Time-To-Live value for the specific feed
+ * \return A list of RSS items.
+ *
+ * The function currently parses RSS-formatted XML data only.
+ * It extracts the "//item" nodes of a RSS "//channel".
+ * The items are then packaged into neat little rss items and returned as a list.
+ */
+simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count, uint32_t *ttl) {
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	xmlXPathObjectPtr xpathObj;
 	xmlNodeSetPtr ttlNode;
 	simple_list rss_items;
 
-	static int ttl = 0;
 	const xmlChar* ttlExpr = (xmlChar*) "//channel/ttl";
 	const xmlChar* itemExpr = (xmlChar*) "//item";
 	LIBXML_TEST_VERSION
@@ -143,7 +170,7 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count)
 		return NULL;
 	}
 
-	/* Create xpath evaluation context */
+	/* Create XPath evaluation context */
 	xpathCtx = xmlXPathNewContext(doc);
 	if (xpathCtx == NULL) {
 		dbg_printf(P_ERROR, "Error: unable to create new XPath context");
@@ -159,13 +186,7 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count)
 			ttlNode = xpathObj->nodesetval;
 
 			if (ttlNode->nodeNr == 1 && ttlNode->nodeTab[0]->type == XML_ELEMENT_NODE) {
-				ttl = atoi((char*) xmlNodeGetContent(ttlNode->nodeTab[0]->children));
-
-				/* FIXME */
-				/* user-specified interval is shorter than that requested by the RSS feed */
-/*				if (ttl > am_get_interval()) {
-					am_set_interval(ttl);
-				}*/
+				*ttl = atoi((char*) xmlNodeGetContent(ttlNode->nodeTab[0]->children));
 			}
 			xmlXPathFreeObject(xpathObj);
 		} else {

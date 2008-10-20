@@ -11,14 +11,22 @@
 #include "file.h"
 #include "output.h"
 
-int main(void) {
+
+int testHTTPS(void) {
+	int ret = 1;
 
 	const char *url = "https://secure3.silverorange.com/rsstest/rss_with_ssl.xml";
 	WebData *data = getHTTPData(url);
 	if(data && data->response) {
-		dbg_printf(P_MSG, "received %d bytes of data from '%s'", data->response->size, url);
-		saveFile("feed.xml", data->response->data, data->response->size);
+		ret = saveFile("feed.xml", data->response->data, data->response->size);
+	}
+	if(ret == 0) {
+		unlink("feed.xml");
 	}
 	WebData_free(data);
-	return 0;
+	return ret;
+}
+
+int main(void) {
+	return testHTTPS();
 }

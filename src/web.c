@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file web.c
+ *
+ * Provides basic functionality for communicating with HTTP and FTP servers.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -30,32 +41,23 @@
 #include "output.h"
 #include "utils.h"
 
+
+/** \cond */
 #define DATA_BUFFER 1024 * 100
 #define HEADER_BUFFER 500
+/** \endcond */
 
-static regex_t *content_disp_preg = NULL;
-
-static void init_cd_preg() {
+static void init_cd_preg(regex_t *content_disp_preg) {
 	int err;
 	char erbuf[100];
  	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
 
-	assert(content_disp_preg == NULL);
-
-	content_disp_preg = am_malloc(sizeof(regex_t));
-	dbg_printf(P_INFO2, "[init_cd_preg] allocated %d bytes for content_disp_preg", sizeof(regex_t));
+	dbg_printf(P_DBG, "[init_cd_preg] allocated %d bytes for content_disp_preg", sizeof(regex_t));
 	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
 	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
 	if(err) {
 		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
 		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s", erbuf);
-	}
-}
-
-void cd_preg_free() {
-	if(content_disp_preg) {
-		regfree(content_disp_preg);
-		am_free(content_disp_preg);
 	}
 }
 
@@ -69,6 +71,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 	int content_length = 0, len, err;
 	int i;
 	regmatch_t pmatch[3];
+	regex_t content_disp_preg;
 
 	buf = am_malloc(realsize + 1);
 	if(!buf) {
@@ -99,10 +102,8 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		}
 	} else {
 		/* parse header for Content-Disposition to get correct filename */
-		if(!content_disp_preg) {
-			init_cd_preg();
-		}
-		err = regexec(content_disp_preg, buf, 3, pmatch, 0);
+		init_cd_preg(&content_disp_preg);
+		err = regexec(&content_disp_preg, buf, 3, pmatch, 0);
 		if(!err) {			/* regex matches */
 			len = pmatch[2].rm_eo - pmatch[2].rm_so;
 			mem->content_filename = am_realloc(mem->content_filename, len + 1);
@@ -110,11 +111,11 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 			mem->content_filename[len] = '\0';
 			dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
 		} else if(err != REG_NOMATCH && err != 0){
-			len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+			len = regerror(err, &content_disp_preg, erbuf, sizeof(erbuf));
 			dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", erbuf);
 		} else {
 			if(!strncmp(buf, "Content-Disposition", 19)) {
-				len = regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
+				len = regerror(err, &content_disp_preg, erbuf, sizeof(erbuf));
 				dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", erbuf);
 				dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s", buf);
 			}
@@ -178,6 +179,13 @@ static void HTTPData_free(HTTPData* data) {
 	am_free(data);
 }
 
+
+/** \brief Create a new WebData object
+ *
+ * \param[in] url URL for a WebData object
+ *
+ * The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
+ */
 struct WebData* WebData_new(const char *url) {
 	WebData *data;
 
@@ -209,6 +217,11 @@ struct WebData* WebData_new(const char *url) {
 	return data;
 }
 
+
+/** \brief Free a WebData object and all memory associated with it
+ *
+ * \param[in] data Pointer to a WebData object
+ */
 void WebData_free(struct WebData *data) {
 	if(data) {
 		am_free(data->url);
@@ -219,6 +232,15 @@ void WebData_free(struct WebData *data) {
 		data = NULL;
 	}
 }
+
+/** \brief Download data from a given URL
+ *
+ * \param[in] url URL of the object to download
+ * \return a WebData object containing the complete response as well as header information
+ *
+ * getHTTPData() attempts to download the file pointed to by \a url and stores the content in a WebData object.
+ * The function returns \c NULL if the download failed.
+ */
 
 WebData* getHTTPData(const char *url) {
 	CURL *curl_handle;
@@ -261,7 +283,16 @@ WebData* getHTTPData(const char *url) {
 	}
 }
 
-char *sendHTTPData(const char *url, const char* auth, void *data, uint32_t data_size) {
+
+/** \brief Upload data to a specified URL.
+ *
+ * \param url Path to where data shall be uploaded
+ * \param auth (Optional) authentication information in the form of "user:password"
+ * \param data Data that shall be uploaded
+ * \param data_size size of the data
+ * \return Web server response
+ */
+char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
 	CURL *curl_handle = NULL;
 	CURLcode res;
 	long rc;
@@ -283,7 +314,7 @@ char *sendHTTPData(const char *url, const char* auth, void *data, uint32_t data_
 	curl_easy_setopt(curl_handle, CURLOPT_URL, response_data->url);
 
 	if(auth) {
-		dbg_printf(P_INFO2, "aut: %s", auth);
+		dbg_printf(P_INFO2, "auth: %s", auth);
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		curl_easy_setopt(curl_handle, CURLOPT_USERPWD, auth);
 	}

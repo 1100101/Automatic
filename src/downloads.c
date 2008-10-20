@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file downloads.c
+ *
+ * Parse configuration file.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -48,6 +59,14 @@ static uint8_t bucket_hasURL(const char *url, NODE *head) {
 	return 0;
 }
 
+
+/** \brief Checks if a torrent file has been downloaded before
+ *
+ * \param bucket Bucket list that stores the URLS of previously downloaded torrents
+ * \param url URL of the torrent that should be checked
+ * \return 0 if it's a new torrent, 1 if it has been downloaded before
+ */
+
 uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
 	uint8_t res;
 
@@ -58,8 +77,17 @@ uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
 	return res;
 }
 
-
-int addToBucket(const char* identifier, NODE **head, int maxBucketItems) {
+/** \brief add new item to bucket list
+ *
+ * \param[in] identifier Unique identifier for a bucket item (e.g. a URL)
+ * \param[in,out] head pointer to the bucket list
+ * \param[in] maxBucketItems number of maximum items in bucket list
+ * \return always returns 0
+ *
+ * The size of the provided bucket list is kept to maxBucketItems.
+ * If it gets larger than the specified value, the oldest element is removed from the list.
+ */
+int addToBucket(const char* identifier, NODE **head, const int maxBucketItems) {
 
 	addItem(am_strdup(identifier), head);
 	if(maxBucketItems > 0 && listCount(*head) > maxBucketItems) {

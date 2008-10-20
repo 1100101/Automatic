@@ -1,6 +1,3 @@
-#ifndef RSS_LIST_H__
-#define RSS_LIST_H__
-
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -20,21 +17,7 @@
  * 02111-1307, USA.
  */
 
-#ifdef MEMWATCH
-	#include "memwatch.h"
-#endif
 
-#include "list.h"
 
-typedef struct feed_item *feed_item;
-
-struct feed_item {
-	char *name;
-	char *url;
-};
-
-void freeFeedItem(void *item);
-feed_item newFeedItem(void);
-uint8_t isMatch(const simple_list filters, const feed_item item);
-
-#endif
+int save_state(const char* state_file, simple_list list);
+int load_state(const char* state_file, simple_list *list);

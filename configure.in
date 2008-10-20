@@ -68,5 +68,5 @@ AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([dup2 gettimeofday localtime_r regcomp strerror strstr])
 
-AC_OUTPUT(Makefile src/Makefile src/https_test/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/tests/Makefile)
 

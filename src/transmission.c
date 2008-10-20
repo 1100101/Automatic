@@ -1,8 +1,15 @@
-/*
- * transmission.c
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file transmission.c
  *
- *  Created on: Oct 13, 2008
- *      Author: aurich
+ * Transmission-specific functionality.
+ *
+ * \internal Created on: Oct 13, 2008
+ * Author: Frank Aurich
  */
 
 #include <stdlib.h>
@@ -16,6 +23,16 @@
 #include "output.h"
 
 
+/** \brief (Deprecated) Call Transmission via system() call to add a torrent
+ *
+ * \param tm_path Full path to the Transmission config folder
+ * \param filename Full path to the new torrent
+ * \return 0 if the torrent was successfully added, -1 otherwise.
+ *
+ * This function is used with older versions of Transmission (1.2x) where the JSON-RPC framework
+ * was not in place yet.
+ * It remains for compatibility reasons.
+ */
 int8_t call_transmission(const char* tm_path, const char *filename) {
 	char buf[PATH_MAX];
 	int8_t status;

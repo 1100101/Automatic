@@ -9,6 +9,7 @@
 #define JSON_H_
 
 char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size);
+const char* parseResponse(const char* response);
 
 
 #endif /* JSON_H_ */

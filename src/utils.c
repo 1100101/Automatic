@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file utils.c
+ *
+ * Several useful functions to make coding easier.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
  *
@@ -30,6 +41,11 @@
 	#include "memwatch.h"
 #endif
 
+/** \brief allocate memory on the heap
+ *
+ * \param size Number of bytes to be allocated
+ * \return A pointer to the newly allocated memory, or NULL in case of a failure.
+ */
 void* am_malloc( size_t size ) {
 	void *tmp = NULL;
 	if(size > 0) {
@@ -40,6 +56,15 @@ void* am_malloc( size_t size ) {
 	return NULL;
 }
 
+/** \brief Reallocate (resize) a memory section
+ *
+ * \param p Pointer to existing mem allocation
+ * \param size new size of the memory section
+ * \return Pointer to the newly allocated memory
+ *
+ * If p is NULL, new memory is allocated via am_malloc.
+ * This is because some implementations of realloc() crash if p is NULL.
+ */
 void* am_realloc(void *p, size_t size) {
 	if(!p)
 		return am_malloc(size);
@@ -47,6 +72,12 @@ void* am_realloc(void *p, size_t size) {
 		return realloc(p, size);
 }
 
+/** \brief Free allocated memory
+ *
+ * \param p Pointer to allocated memory
+ *
+ * The function frees the memory pointed to by p. The function does nothing if p is NULL.
+ */
 void am_free(void * p) {
 	if(p) {
 		dbg_printf(P_INFO2, "Freeing %p", p);
@@ -55,18 +86,14 @@ void am_free(void * p) {
 	}
 }
 
-char* am_strdup(const char *str) {
-	int len;
-	char *buf = NULL;
-	if(str) {
-		len = strlen(str);
-		buf = am_malloc(len + 1);
-		strncpy(buf, str, len);
-		buf[len]= '\0';
-	}
-	return buf;
-}
-
+/** \brief create a copy of a string
+ *
+ * \param str Pointer to a string
+ * \param len length of the given string
+ * \return Pointer to a copy of the given string
+ *
+ * Creates a copy of the given string, but only with a maximum size of len
+ */
 char* am_strndup(const char *str, int len) {
 	char *buf = NULL;
 	if(str) {
@@ -77,6 +104,31 @@ char* am_strndup(const char *str, int len) {
 	return buf;
 }
 
+/** \brief create a copy of a string
+ *
+ * \param str Pointer to a string
+ * \return Pointer to a copy of the given string
+ */
+char* am_strdup(const char *str) {
+	if(str) {
+		return am_strndup(str, strlen(str));
+	}
+	return NULL;
+/*	int len;
+	char *buf = NULL;
+	if(str) {
+		len = strlen(str);
+		buf = am_malloc(len + 1);
+		strncpy(buf, str, len);
+		buf[len]= '\0';
+	}
+	return buf;*/
+}
+
+/** \brief get the path to the current user's home filder
+ *
+ * \return Path to the users home folder.
+ */
 char* get_home_folder() {
 	char * dir = NULL;
 	struct passwd * pw = NULL;
@@ -96,6 +148,13 @@ char* get_home_folder() {
 	return dir;
 }
 
+/** \brief Check a given path for variables and resolve them
+ *
+ * \param path The given folder or file path
+ * \return The resolved path.
+ *
+ * The function currently only replaces the '~' in paths with the user's home folder.
+ */
 char* resolve_path(const char *path) {
 	char new_dir[MAXPATHLEN];
 	char *homedir = NULL;
@@ -116,6 +175,10 @@ char* resolve_path(const char *path) {
 	return NULL;
 }
 
+/** \brief Get path to Transmissions default configuration directory
+ *
+ * \return Path to Transmissions default config folder.
+ */
 char* get_tr_folder() {
 	static char *path = NULL;
 	char buf[MAXPATHLEN];
@@ -131,7 +194,11 @@ char* get_tr_folder() {
 	return path;
 }
 
-char* get_temp_folder() {
+/** \brief Get the current user's tempory folder
+ *
+ * \return Path to the temporary folder.
+ */
+char* get_temp_folder(void) {
 	static char *dir = NULL;
 
 	if(!dir) {

@@ -1,5 +1,5 @@
-#ifndef DOWNLOADS_H__
-#define DOWNLOADS_H__
+#ifndef RSS_LIST_H__
+#define RSS_LIST_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -26,7 +26,20 @@
 
 #include "list.h"
 
-int addToBucket(const char* identifier, NODE **head, int maxBucketItems);
-uint8_t has_been_downloaded(const simple_list bucket, const char *url);
+typedef struct feed_item *feed_item;
+
+
+/** A structure to represent an RSS feed item
+ */
+struct feed_item {
+	/** \{ */
+	char *name; /**< "Name" field of the RSS item */
+	char *url;  /**< URL field of the RSS item    */
+	/** \} */
+};
+
+void freeFeedItem(void *item);
+feed_item newFeedItem(void);
+uint8_t useFilters(const simple_list filters, const feed_item item);
 
 #endif

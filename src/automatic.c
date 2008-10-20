@@ -17,14 +17,12 @@
  * 02111-1307, USA.
  */
 
-#define AM_DEFAULT_CONFIGFILE 			"/etc/automatic.conf"
-#define AM_DEFAULT_STATEFILE  			".automatic.state"
+#define AM_DEFAULT_CONFIGFILE 		"/etc/automatic.conf"
+#define AM_DEFAULT_STATEFILE  		".automatic.state"
 #define AM_DEFAULT_VERBOSE 				P_MSG
 #define AM_DEFAULT_NOFORK 				0
 #define AM_DEFAULT_MAXBUCKET 			10
 #define AM_DEFAULT_USETRANSMISSION 	    1
-
-#define MAX_URL_LEN 256
 
 #define FROM_XML_FILE 0
 #define TESTING 0
@@ -41,7 +39,7 @@
 #include <getopt.h>
 #include <sys/param.h>
 #include <sys/wait.h>
-#include <fcntl.h> /* open */
+#include <fcntl.h> 		/* open */
 
 #include "version.h"
 #include "web.h"
@@ -61,7 +59,7 @@ static void session_free(auto_handle *as);
 
 uint8_t closing = 0;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
-uint8_t nofork = AM_DEFAULT_NOFORK;
+uint8_t nofork  = AM_DEFAULT_NOFORK;
 
 static void usage(void) {
 	printf("usage: automatic [-fh] [-v level] [-c file]\n"
@@ -104,14 +102,13 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
 
 static void do_cleanup(auto_handle *as) {
 	session_free(as);
-	cd_preg_free();
 }
 
 static void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
 	if (as && as->bucket_changed)
-		save_state(as->statefile, &as->downloads);
+		save_state(as->statefile, as->downloads);
 	do_cleanup(as);
 	exit(EXIT_SUCCESS);
 }
@@ -176,7 +173,6 @@ static void signal_handler(int sig) {
 		case SIGINT:
 		case SIGTERM: {
 			dbg_printf(P_INFO2, "SIGTERM/SIGINT caught");
-			/* shutdown_daemon(session); */
 			closing = 1;
 			break;
 		}
@@ -261,9 +257,10 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 			unlink(fname);
 		}
 	} else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
-/*		if (uploadTorrent(ah, t_data, t_size) == 0) {
+		if (uploadTorrent(t_data, t_size, (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST,
+											ah->auth, ah->rpc_port) == 0) {
 			success = 1;
-		}*/
+		}
 	}
 	return success;
 }
@@ -278,13 +275,13 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 	while(current && current->data) {
 		feed_item item = (feed_item)current->data;
 
-		if (isMatch(session->filters, item)) {
+		if (useFilters(session->filters, item)) {
 			if (!has_been_downloaded(session->downloads, item->url)) {
 				dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
 				torrent = downloadTorrent(item->url);
 				if(torrent) {
 					get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
-					/* add torrent to TM */
+					/* add torrent to Transmission */
 					success = addTorrentToTM(session, torrent->response->data, torrent->response->size, fname);
 					/* add torrent url to bucket list */
 					if (success == 1) {
@@ -302,15 +299,16 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 }
 
 
-void processFeed(auto_handle *session, void *feed_item) {
+static void processFeed(auto_handle *session, const rss_feed feed) {
 	WebData *wdata = NULL;
 	uint32_t bucket_size;
 	static uint8_t first_run = 1;
 
-	wdata = getHTTPData(((rss_feed)feed_item)->url);
+	wdata = getHTTPData(feed->url);
 	if (wdata && wdata->response) {
 		simple_list items = parse_xmldata(wdata->response->data,
-				wdata->response->size, &bucket_size);
+				wdata->response->size, &bucket_size, &feed->ttl);
+		/* feed->count = bucket_size; */
 		processRSSList(session, items);
 		freeList(&items, freeFeedItem);
 		if (first_run) {
@@ -322,7 +320,6 @@ void processFeed(auto_handle *session, void *feed_item) {
 	}
 	WebData_free(wdata);
 }
-
 
 /* main function */
 

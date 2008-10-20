@@ -1,5 +1,15 @@
-/*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file output.c
+ *
+ * Provides output functionality.
+ */
+
+/* Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,12 +40,23 @@
 #include "output.h"
 #include "automatic.h"
 
+
+/** \brief Print log information to stdout.
+ *
+ * \param[in] type Type of logging statement.
+ * \param[in] format Format string
+ * \param[in] ... Additional parameters
+ *
+ * dbg_printf() prints logging and debug information to stdout. The relevance of each
+ * statement is defined by the given type. The end-user provides a verbosity level (e.g.
+ * on the command-line) which dictates what kind of messages are printed and what not.
+ */
 void dbg_printf(debug_type type, const char *format, ...) {
 	va_list va;
   char tmp[MSGSIZE_MAX];
 	FILE *fp = stderr;
 
-	uint8_t verbose = am_get_verbose();
+	uint8_t verbose = P_MSG;
 
 	if(verbose >= type) {
 		va_start(va, format);
@@ -51,6 +72,13 @@ void dbg_printf(debug_type type, const char *format, ...) {
 	}
 }
 
+/** \brief Get the current date and time in form of a string.
+ *
+ * \param buf Pointer to a string buffer which will hold the time string.
+ * \return The current time as a string.
+ *
+ * This function is useful for logging purposes.
+ */
 char* getlogtime_str(char *buf) {
 	char tmp[TIME_STR_SIZE];
 	time_t now;

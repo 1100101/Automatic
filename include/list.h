@@ -1,6 +1,10 @@
 #ifndef LIST_H__
 #define LIST_H__
 
+/**
+ * @file list.h
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -24,18 +28,26 @@
 	#include "memwatch.h"
 #endif
 
-
 typedef struct NODE NODE;
 typedef struct NODE* simple_list;
 
+
+/** \struct NODE
+ * A node for a generic list.
+ */
 struct NODE {
+	 /*! pointer to the next element */
    NODE *next;
+   /*! pointer to a data element */
    void *data;
 };
 
+
+/** Function pointer for providing a free() function to freeList() */
 typedef void (*listFuncPtr)(void *);
 
 int addItem(void *elem, NODE **head);
+void printList(const simple_list list);
 
 void freeList( NODE **head, listFuncPtr freeFunc );
 void removeFirst(NODE  **head, listFuncPtr freeFunc);
@@ -44,6 +56,5 @@ void removeLast(NODE *head, listFuncPtr freeFunc);
 
 unsigned int listCount(NODE* head);
 void reverseList(NODE **list);
-NODE* getLastNode(NODE *ptr_to_head);
 
 #endif

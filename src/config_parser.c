@@ -1,3 +1,15 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file config_parser.c
+ *
+ * Parse configuration file.
+ */
+
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
  *
@@ -35,6 +47,8 @@
 #include "feed_item.h"
 #include "rss_feed.h"
 
+
+/** \cond */
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	2000
 
@@ -45,6 +59,8 @@ struct am_option {
 };
 
 typedef struct am_option am_option_t;
+
+/** \endcond */
 
 static const char *delim = ";;";
 
@@ -234,6 +250,13 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 	return 0;
 }
 
+
+/** \brief parse configuration file.
+ *
+ * \param[in,out] as Pointer to session handle
+ * \param[in] filename Path to the configuration file
+ * \return 0 if parsing was successful, -1 if an error occured.
+ */
 int parse_config_file(struct auto_handle *as, const char *filename) {
 	FILE *fp;
 	char *line;

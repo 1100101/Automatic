@@ -1,3 +1,14 @@
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file rss_feed.c
+ *
+ * RSS-Feed-specific list functions.
+ */
+
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
  *
@@ -34,6 +45,29 @@
 #endif
 
 
+/* private functions */
+
+/** \brief Create a new RSS feed node
+ *
+ * \return Pointer to the new feed node
+ */
+static rss_feed feed_new(void) {
+	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
+	if(i != NULL) {
+		i->url = NULL;
+		i->ttl = -1;
+		/*i->count = -1;*/
+	}
+	return i;
+}
+
+
+/* public functions */
+
+/** \brief Print the content of a feed list (URL, TTL, ...)
+ *
+ * \param list Pointer to a feed list
+ */
 void feed_printList(simple_list list) {
 #ifdef DEBUG
 	NODE *cur = list;
@@ -47,7 +81,7 @@ void feed_printList(simple_list list) {
 			dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
 		}
 		dbg_printf(P_INFO2, "  ttl: %d\n", x->ttl);
-		dbg_printf(P_INFO2, "  count: %d\n", x->count);
+		/*dbg_printf(P_INFO2, "  count: %d\n", x->count);*/
 		dbg_printf(P_INFO2, "  next: (%p)\n", (void*)cur->next);
 		cur = cur->next;
 	}
@@ -55,17 +89,11 @@ void feed_printList(simple_list list) {
 #endif
 }
 
-
-rss_feed feed_new(void) {
-	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
-	if(i != NULL) {
-		i->url = NULL;
-		i->ttl = -1;
-		i->count = -1;
-	}
-	return i;
-}
-
+/** \brief Add a new feed node to a given list
+ *
+ * \param url URL of the new feed
+ * \param head Pointer to a list
+ */
 void feed_add(char *url, NODE **head) {
 	rss_feed x = feed_new();
 
@@ -74,6 +102,13 @@ void feed_add(char *url, NODE **head) {
 }
 
 
+/** \brief Free the memory associated with the given feed-list item
+ *
+ * \param listItem Pointer to a feed-list item
+ *
+ * This function is to be used in the generic list functions freeList(), removeFirst() and
+ * removeLast() as the 2nd parameter to ensure proper memory deallocation.
+ */
 void feed_free(void* listItem) {
 	rss_feed x = (rss_feed)listItem;
 

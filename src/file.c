@@ -1,8 +1,15 @@
-/*
- * file.c
+/* $Id$
+ * $Name$
+ * $ProjectName$
+ */
+
+/**
+ * @file file.c
  *
- *  Created on: Oct 12, 2008
- *      Author: kylek
+ * Read and write files
+ *
+ * \internal Created on: Oct 12, 2008
+ * \internal Author: Frank Aurich (1100101+automatic@gmail.com)
  */
 
 #include <stdio.h>
@@ -17,12 +24,23 @@
 #include "utils.h"
 #include "output.h"
 
-
-char* readFile(const char *fname, uint32_t * setme_len) {
+/** \brief Read a file and store its content in memory.
+ *
+ * \param[in] fname (input) filename
+ * \param[out] setme_len (output) number of read bytes
+ * \return pointer to file content
+ *
+ * The function returns NULL if the specified file could not be properly read.
+ */
+char* readFile(const char *fname, uint32_t *setme_len) {
   FILE *file;
   char *buffer = NULL;
   uint32_t fileLen;
 
+/*  if(!fname || !setme_len) {
+  	return NULL;
+  }
+*/
   file = fopen(fname, "rb");
   if (!file) {
     dbg_printf(P_ERROR, "Cannot open file '%s': %s", fname, strerror(errno));
@@ -49,6 +67,13 @@ char* readFile(const char *fname, uint32_t * setme_len) {
   return buffer;
 }
 
+/** \brief Write data to a file.
+ *
+ * \param[in] name (input) filename
+ * \param[in] data (input) pointer to data
+ * \param[in] size (input) size of data
+ * \return 0 if saving was successful, -1 otherwise.
+ */
 int saveFile(const char *name, const void *data, uint32_t size) {
   int torrent, ret = -1;
 

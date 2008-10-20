@@ -1,5 +1,5 @@
-#ifndef AUTOMATIC_H__
-#define AUTOMATIC_H__
+#ifndef RSS_FEED_H__
+#define RSS_FEED_H__
 
 /*
  * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
@@ -24,37 +24,23 @@
 	#include "memwatch.h"
 #endif
 
-#define AM_DEFAULT_INTERVAL			30
-#define AM_DEFAULT_HOST  				"localhost"
-#define AM_DEFAULT_RPCPORT 			9091
-#define AM_TRANSMISSION_1_2			2
-#define AM_TRANSMISSION_1_3			3
+#include "list.h"
 
-#include <stdint.h>
+typedef struct rss_feed* rss_feed;
+typedef struct NODE* rss_feeds;
 
-#include "feed_item.h"
-#include "rss_feed.h"
 
-struct auto_handle {
-
-	char *transmission_path;
-	char *statefile;
-	char *torrent_folder;
-	char *auth;
-	char *host;
-	rss_feeds 	feeds;
-	simple_list downloads;
-	simple_list filters;
-	uint8_t 		max_bucket_items;
-	uint8_t 		bucket_changed;
-	uint8_t 		check_interval;
-	uint8_t 		use_transmission;
-	uint16_t 		rpc_port;
-	uint8_t 		transmission_version;
+/** struct representing an RSS feed */
+struct rss_feed {
+	/** \{ */
+	char    *url;  /**< Feed URL */
+	uint32_t ttl;	 /**< Time-To-Live for the specific feed */
+	/* int32_t count;*/ /**< Item count? (UNUSED) */
+	/** \{ */
 };
 
-typedef struct auto_handle auto_handle;
-
-uint8_t am_get_verbose(void);
+void feed_free(void* listItem);
+void feed_printList(simple_list list);
+void feed_add(char *url, NODE **head);
 
 #endif

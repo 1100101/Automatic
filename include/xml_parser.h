@@ -22,6 +22,6 @@
  * 02111-1307, USA.
  */
 
-simple_list parse_xmldata(const char* buffer, uint32_t size, uint32_t* count);
+simple_list parse_xmldata(const char* buffer, uint32_t size, uint32_t *count, uint32_t *ttl);
 
 #endif
