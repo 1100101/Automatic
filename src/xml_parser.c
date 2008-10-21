@@ -76,12 +76,13 @@ static rssNode* getNodeAttributes(xmlNodePtr child) {
 }
 
 static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
-	xmlNodePtr cur, child;
+	xmlNodePtr cur = NULL, child = NULL;
 	uint32_t size, i;
-	feed_item item;
+	feed_item item = NULL;
 	uint8_t name_set, url_set, is_torrent_feed = 0;
-	rssNode *enclosure;
+	rssNode *enclosure = NULL;
 	simple_list itemList = NULL;
+
 	size = (nodes) ? nodes->nodeNr : 0;
 
 	dbg_printf(P_INFO, "%d items in XML", size);
@@ -105,9 +106,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 						enclosure = getNodeAttributes(child);
 						if ((strcmp(enclosure->type, "application/x-bittorrent") == 0)) {
 							if (enclosure->url) {
-								if (item->url) {
-									am_free(item->url);
-								}
+								am_free(item->url);
 								item->url = am_strdup(enclosure->url);
 								url_set = 1;
 								is_torrent_feed = 1;
@@ -148,11 +147,12 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
  * The items are then packaged into neat little rss items and returned as a list.
  */
 simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count, uint32_t *ttl) {
-	xmlDocPtr doc;
-	xmlXPathContextPtr xpathCtx;
-	xmlXPathObjectPtr xpathObj;
-	xmlNodeSetPtr ttlNode;
-	simple_list rss_items;
+	xmlDocPtr doc = NULL;
+	xmlXPathContextPtr xpathCtx = NULL;
+	xmlXPathObjectPtr xpathObj = NULL;
+	xmlNodeSetPtr ttlNode = NULL;
+	simple_list rss_items = NULL;
+
 
 	const xmlChar* ttlExpr = (xmlChar*) "//channel/ttl";
 	const xmlChar* itemExpr = (xmlChar*) "//item";
@@ -161,19 +161,23 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count,
 	/* Init libxml */
 	xmlInitParser();
 
-	assert(data);
+	*item_count = 0;
+
+	if(!data) {
+		return NULL;
+	}
 
 	/* Load XML document */
 	doc = xmlParseMemory(data, size);
 	if (doc == NULL) {
-		dbg_printf(P_ERROR, "Error: unable to parse buffer");
+		dbg_printf(P_ERROR, "Error: Unable to parse input data!");
 		return NULL;
 	}
 
 	/* Create XPath evaluation context */
 	xpathCtx = xmlXPathNewContext(doc);
 	if (xpathCtx == NULL) {
-		dbg_printf(P_ERROR, "Error: unable to create new XPath context");
+		dbg_printf(P_ERROR, "Error: Unable to create new XPath context");
 		xmlFreeDoc(doc);
 		xmlCleanupParser();
 		return NULL;
@@ -190,14 +194,14 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count,
 			}
 			xmlXPathFreeObject(xpathObj);
 		} else {
-			dbg_printf(P_ERROR, "Error: unable to evaluate TTL XPath expression");
+			dbg_printf(P_ERROR, "Error: Unable to evaluate TTL XPath expression");
 		}
 	}
 
 	/* Extract RSS "items" from feed */
 	xpathObj = xmlXPathEvalExpression(itemExpr, xpathCtx);
 	if (xpathObj == NULL) {
-		dbg_printf(P_ERROR, "Error: unable to evaluate XPath expression \"%s\"",
+		dbg_printf(P_ERROR, "Error: Unable to evaluate XPath expression \"%s\"",
 				itemExpr);
 		xmlXPathFreeContext(xpathCtx);
 		xmlFreeDoc(doc);

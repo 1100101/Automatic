@@ -44,7 +44,7 @@
 #include "utils.h"
 #include "config_parser.h"
 #include "output.h"
-#include "feed_item.h"
+#include "list.h"
 #include "rss_feed.h"
 
 
@@ -76,7 +76,6 @@ static void set_path(char *src, char **dst) {
 		}
 	}
 }
-
 
 static int parseUInt(const char *str) {
 	int is_num = 1;
@@ -138,9 +137,7 @@ static int addToList(NODE **head, const char* strlist) {
 	char *str = NULL;
 
 	assert(*head == NULL);
-
 	str = shorten(strlist);
-	freeList(head, NULL);
 	p = strtok(str, delim);
 	while (p) {
 		addItem(am_strdup(p), head);
@@ -155,7 +152,6 @@ static int getFeeds(NODE **head, const char* strlist) {
 	char *str;
 	str = shorten(strlist);
 	assert(*head == NULL);
-	freeList(head, feed_free);
 	p = strtok(str, delim);
 	while (p) {
 		feed_add(p, head);
@@ -164,28 +160,6 @@ static int getFeeds(NODE **head, const char* strlist) {
 	am_free(str);
 	return 0;
 }
-
-/** Work in progress **/
-
-/* static void set_option2(auto_handle *as, const char *opt, char *param) {
-
-	int x,y,z;
-
-	am_option_t conf[] = {
-    {"url"                 , &x, CONF_TYPE_STRINGLIST},
-    {"transmission-home"   , &y, CONF_TYPE_STRING},
-    {"transmission-version", &z, CONF_TYPE_INT},
-		{NULL, NULL, 0}
-	};
-	int i;
-
-	for(i = 0; conf[i].name != NULL; i++) {
-		if(!strcmp(conf[i].name, opt)) {
-			printf("this apparently works\n");
-		}
-	}
-}
-*/
 
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int numval;

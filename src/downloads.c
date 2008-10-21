@@ -4,7 +4,7 @@
  */
 
 /**
- * @file downloads.c
+ * \file downloads.c
  *
  * Parse configuration file.
  */

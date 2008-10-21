@@ -78,9 +78,11 @@ int8_t uploadTorrent(const void *t_data, int t_size, const char *host, const cha
 	uint32_t packet_size = 0, ret = -1;
 	char url[MAX_URL_LEN];
 
+	/* packet torrent data in a JSON package */
 	packet = makeJSON(t_data, t_size, &packet_size);
-	if(packet != NULL) {
+	if(packet) {
 		snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
+		/* send JSON package to Transmission via HTTP POST */
 		res = sendHTTPData(url, auth, packet, packet_size);
 		if(res != NULL) {
 			response = parseResponse(res);

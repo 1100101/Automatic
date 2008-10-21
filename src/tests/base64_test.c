@@ -15,17 +15,18 @@
 
 int main(void) {
 
-	const char *test_str = "test-string";
-	const char *enc_str = "dGVzdC1zdHJpbmcK";
+	const char *dec_str = "The quick brown fox jumps over the lazy dog.";
+	const char *enc_str = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=";
 
-	char *encode = NULL;
-	uint32_t len, res;
-	encode = base64_encode(test_str, strlen(test_str), &len);
-	dbg_printf(P_MSG, "result:   %s (%d)", encode, len);
-	dbg_printf(P_MSG, "expected: %s (%d)", enc_str, strlen(enc_str));
-	assert(len == strlen(enc_str));
-	res = strcmp(encode, enc_str);
-	assert(res == 0);
+	char *encode = NULL, *decode = NULL;
+	uint32_t enc_len, dec_len;
+	encode = base64_encode(dec_str, strlen(dec_str), &enc_len);
+	assert(enc_len == strlen(enc_str));
+	assert(strcmp(encode, enc_str) == 0);
+	decode = base64_decode(encode, enc_len, &dec_len);
+	assert(dec_len == strlen(dec_str));
+	assert(strcmp(decode, dec_str) == 0);
 	am_free(encode);
+	am_free(decode);
 	return 0;
 }

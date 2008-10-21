@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <assert.h>
 #include <errno.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -197,24 +196,30 @@ auto_handle* session_init(void) {
 	char *home;
 
 	auto_handle *ses = am_malloc(sizeof(auto_handle));
+
+	/* numbers */
 	ses->max_bucket_items 		= AM_DEFAULT_MAXBUCKET;
 	ses->bucket_changed 			= 0;
 	ses->check_interval 			= AM_DEFAULT_INTERVAL;
 	ses->use_transmission 		= AM_DEFAULT_USETRANSMISSION;
 	ses->transmission_version = AM_TRANSMISSION_1_3;
-	ses->transmission_path 		= get_tr_folder();
 	ses->rpc_port 						= AM_DEFAULT_RPCPORT;
-	home = get_home_folder();
-	sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
-	ses->statefile = am_malloc(strlen(path) + 1);
-	strncpy(ses->statefile, path, strlen(path) + 1);
+
+	/* strings */
+	ses->transmission_path 		= get_tr_folder();
 	ses->torrent_folder 			= get_temp_folder();
-	ses->downloads 						= NULL;
 	ses->host 								= NULL;
 	ses->auth 								= NULL;
+	home = get_home_folder();
+	sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
+	am_free(home);
+	ses->statefile            = am_strdup(path);
+
+	/* lists */
 	ses->filters 							= NULL;
 	ses->feeds 								= NULL;
-	am_free(home);
+	ses->downloads 						= NULL;
+
 	return ses;
 }
 
@@ -301,20 +306,20 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 
 static void processFeed(auto_handle *session, const rss_feed feed) {
 	WebData *wdata = NULL;
-	uint32_t bucket_size;
+	uint32_t item_count;
 	static uint8_t first_run = 1;
 
 	wdata = getHTTPData(feed->url);
 	if (wdata && wdata->response) {
 		simple_list items = parse_xmldata(wdata->response->data,
-				wdata->response->size, &bucket_size, &feed->ttl);
+				wdata->response->size, &item_count, &feed->ttl);
 		/* feed->count = bucket_size; */
 		processRSSList(session, items);
 		freeList(&items, freeFeedItem);
 		if (first_run) {
-			session->max_bucket_items = bucket_size;
+			session->max_bucket_items  = item_count;
 		} else {
-			session->max_bucket_items += bucket_size;
+			session->max_bucket_items += item_count;
 		}
 		first_run = 0;
 	}
@@ -322,7 +327,6 @@ static void processFeed(auto_handle *session, const rss_feed feed) {
 }
 
 /* main function */
-
 int main(int argc, char **argv) {
 	auto_handle *session = NULL;
 	char *config_file = NULL;

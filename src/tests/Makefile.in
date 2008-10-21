@@ -41,22 +41,26 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
-am_base64_test_OBJECTS = base64_test-base64_test.$(OBJEXT) \
-	base64_test-output.$(OBJEXT) base64_test-base64.$(OBJEXT) \
-	base64_test-utils.$(OBJEXT) base64_test-memwatch.$(OBJEXT)
+am__objects_1 = base64_test-output.$(OBJEXT) \
+	base64_test-memwatch.$(OBJEXT) base64_test-utils.$(OBJEXT)
+am_base64_test_OBJECTS = $(am__objects_1) base64_test-base64.$(OBJEXT) \
+	base64_test-base64_test.$(OBJEXT)
 base64_test_OBJECTS = $(am_base64_test_OBJECTS)
 base64_test_LDADD = $(LDADD)
-am_https_test_OBJECTS = https_test-https_test.$(OBJEXT) \
-	https_test-output.$(OBJEXT) https_test-utils.$(OBJEXT) \
-	https_test-web.$(OBJEXT) https_test-file.$(OBJEXT)
+am__objects_2 = https_test-output.$(OBJEXT) \
+	https_test-memwatch.$(OBJEXT) https_test-utils.$(OBJEXT)
+am_https_test_OBJECTS = $(am__objects_2) \
+	https_test-https_test.$(OBJEXT) https_test-web.$(OBJEXT) \
+	https_test-file.$(OBJEXT)
 https_test_OBJECTS = $(am_https_test_OBJECTS)
 am__DEPENDENCIES_1 =
 https_test_DEPENDENCIES = $(am__DEPENDENCIES_1)
 https_test_LINK = $(CCLD) $(https_test_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_list_test_OBJECTS = list_test-list_test.$(OBJEXT) \
-	list_test-output.$(OBJEXT) list_test-memwatch.$(OBJEXT) \
-	list_test-list.$(OBJEXT)
+am__objects_3 = list_test-output.$(OBJEXT) \
+	list_test-memwatch.$(OBJEXT) list_test-utils.$(OBJEXT)
+am_list_test_OBJECTS = $(am__objects_3) list_test-list.$(OBJEXT) \
+	list_test-list_test.$(OBJEXT)
 list_test_OBJECTS = $(am_list_test_OBJECTS)
 list_test_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -172,31 +176,30 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INCLUDES = -I$(top_srcdir)/include/
 TESTS = $(check_PROGRAMS)
-https_test_SOURCES = \
-   https_test.c       \
-   $(top_srcdir)/src/output.c  \
-   $(top_srcdir)/src/utils.c   \
-   $(top_srcdir)/src/web.c     \
+GLOBAL_SOURCES = \
+   $(top_srcdir)/src/output.c     \
+   $(top_srcdir)/src/memwatch.c   \
+   $(top_srcdir)/src/utils.c
+
+https_test_SOURCES = $(GLOBAL_SOURCES) \
+   https_test.c                    \
+   $(top_srcdir)/src/web.c         \
    $(top_srcdir)/src/file.c
 
-list_test_SOURCES = \
-   list_test.c      \
-   $(top_srcdir)/src/output.c   \
-   $(top_srcdir)/src/memwatch.c \
-   $(top_srcdir)/src/list.c   
+list_test_SOURCES = $(GLOBAL_SOURCES) \
+    $(top_srcdir)/src/list.c      \
+    list_test.c
 
-base64_test_SOURCES = \
-   base64_test.c                \
-   $(top_srcdir)/src/output.c   \
-   $(top_srcdir)/src/base64.c   \
-   $(top_srcdir)/src/utils.c    \
-   $(top_srcdir)/src/memwatch.c
+base64_test_SOURCES = $(GLOBAL_SOURCES) \
+   $(top_srcdir)/src/base64.c       \
+   base64_test.c
 
 noinst_HEADERS = \
-   $(top_srcdir)/include/output.h \
-   $(top_srcdir)/include/list.h   \
-   $(top_srcdir)/include/utils.h  \
-   $(top_srcdir)/include/web.h    \
+   $(top_srcdir)/include/output.h   \
+   $(top_srcdir)/include/list.h     \
+   $(top_srcdir)/include/utils.h    \
+   $(top_srcdir)/include/memwatch.h \
+   $(top_srcdir)/include/web.h      \
    $(top_srcdir)/include/file.h
 
 https_test_LDADD = $(LIBCURL_LIBS)
@@ -263,6 +266,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64_test-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-https_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/https_test-web.Po@am__quote@
@@ -270,6 +274,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test-list_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test-output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test-utils.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -285,20 +290,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-base64_test-base64_test.o: base64_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64_test.o -MD -MP -MF $(DEPDIR)/base64_test-base64_test.Tpo -c -o base64_test-base64_test.o `test -f 'base64_test.c' || echo '$(srcdir)/'`base64_test.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64_test.Tpo $(DEPDIR)/base64_test-base64_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64_test.c' object='base64_test-base64_test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64_test.o `test -f 'base64_test.c' || echo '$(srcdir)/'`base64_test.c
-
-base64_test-base64_test.obj: base64_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64_test.obj -MD -MP -MF $(DEPDIR)/base64_test-base64_test.Tpo -c -o base64_test-base64_test.obj `if test -f 'base64_test.c'; then $(CYGPATH_W) 'base64_test.c'; else $(CYGPATH_W) '$(srcdir)/base64_test.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64_test.Tpo $(DEPDIR)/base64_test-base64_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64_test.c' object='base64_test-base64_test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64_test.obj `if test -f 'base64_test.c'; then $(CYGPATH_W) 'base64_test.c'; else $(CYGPATH_W) '$(srcdir)/base64_test.c'; fi`
-
 base64_test-output.o: $(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-output.o -MD -MP -MF $(DEPDIR)/base64_test-output.Tpo -c -o base64_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-output.Tpo $(DEPDIR)/base64_test-output.Po
@@ -312,34 +303,6 @@ base64_test-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='base64_test-output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
-
-base64_test-base64.o: $(top_srcdir)/src/base64.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64.o -MD -MP -MF $(DEPDIR)/base64_test-base64.Tpo -c -o base64_test-base64.o `test -f '$(top_srcdir)/src/base64.c' || echo '$(srcdir)/'`$(top_srcdir)/src/base64.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64.Tpo $(DEPDIR)/base64_test-base64.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/base64.c' object='base64_test-base64.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64.o `test -f '$(top_srcdir)/src/base64.c' || echo '$(srcdir)/'`$(top_srcdir)/src/base64.c
-
-base64_test-base64.obj: $(top_srcdir)/src/base64.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64.obj -MD -MP -MF $(DEPDIR)/base64_test-base64.Tpo -c -o base64_test-base64.obj `if test -f '$(top_srcdir)/src/base64.c'; then $(CYGPATH_W) '$(top_srcdir)/src/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/base64.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64.Tpo $(DEPDIR)/base64_test-base64.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/base64.c' object='base64_test-base64.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64.obj `if test -f '$(top_srcdir)/src/base64.c'; then $(CYGPATH_W) '$(top_srcdir)/src/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/base64.c'; fi`
-
-base64_test-utils.o: $(top_srcdir)/src/utils.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-utils.o -MD -MP -MF $(DEPDIR)/base64_test-utils.Tpo -c -o base64_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-utils.Tpo $(DEPDIR)/base64_test-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='base64_test-utils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
-
-base64_test-utils.obj: $(top_srcdir)/src/utils.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-utils.obj -MD -MP -MF $(DEPDIR)/base64_test-utils.Tpo -c -o base64_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-utils.Tpo $(DEPDIR)/base64_test-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='base64_test-utils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
 
 base64_test-memwatch.o: $(top_srcdir)/src/memwatch.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-memwatch.o -MD -MP -MF $(DEPDIR)/base64_test-memwatch.Tpo -c -o base64_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
@@ -355,19 +318,47 @@ base64_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
-https_test-https_test.o: https_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-https_test.o -MD -MP -MF $(DEPDIR)/https_test-https_test.Tpo -c -o https_test-https_test.o `test -f 'https_test.c' || echo '$(srcdir)/'`https_test.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-https_test.Tpo $(DEPDIR)/https_test-https_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='https_test.c' object='https_test-https_test.o' libtool=no @AMDEPBACKSLASH@
+base64_test-utils.o: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-utils.o -MD -MP -MF $(DEPDIR)/base64_test-utils.Tpo -c -o base64_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-utils.Tpo $(DEPDIR)/base64_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='base64_test-utils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-https_test.o `test -f 'https_test.c' || echo '$(srcdir)/'`https_test.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
 
-https_test-https_test.obj: https_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-https_test.obj -MD -MP -MF $(DEPDIR)/https_test-https_test.Tpo -c -o https_test-https_test.obj `if test -f 'https_test.c'; then $(CYGPATH_W) 'https_test.c'; else $(CYGPATH_W) '$(srcdir)/https_test.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-https_test.Tpo $(DEPDIR)/https_test-https_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='https_test.c' object='https_test-https_test.obj' libtool=no @AMDEPBACKSLASH@
+base64_test-utils.obj: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-utils.obj -MD -MP -MF $(DEPDIR)/base64_test-utils.Tpo -c -o base64_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-utils.Tpo $(DEPDIR)/base64_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='base64_test-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-https_test.obj `if test -f 'https_test.c'; then $(CYGPATH_W) 'https_test.c'; else $(CYGPATH_W) '$(srcdir)/https_test.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+
+base64_test-base64.o: $(top_srcdir)/src/base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64.o -MD -MP -MF $(DEPDIR)/base64_test-base64.Tpo -c -o base64_test-base64.o `test -f '$(top_srcdir)/src/base64.c' || echo '$(srcdir)/'`$(top_srcdir)/src/base64.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64.Tpo $(DEPDIR)/base64_test-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/base64.c' object='base64_test-base64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64.o `test -f '$(top_srcdir)/src/base64.c' || echo '$(srcdir)/'`$(top_srcdir)/src/base64.c
+
+base64_test-base64.obj: $(top_srcdir)/src/base64.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64.obj -MD -MP -MF $(DEPDIR)/base64_test-base64.Tpo -c -o base64_test-base64.obj `if test -f '$(top_srcdir)/src/base64.c'; then $(CYGPATH_W) '$(top_srcdir)/src/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/base64.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64.Tpo $(DEPDIR)/base64_test-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/base64.c' object='base64_test-base64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64.obj `if test -f '$(top_srcdir)/src/base64.c'; then $(CYGPATH_W) '$(top_srcdir)/src/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/base64.c'; fi`
+
+base64_test-base64_test.o: base64_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64_test.o -MD -MP -MF $(DEPDIR)/base64_test-base64_test.Tpo -c -o base64_test-base64_test.o `test -f 'base64_test.c' || echo '$(srcdir)/'`base64_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64_test.Tpo $(DEPDIR)/base64_test-base64_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64_test.c' object='base64_test-base64_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64_test.o `test -f 'base64_test.c' || echo '$(srcdir)/'`base64_test.c
+
+base64_test-base64_test.obj: base64_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT base64_test-base64_test.obj -MD -MP -MF $(DEPDIR)/base64_test-base64_test.Tpo -c -o base64_test-base64_test.obj `if test -f 'base64_test.c'; then $(CYGPATH_W) 'base64_test.c'; else $(CYGPATH_W) '$(srcdir)/base64_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/base64_test-base64_test.Tpo $(DEPDIR)/base64_test-base64_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='base64_test.c' object='base64_test-base64_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(base64_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o base64_test-base64_test.obj `if test -f 'base64_test.c'; then $(CYGPATH_W) 'base64_test.c'; else $(CYGPATH_W) '$(srcdir)/base64_test.c'; fi`
 
 https_test-output.o: $(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-output.o -MD -MP -MF $(DEPDIR)/https_test-output.Tpo -c -o https_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
@@ -383,6 +374,20 @@ https_test-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
 
+https_test-memwatch.o: $(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-memwatch.o -MD -MP -MF $(DEPDIR)/https_test-memwatch.Tpo -c -o https_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-memwatch.Tpo $(DEPDIR)/https_test-memwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='https_test-memwatch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
+
+https_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-memwatch.obj -MD -MP -MF $(DEPDIR)/https_test-memwatch.Tpo -c -o https_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-memwatch.Tpo $(DEPDIR)/https_test-memwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='https_test-memwatch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
+
 https_test-utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-utils.o -MD -MP -MF $(DEPDIR)/https_test-utils.Tpo -c -o https_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-utils.Tpo $(DEPDIR)/https_test-utils.Po
@@ -396,6 +401,20 @@ https_test-utils.obj: $(top_srcdir)/src/utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='https_test-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+
+https_test-https_test.o: https_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-https_test.o -MD -MP -MF $(DEPDIR)/https_test-https_test.Tpo -c -o https_test-https_test.o `test -f 'https_test.c' || echo '$(srcdir)/'`https_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-https_test.Tpo $(DEPDIR)/https_test-https_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='https_test.c' object='https_test-https_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-https_test.o `test -f 'https_test.c' || echo '$(srcdir)/'`https_test.c
+
+https_test-https_test.obj: https_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-https_test.obj -MD -MP -MF $(DEPDIR)/https_test-https_test.Tpo -c -o https_test-https_test.obj `if test -f 'https_test.c'; then $(CYGPATH_W) 'https_test.c'; else $(CYGPATH_W) '$(srcdir)/https_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/https_test-https_test.Tpo $(DEPDIR)/https_test-https_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='https_test.c' object='https_test-https_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-https_test.obj `if test -f 'https_test.c'; then $(CYGPATH_W) 'https_test.c'; else $(CYGPATH_W) '$(srcdir)/https_test.c'; fi`
 
 https_test-web.o: $(top_srcdir)/src/web.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -MT https_test-web.o -MD -MP -MF $(DEPDIR)/https_test-web.Tpo -c -o https_test-web.o `test -f '$(top_srcdir)/src/web.c' || echo '$(srcdir)/'`$(top_srcdir)/src/web.c
@@ -425,20 +444,6 @@ https_test-file.obj: $(top_srcdir)/src/file.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(https_test_CPPFLAGS) $(CPPFLAGS) $(https_test_CFLAGS) $(CFLAGS) -c -o https_test-file.obj `if test -f '$(top_srcdir)/src/file.c'; then $(CYGPATH_W) '$(top_srcdir)/src/file.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/file.c'; fi`
 
-list_test-list_test.o: list_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-list_test.o -MD -MP -MF $(DEPDIR)/list_test-list_test.Tpo -c -o list_test-list_test.o `test -f 'list_test.c' || echo '$(srcdir)/'`list_test.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-list_test.Tpo $(DEPDIR)/list_test-list_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list_test.c' object='list_test-list_test.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-list_test.o `test -f 'list_test.c' || echo '$(srcdir)/'`list_test.c
-
-list_test-list_test.obj: list_test.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-list_test.obj -MD -MP -MF $(DEPDIR)/list_test-list_test.Tpo -c -o list_test-list_test.obj `if test -f 'list_test.c'; then $(CYGPATH_W) 'list_test.c'; else $(CYGPATH_W) '$(srcdir)/list_test.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-list_test.Tpo $(DEPDIR)/list_test-list_test.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list_test.c' object='list_test-list_test.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-list_test.obj `if test -f 'list_test.c'; then $(CYGPATH_W) 'list_test.c'; else $(CYGPATH_W) '$(srcdir)/list_test.c'; fi`
-
 list_test-output.o: $(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-output.o -MD -MP -MF $(DEPDIR)/list_test-output.Tpo -c -o list_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-output.Tpo $(DEPDIR)/list_test-output.Po
@@ -467,6 +472,20 @@ list_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
+list_test-utils.o: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-utils.o -MD -MP -MF $(DEPDIR)/list_test-utils.Tpo -c -o list_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-utils.Tpo $(DEPDIR)/list_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='list_test-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
+
+list_test-utils.obj: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-utils.obj -MD -MP -MF $(DEPDIR)/list_test-utils.Tpo -c -o list_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-utils.Tpo $(DEPDIR)/list_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='list_test-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+
 list_test-list.o: $(top_srcdir)/src/list.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-list.o -MD -MP -MF $(DEPDIR)/list_test-list.Tpo -c -o list_test-list.o `test -f '$(top_srcdir)/src/list.c' || echo '$(srcdir)/'`$(top_srcdir)/src/list.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-list.Tpo $(DEPDIR)/list_test-list.Po
@@ -480,6 +499,20 @@ list_test-list.obj: $(top_srcdir)/src/list.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/list.c' object='list_test-list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-list.obj `if test -f '$(top_srcdir)/src/list.c'; then $(CYGPATH_W) '$(top_srcdir)/src/list.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/list.c'; fi`
+
+list_test-list_test.o: list_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-list_test.o -MD -MP -MF $(DEPDIR)/list_test-list_test.Tpo -c -o list_test-list_test.o `test -f 'list_test.c' || echo '$(srcdir)/'`list_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-list_test.Tpo $(DEPDIR)/list_test-list_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list_test.c' object='list_test-list_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-list_test.o `test -f 'list_test.c' || echo '$(srcdir)/'`list_test.c
+
+list_test-list_test.obj: list_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list_test-list_test.obj -MD -MP -MF $(DEPDIR)/list_test-list_test.Tpo -c -o list_test-list_test.obj `if test -f 'list_test.c'; then $(CYGPATH_W) 'list_test.c'; else $(CYGPATH_W) '$(srcdir)/list_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/list_test-list_test.Tpo $(DEPDIR)/list_test-list_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list_test.c' object='list_test-list_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(list_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list_test-list_test.obj `if test -f 'list_test.c'; then $(CYGPATH_W) 'list_test.c'; else $(CYGPATH_W) '$(srcdir)/list_test.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
