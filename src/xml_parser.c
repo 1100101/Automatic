@@ -117,7 +117,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 					child = child->next;
 				}
 				if (is_torrent_feed == 0) {
-					dbg_printf(P_MSG, "Is this really a torrent feed?");
+					dbg_printf(P_INFO2, "Is this really a torrent feed?");
 				}
 				if (name_set && url_set) {
 					addItem(item, &itemList);
