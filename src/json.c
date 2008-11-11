@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
-#include <regex.h>
+#include <pcre.h>
 #include <string.h>
 
 #include "base64.h"
@@ -77,29 +77,41 @@ char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size) {
  * The JSON response contains a field "result" with a string value. This value is extracted and returned.
  * Possible values are "success", "duplicate torrent" or failure messages.
  */
+
+#define OVECCOUNT 30
 const char* parseResponse(const char* response) {
 	int err, len;
-	char erbuf[100];
-	regmatch_t pmatch[2];
+	int erroffset;
+	const char *error = NULL;
 	const char* result_regex = "\"result\": \"(.+)\"\n";
-	regex_t *result_preg = am_malloc(sizeof(regex_t));
+	pcre *result_preg = NULL;
 	char *result_str = NULL;
+	int ovector[OVECCOUNT];
 
-	err = regcomp(result_preg, result_regex, REG_EXTENDED|REG_ICASE);
-	if(err) {
-		regerror(err, result_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[parseResponse] regcomp: Error compiling regular expression: %s", erbuf);
-	}
-	err = regexec(result_preg, response, 2, pmatch, 0);
-	if(!err) { /* regex matches */
-		len = pmatch[1].rm_eo - pmatch[1].rm_so;
-		dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, pmatch[1].rm_eo, pmatch[1].rm_so);
-		result_str = am_strndup(response + pmatch[1].rm_so, len);
+	result_preg = pcre_compile(result_regex, PCRE_CASELESS|PCRE_EXTENDED,
+											&error,               /* for error message */
+											&erroffset,           /* for error offset */
+											NULL);                /* use default character tables */
+
+	if(result_preg == NULL) {
+		dbg_printf(P_ERR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
 	} else {
-		len = regerror(err, result_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[parseResponse] regexec error: %s", erbuf);
+		err = pcre_exec(result_preg, NULL, response, strlen(response),
+										0, 0, ovector, OVECCOUNT);
+		if(err >= 0) { /* regex matches */
+			assert(err == 1);
+			char *substring_start = subject + ovector[0];
+			len = ovector[1] - ovector[0];
+			dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, ovector[1], ovector[0]);
+			result_str = am_strndup(response + ovector[0], len);
+		} else {
+			if(err == PCRE_ERROR_NOMATCH) {
+				dbg_printf(P_INFO, "[parseResponse] regexec didn't match. Response was: %s", response);
+			} else {
+				dbg_printf(P_ERROR, "[parseResponse] regexec error: %d", err);
+			}
+		}
+		pcre_free(result_preg);
 	}
-	regfree(result_preg);
-	am_free(result_preg);
 	return result_str;
 }

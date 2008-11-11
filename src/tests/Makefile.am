@@ -14,15 +14,15 @@ https_test_SOURCES = $(GLOBAL_SOURCES) \
    https_test.c                    \
    $(top_srcdir)/src/web.c         \
    $(top_srcdir)/src/file.c
-   
+
 list_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/list.c      \
     list_test.c
-      
+
 base64_test_SOURCES = $(GLOBAL_SOURCES) \
    $(top_srcdir)/src/base64.c       \
    base64_test.c
-   
+
 
 noinst_HEADERS = \
    $(top_srcdir)/include/output.h   \
@@ -32,8 +32,8 @@ noinst_HEADERS = \
    $(top_srcdir)/include/web.h      \
    $(top_srcdir)/include/file.h
 
-https_test_LDADD  = $(LIBCURL_LIBS)
-https_test_CFLAGS = $(LIBCURL_CFLAGS)
+https_test_LDADD  = $(LIBCURL_LIBS) $(LIBPCRE_LIBS)
+https_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBPCRE_CFLAGS)
 
 
 https_test_CPPFLAGS  = -DMEMWATCH -DDEBUG

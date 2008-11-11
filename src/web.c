@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <regex.h>
+#include <pcre.h>
 #include <curl/curl.h>
 #include <stdint.h>
 
@@ -47,31 +47,34 @@
 #define HEADER_BUFFER 500
 /** \endcond */
 
-static void init_cd_preg(regex_t *content_disp_preg) {
+pcre* init_cd_preg(void) {
 	int err;
-	char erbuf[100];
- 	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+	pcre *re = NULL;
 
-	dbg_printf(P_DBG, "[init_cd_preg] allocated %d bytes for content_disp_preg", sizeof(regex_t));
-	err = regcomp(content_disp_preg, fname_regex, REG_EXTENDED|REG_ICASE);
+	const char* errbuf = NULL;
+	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+	re = pcre_compile(fname_regex, PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
+
 	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
-	if(err) {
-		regerror(err, content_disp_preg, erbuf, sizeof(erbuf));
-		dbg_printf(P_ERROR, "[init_cd_preg] regcomp: Error compiling regular expression: %s", erbuf);
+	if(re == NULL) {
+		dbg_printf(P_ERR, "[init_cd_preg] PCRE compilation failed at offset %d: %s\n", err, errbuf);
 	}
+	return re;
 }
+
+#define OVECCOUNT 30
 
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
-	char *buf;
+	char *buf = NULL;
 	char tmp[20];
-	char *p;
-	char erbuf[100];
+	char *p = NULL;
 	int content_length = 0, len, err;
 	int i;
-	regmatch_t pmatch[3];
-	regex_t content_disp_preg;
+	pcre *content_disp_preg = NULL;
+	int ovector[OVECCOUNT];
+
 
 	buf = am_malloc(realsize + 1);
 	if(!buf) {
@@ -102,23 +105,27 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		}
 	} else {
 		/* parse header for Content-Disposition to get correct filename */
-		init_cd_preg(&content_disp_preg);
-		err = regexec(&content_disp_preg, buf, 3, pmatch, 0);
-		if(!err) {			/* regex matches */
-			len = pmatch[2].rm_eo - pmatch[2].rm_so;
-			mem->content_filename = am_realloc(mem->content_filename, len + 1);
-			strncpy(mem->content_filename, buf + pmatch[2].rm_so, len);
-			mem->content_filename[len] = '\0';
-			dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
-		} else if(err != REG_NOMATCH && err != 0){
-			len = regerror(err, &content_disp_preg, erbuf, sizeof(erbuf));
-			dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", erbuf);
-		} else {
-			if(!strncmp(buf, "Content-Disposition", 19)) {
-				len = regerror(err, &content_disp_preg, erbuf, sizeof(erbuf));
-				dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", erbuf);
-				dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s", buf);
+		content_disp_preg = init_cd_preg();
+		if(content_disp_preg) {
+			err = pcre_exec(content_disp_preg, NULL, buf, strlen(buf),
+											0, 0, ovector, OVECCOUNT);
+
+			err = regexec(&content_disp_preg, buf, 3, pmatch, 0);
+			if(err == 1) {			/* regex matches */
+				len = ovector[1] - ovector[0];
+				mem->content_filename = am_realloc(mem->content_filename, len + 1);
+				strncpy(mem->content_filename, buf + ovector[0], len);
+				mem->content_filename[len] = '\0';
+				dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
+			} else if(err < 0 && err != PCRE_ERROR_NOMATCH) {
+				dbg_printf(P_ERROR, "[write_header_callback] regexec error: %d", err);
+			} else {
+				if(!strncmp(buf, "Content-Disposition", 19)) {
+					dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", err);
+					dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s", buf);
+				}
 			}
+			pcre_free(content_disp_preg);
 		}
 	}
 

@@ -27,8 +27,10 @@ fi
 
 CURL_MINIMUM=7.15.0
 LIBXML2_MINIMUM=2.6.31
+PCRE_MINIMUM=7.7
 AC_SUBST(CURL_MINIMUM)
 AC_SUBST(LIBXML2_MINIMUM)
+AC_SUBST(PCRE_MINIMUM)
 
 # export these variable (so Makefile substitutions
 # can be made.
@@ -38,6 +40,7 @@ AC_SUBST(LDFLAGS)
 # Checks for libraries.
 PKG_CHECK_MODULES(LIBCURL, [libcurl >= $CURL_MINIMUM])
 PKG_CHECK_MODULES(LIBXML, [libxml-2.0 >= $LIBXML2_MINIMUM])
+PKG_CHECK_MODULES(PCRE, [libpcre >= $PCRE_MINIMUM])
 AC_CHECK_LIB(curl, curl_global_init)
 
 # Checks for c compiler.

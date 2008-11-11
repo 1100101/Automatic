@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
-#include <regex.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
