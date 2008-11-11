@@ -87,7 +87,7 @@ int saveFile(const char *name, const void *data, uint32_t size) {
     ret = -1;
   } else {
     ret = write(fh, data, size);
-    if (ret != size) {
+    if ((uint32_t)ret != size) {
       dbg_printf(P_ERROR, "[saveFile] Error writing torrent file: %s",
           strerror(errno));
       ret = -1;

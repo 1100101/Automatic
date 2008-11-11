@@ -57,7 +57,7 @@ pcre* init_cd_preg(void) {
 
 	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
 	if(re == NULL) {
-		dbg_printf(P_ERR, "[init_cd_preg] PCRE compilation failed at offset %d: %s\n", err, errbuf);
+		dbg_printf(P_ERROR, "[init_cd_preg] PCRE compilation failed at offset %d: %s\n", err, errbuf);
 	}
 	return re;
 }
@@ -71,7 +71,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 	char tmp[20];
 	char *p = NULL;
 	int content_length = 0, len, err;
-	int i;
+	uint32_t i;
 	pcre *content_disp_preg = NULL;
 	int ovector[OVECCOUNT];
 
@@ -107,10 +107,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		/* parse header for Content-Disposition to get correct filename */
 		content_disp_preg = init_cd_preg();
 		if(content_disp_preg) {
-			err = pcre_exec(content_disp_preg, NULL, buf, strlen(buf),
-											0, 0, ovector, OVECCOUNT);
-
-			err = regexec(&content_disp_preg, buf, 3, pmatch, 0);
+			err = pcre_exec(content_disp_preg, NULL, buf, strlen(buf), 0, 0, ovector, OVECCOUNT);
 			if(err == 1) {			/* regex matches */
 				len = ovector[1] - ovector[0];
 				mem->content_filename = am_realloc(mem->content_filename, len + 1);

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <pcre.h>
 #include <string.h>
+#include <assert.h>
 
 #include "base64.h"
 #include "output.h"
@@ -35,9 +36,10 @@
 char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size) {
 
 	char *encoded = NULL;
-	uint32_t enc_size, json_size;
+
 	char *buf = NULL;
-	int buf_size;
+	int buf_size, json_size;
+	uint32_t enc_size;
 	const char *JSONstr =
 		"{\n"
 		"\"method\": \"torrent-add\",\n"
@@ -94,13 +96,12 @@ const char* parseResponse(const char* response) {
 											NULL);                /* use default character tables */
 
 	if(result_preg == NULL) {
-		dbg_printf(P_ERR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
+		dbg_printf(P_ERROR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
 	} else {
 		err = pcre_exec(result_preg, NULL, response, strlen(response),
 										0, 0, ovector, OVECCOUNT);
 		if(err >= 0) { /* regex matches */
 			assert(err == 1);
-			char *substring_start = subject + ovector[0];
 			len = ovector[1] - ovector[0];
 			dbg_printf(P_DBG, "result len: %d (end: %d, start: %d)", len, ovector[1], ovector[0]);
 			result_str = am_strndup(response + ovector[0], len);

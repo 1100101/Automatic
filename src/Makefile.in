@@ -55,7 +55,8 @@ am_automatic_OBJECTS = automatic.$(OBJEXT) base64.$(OBJEXT) \
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
-automatic_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+automatic_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am__objects_1 = automatic_mw-automatic.$(OBJEXT) \
 	automatic_mw-base64.$(OBJEXT) \
 	automatic_mw-config_parser.$(OBJEXT) \
@@ -72,7 +73,7 @@ am_automatic_mw_OBJECTS = $(am__objects_1) \
 automatic_mw_OBJECTS = $(am_automatic_mw_OBJECTS)
 automatic_mw_LDADD = $(LDADD)
 automatic_mw_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -155,6 +156,9 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PCRE_CFLAGS = @PCRE_CFLAGS@
+PCRE_LIBS = @PCRE_LIBS@
+PCRE_MINIMUM = @PCRE_MINIMUM@
 PKG_CONFIG = @PKG_CONFIG@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -205,7 +209,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = . tests
 INCLUDES = -I$(top_srcdir)/include/
-AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS)
+AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 automatic_SOURCES = \
    $(top_srcdir)/src/automatic.c      \
    $(top_srcdir)/src/base64.c         \
@@ -255,7 +259,8 @@ automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG
 dist_sysconf_DATA = automatic.conf-sample
 LDADD = \
     $(LIBCURL_LIBS) \
-    $(LIBXML_LIBS)
+    $(LIBXML_LIBS)  \
+    $(PCRE_LIBS)
 
 EXTRA_automatic_SOURCES = \
     version.h

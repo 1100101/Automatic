@@ -55,7 +55,6 @@
 uint8_t useFilters(const simple_list filters, const feed_item item) {
 	int err;
 	pcre *preg = NULL;
-	char erbuf[100];
 	int erroffset;
 	const char *error = NULL;
 	char *regex_str = NULL;
@@ -70,7 +69,7 @@ uint8_t useFilters(const simple_list filters, const feed_item item) {
 												&erroffset,           /* for error offset */
 												NULL);                /* use default character tables */
 		if (preg == NULL) {
-			dbg_printf(P_ERR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
+			dbg_printf(P_ERROR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
 			current_regex = current_regex->next;
 			continue;
 		}

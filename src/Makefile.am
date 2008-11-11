@@ -1,7 +1,7 @@
 SUBDIRS = . tests
 INCLUDES = -I$(top_srcdir)/include/
 
-AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(LIBPCRE_CFLAGS)
+AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
 bin_PROGRAMS =   \
   automatic      \
@@ -61,7 +61,7 @@ dist_sysconf_DATA = automatic.conf-sample
 LDADD = \
     $(LIBCURL_LIBS) \
     $(LIBXML_LIBS)  \
-    $(LIBPCRE_LIBS)
+    $(PCRE_LIBS)
 
 clean-local:
 	if test -d .svn; then rm -f version.h; fi;

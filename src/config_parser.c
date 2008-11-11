@@ -79,7 +79,7 @@ static void set_path(char *src, char **dst) {
 
 static int parseUInt(const char *str) {
 	int is_num = 1;
-	int i;
+	uint32_t i;
 
 	for(i = 0; i < strlen(str); i++) {
 		if(isdigit(str[i]) == 0)
@@ -95,11 +95,12 @@ static char* shorten(const char *str) {
 		char tmp[MAX_PARAM_LEN + 1];
 		int tmp_pos;
 		char c;
-		int line_pos = 0, i;
-		int len = strlen(str);
+		uint32_t line_pos = 0, i;
+		uint32_t len = strlen(str);
 
-		for(i = 0; i < sizeof(tmp); ++i)
+		for(i = 0; i < sizeof(tmp); ++i) {
 			tmp[i] = '\0';
+		}
 
 		while (isspace(str[line_pos])) {
 			++line_pos;
