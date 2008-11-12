@@ -17,6 +17,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/json.c           \
    $(top_srcdir)/src/list.c           \
    $(top_srcdir)/src/output.c         \
+   $(top_srcdir)/src/regex.c          \
    $(top_srcdir)/src/rss_feed.c       \
    $(top_srcdir)/src/state.c          \
    $(top_srcdir)/src/torrent.c        \
@@ -35,6 +36,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/json.h           \
    $(top_srcdir)/include/list.h           \
    $(top_srcdir)/include/output.h         \
+   $(top_srcdir)/include/regex.h          \
    $(top_srcdir)/include/rss_feed.h       \
    $(top_srcdir)/include/state.h          \
    $(top_srcdir)/include/torrent.h        \

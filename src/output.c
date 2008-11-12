@@ -56,7 +56,7 @@ void dbg_printf(debug_type type, const char *format, ...) {
   char tmp[MSGSIZE_MAX];
 	FILE *fp = stderr;
 
-	uint8_t verbose = P_MSG;
+extern	int8_t verbose;
 
 	if(verbose >= type) {
 		va_start(va, format);

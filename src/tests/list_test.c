@@ -17,6 +17,8 @@
 
 #define LIST_SIZE 100
 
+int8_t verbose = P_NONE;
+
 static char *rand_str(uint8_t size) {
    static const char text[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
    int i, len = rand() % (size - 1);

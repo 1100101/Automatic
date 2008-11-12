@@ -32,12 +32,12 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
-#include <pcre.h>
 #include <stdint.h>
 
 
 #include "feed_item.h"
 #include "output.h"
+#include "regex.h"
 #include "utils.h"
 
 #ifdef MEMWATCH
@@ -53,38 +53,15 @@
  *
  */
 uint8_t useFilters(const simple_list filters, const feed_item item) {
-	int err;
-	pcre *preg = NULL;
-	int erroffset;
-	const char *error = NULL;
 	char *regex_str = NULL;
 	simple_list current_regex = NULL;
 
 	current_regex = filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
 		regex_str = (char*) current_regex->data;
-		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
-		preg = pcre_compile(regex_str, PCRE_CASELESS|PCRE_EXTENDED,
-												&error,               /* for error message */
-												&erroffset,           /* for error offset */
-												NULL);                /* use default character tables */
-		if (preg == NULL) {
-			dbg_printf(P_ERROR, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
-			current_regex = current_regex->next;
-			continue;
-		}
-
-		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
-		err = pcre_exec(preg, NULL, item->name, strlen(item->name),
-										0, 0, NULL, 0);
-		if (!err) { /* regex matches */
-			pcre_free(preg);
+		if(isRegExMatch(regex_str, item->name) == 1) {
 			return 1;
-		} else {
-			if(err != PCRE_ERROR_NOMATCH)
-			dbg_printf(P_ERROR, "[useFilters] PCRE error: %d", err);
 		}
-		pcre_free(preg);
 		current_regex = current_regex->next;
 	}
 	return 0;

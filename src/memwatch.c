@@ -136,7 +136,7 @@
 ***********************************************************************/
 
 /*lint -save -e767 */
-#define VERSION     "2.71"         /* the current version number */
+#define MW_VERSION     "2.71"         /* the current version number */
 #define CHKVAL(mw)  (0xFE0180L^(long)mw->count^(long)mw->size^(long)mw->line)
 #define FLUSH()     mwFlush()
 #define TESTS(f,l)  if(mwTestAlways) (void)mwTestNow(f,l,1)
@@ -451,7 +451,7 @@ void mwInit( void ) {
         (void) time( &tid );
         mwWrite(
             "\n============="
-            " MEMWATCH " VERSION " Copyright (C) 1992-1999 Johan Lindh "
+            " MEMWATCH " MW_VERSION " Copyright (C) 1992-1999 Johan Lindh "
             "=============\n");
         mwWrite( "\nStarted at %s\n", ctime( &tid ) );
 

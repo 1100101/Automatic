@@ -33,12 +33,12 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <pcre.h>
 #include <curl/curl.h>
 #include <stdint.h>
 
 #include "web.h"
 #include "output.h"
+#include "regex.h"
 #include "utils.h"
 
 
@@ -47,33 +47,15 @@
 #define HEADER_BUFFER 500
 /** \endcond */
 
-pcre* init_cd_preg(void) {
-	int err;
-	pcre *re = NULL;
-
-	const char* errbuf = NULL;
-	const char* fname_regex = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
-	re = pcre_compile(fname_regex, PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
-
-	/* a failure of regcomp won't be critical. the app will fall back and extract a filename from the URL */
-	if(re == NULL) {
-		dbg_printf(P_ERROR, "[init_cd_preg] PCRE compilation failed at offset %d: %s\n", err, errbuf);
-	}
-	return re;
-}
-
-#define OVECCOUNT 30
-
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
 	char *buf = NULL;
 	char tmp[20];
-	char *p = NULL;
-	int content_length = 0, len, err;
+	char *p = NULL, *filename = NULL;
+	const char* content_pattern = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+	int content_length = 0;
 	uint32_t i;
-	pcre *content_disp_preg = NULL;
-	int ovector[OVECCOUNT];
 
 
 	buf = am_malloc(realsize + 1);
@@ -105,24 +87,11 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		}
 	} else {
 		/* parse header for Content-Disposition to get correct filename */
-		content_disp_preg = init_cd_preg();
-		if(content_disp_preg) {
-			err = pcre_exec(content_disp_preg, NULL, buf, strlen(buf), 0, 0, ovector, OVECCOUNT);
-			if(err == 1) {			/* regex matches */
-				len = ovector[1] - ovector[0];
-				mem->content_filename = am_realloc(mem->content_filename, len + 1);
-				strncpy(mem->content_filename, buf + ovector[0], len);
-				mem->content_filename[len] = '\0';
-				dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
-			} else if(err < 0 && err != PCRE_ERROR_NOMATCH) {
-				dbg_printf(P_ERROR, "[write_header_callback] regexec error: %d", err);
-			} else {
-				if(!strncmp(buf, "Content-Disposition", 19)) {
-					dbg_printf(P_ERROR, "[write_header_callback] regexec error: %s", err);
-					dbg_printf(P_ERROR, "[write_header_callback] Unknown Content-Disposition pattern: %s", buf);
-				}
-			}
-			pcre_free(content_disp_preg);
+
+		filename = getRegExMatch(content_pattern, buf, 2);
+		if(filename) {
+			mem->content_filename = filename;
+			dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
 		}
 	}
 
@@ -252,6 +221,10 @@ WebData* getHTTPData(const char *url) {
 	char errorBuffer[CURL_ERROR_SIZE];
 	long rc;
 
+	if(!url) {
+		return NULL;
+	}
+
 	WebData* data = WebData_new(url);
 	if(!data)
 		return NULL;
@@ -327,6 +300,7 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
 	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);

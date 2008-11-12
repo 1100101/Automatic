@@ -21,6 +21,7 @@
 
 #define TIME_STR_SIZE 30
 enum debug_type {
+	P_NONE = -1,
 	P_ERROR = 0,
 	P_MSG = 1,
 	P_INFO = 2,

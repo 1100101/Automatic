@@ -106,8 +106,9 @@ static void do_cleanup(auto_handle *as) {
 static void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
-	if (as && as->bucket_changed)
+	if (as && as->bucket_changed) {
 		save_state(as->statefile, as->downloads);
+	}
 	do_cleanup(as);
 	exit(EXIT_SUCCESS);
 }

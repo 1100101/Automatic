@@ -6,12 +6,15 @@
  */
 
 
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include "utils.h"
 #include "output.h"
 #include "base64.h"
+
+
+int8_t verbose = P_NONE;
 
 int main(void) {
 
@@ -20,6 +23,10 @@ int main(void) {
 
 	char *encode = NULL, *decode = NULL;
 	uint32_t enc_len, dec_len;
+
+	encode = base64_encode(NULL, 47, &enc_len);
+	assert(encode == NULL && enc_len == 0);
+
 	encode = base64_encode(dec_str, strlen(dec_str), &enc_len);
 	assert(enc_len == strlen(enc_str));
 	assert(strcmp(encode, enc_str) == 0);
