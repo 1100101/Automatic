@@ -87,7 +87,6 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		}
 	} else {
 		/* parse header for Content-Disposition to get correct filename */
-
 		filename = getRegExMatch(content_pattern, buf, 2);
 		if(filename) {
 			mem->content_filename = filename;
@@ -135,7 +134,7 @@ static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *da
 }
 
 static struct HTTPData* HTTPData_new(void) {
-	HTTPData* data;
+	HTTPData* data = NULL;
 
 	data = am_malloc(sizeof(struct HTTPData));
 	if(!data) {
@@ -147,6 +146,7 @@ static struct HTTPData* HTTPData_new(void) {
 }
 
 static void HTTPData_free(HTTPData* data) {
+
 	if(data)
 		am_free(data->data);
 	am_free(data);
@@ -160,7 +160,7 @@ static void HTTPData_free(HTTPData* data) {
  * The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
  */
 struct WebData* WebData_new(const char *url) {
-	WebData *data;
+	WebData *data = NULL;
 
 	data = am_malloc(sizeof(WebData));
 	if(!data)
@@ -196,6 +196,7 @@ struct WebData* WebData_new(const char *url) {
  * \param[in] data Pointer to a WebData object
  */
 void WebData_free(struct WebData *data) {
+
 	if(data) {
 		am_free(data->url);
 		am_free(data->content_filename);
@@ -216,16 +217,17 @@ void WebData_free(struct WebData *data) {
  */
 
 WebData* getHTTPData(const char *url) {
-	CURL *curl_handle;
+	CURL *curl_handle = NULL;
 	CURLcode res;
 	char errorBuffer[CURL_ERROR_SIZE];
+	WebData* data = NULL;
 	long rc;
 
 	if(!url) {
 		return NULL;
 	}
 
-	WebData* data = WebData_new(url);
+	data = WebData_new(url);
 	if(!data)
 		return NULL;
 

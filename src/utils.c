@@ -37,6 +37,8 @@
 
 #include "output.h"
 
+static size_t mem_used = 0;
+
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
@@ -50,10 +52,17 @@ void* am_malloc( size_t size ) {
 	void *tmp = NULL;
 	if(size > 0) {
 		tmp = malloc(size);
-		dbg_printf(P_DBG, "Allocated %d bytes (%p)", size, tmp);
+		if(tmp) {
+			mem_used += size;
+			dbg_printf(P_DBG, "Allocated %d bytes (%p)", size, tmp);
+		}
 		return tmp;
 	}
 	return NULL;
+}
+
+size_t getMemUsed(void)	{
+	return mem_used;
 }
 
 /** \brief Reallocate (resize) a memory section

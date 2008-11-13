@@ -110,6 +110,7 @@ static void shutdown_daemon(auto_handle *as) {
 		save_state(as->statefile, as->downloads);
 	}
 	do_cleanup(as);
+	dbg_printf(P_MSG, "Total memory used: %d", getMemUsed());
 	exit(EXIT_SUCCESS);
 }
 
