@@ -80,14 +80,14 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
 	char *result_str = NULL;
 	int ovector[OVECCOUNT];
 
-	if(!str) {
+	if(!str || (str && strlen(str) == 0)) {
 		dbg_printf(P_ERROR, "[getMatch] Empty string!");
 		return NULL;
 	}
 
 	result_preg = init_regex(pattern);
 	if(result_preg) {
-		dbg_printf(P_INFO2, "[isMatch] Text to match against: %s", str);
+		dbg_printf(P_INFO2, "[isMatch] Text to match against: %s (%d byte)", str, strlen(str));
 		err = pcre_exec(result_preg, NULL, str, strlen(str),
 										0, 0, ovector, OVECCOUNT);
 		if(err > which_result) { /* regex matches */
@@ -100,7 +100,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
 			dbg_printf(P_DBG, "[getMatch] result: '%s' (%d -> %d)", result_str, ovector[2 * which_result], ovector[2 * which_result + 1]);
 		} else if(err < 0) {
 			if(err == PCRE_ERROR_NOMATCH) {
-				dbg_printf(P_INFO, "[getMatch] regexec didn't match. string was: %s", str);
+				dbg_printf(P_INFO, "[getMatch] No match");
 			} else {
 				dbg_printf(P_ERROR, "[getMatch] regexec error: %d", err);
 			}
