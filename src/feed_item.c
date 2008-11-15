@@ -52,14 +52,14 @@
  * \return 1 if a filter matched, 0 otherwise.
  *
  */
-uint8_t useFilters(const simple_list filters, const feed_item item) {
+uint8_t isMatch(const simple_list filters, const char* string) {
 	char *regex_str = NULL;
 	simple_list current_regex = NULL;
 
 	current_regex = filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
 		regex_str = (char*) current_regex->data;
-		if(isRegExMatch(regex_str, item->name) == 1) {
+		if(isRegExMatch(regex_str, string) == 1) {
 			return 1;
 		}
 		current_regex = current_regex->next;

@@ -19,7 +19,7 @@
 
 #define AM_DEFAULT_CONFIGFILE 		"/etc/automatic.conf"
 #define AM_DEFAULT_STATEFILE  		".automatic.state"
-#define AM_DEFAULT_VERBOSE 				P_MSG
+#define AM_DEFAULT_VERBOSE 				P_INFO
 #define AM_DEFAULT_NOFORK 				0
 #define AM_DEFAULT_MAXBUCKET 			10
 #define AM_DEFAULT_USETRANSMISSION 	    1
@@ -99,18 +99,14 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
 	}
 }
 
-static void do_cleanup(auto_handle *as) {
-	session_free(as);
-}
-
 static void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
 	if (as && as->bucket_changed) {
+		printList(as->downloads);
 		save_state(as->statefile, as->downloads);
 	}
-	do_cleanup(as);
-	dbg_printf(P_MSG, "Total memory used: %d", getMemUsed());
+	session_free(as);
 	exit(EXIT_SUCCESS);
 }
 
@@ -232,8 +228,11 @@ static void session_free(auto_handle *as) {
 		am_free(as->torrent_folder);
 		am_free(as->host);
 		am_free(as->auth);
+		dbg_printf(P_INFO2, "Freeing feed list (size: %d)", listCount(as->feeds));
 		freeList(&as->feeds, feed_free);
+		dbg_printf(P_INFO2, "Freeing download list (size: %d)", listCount(as->downloads));
 		freeList(&as->downloads, NULL);
+		dbg_printf(P_INFO2, "Freeing filter list (size: %d)", listCount(as->filters));
 		freeList(&as->filters, NULL);
 		am_free(as);
 	}
@@ -246,18 +245,14 @@ static WebData* downloadTorrent(const char* url) {
 static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 													 uint32_t t_size, const char *fname) {
 	uint8_t success = 0;
-	uint32_t res;
 	if (!ah->use_transmission) {
-		res = saveFile(fname, t_data, t_size);
-		if (res == 0) {
+		if(saveFile(fname, t_data, t_size) == 0) {
 			success = 1;
 		}
 	} else if (ah->transmission_version == AM_TRANSMISSION_1_2) {
-		res = saveFile(fname, t_data, t_size);
-		if (res == 0) {
+		if (saveFile(fname, t_data, t_size) == 0) {
 			if (call_transmission(ah->transmission_path, fname) == -1) {
-				dbg_printf(P_ERROR,
-						"[processTorrent] error adding torrent '%s' to Transmission");
+				dbg_printf(P_ERROR, "[addTorrentToTM] error adding torrent '%s' to Transmission");
 			} else {
 				success = 1;
 			}
@@ -274,34 +269,30 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 
 static void processRSSList(auto_handle *session, const simple_list items) {
 
-	simple_list current = items;
+	simple_list current_item = items;
 	WebData *torrent = NULL;
 	char fname[MAXPATHLEN];
-	uint8_t success = 0;
 
-	while(current && current->data) {
-		feed_item item = (feed_item)current->data;
-
-		if (useFilters(session->filters, item)) {
-			if (!has_been_downloaded(session->downloads, item->url)) {
-				dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
-				torrent = downloadTorrent(item->url);
-				if(torrent) {
-					get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
-					/* add torrent to Transmission */
-					success = addTorrentToTM(session, torrent->response->data, torrent->response->size, fname);
+	while(current_item && current_item->data) {
+		feed_item item = (feed_item)current_item->data;
+		if (isMatch(session->filters, item->name) && !has_been_downloaded(session->downloads, item->url)) {
+			dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
+			torrent = downloadTorrent(item->url);
+			if(torrent) {
+				get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
+				/* add torrent to Transmission */
+				if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
 					/* add torrent url to bucket list */
-					if (success == 1) {
-						if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
-							session->bucket_changed = 1;
-						} else {
-							dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
-						}
+					if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
+						session->bucket_changed = 1;
+					} else {
+						dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
 					}
-					WebData_free(torrent);
 				}
+				WebData_free(torrent);
 			}
 		}
+		current_item = current_item->next;
 	}
 }
 
@@ -341,7 +332,6 @@ int main(int argc, char **argv) {
 	char time_str[TIME_STR_SIZE];
 	NODE *current = NULL;
 	uint32_t count = 0;
-	int status;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -400,42 +390,31 @@ int main(int argc, char **argv) {
 	dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
 
-	status = fork();
-
-	if(status == -1) {
-		fprintf( stderr, "Error forking for watchdog! %d - %s", errno, strerror(errno));
-	} else if(status == 0) { /* folder watch process */
-		while(1) {
-			/* FIXME: this is just placeholder code */
-			printf("folder watch\n");
-			sleep(5);
-		}
-	} else { /* RSS feed watching process */
-		load_state(session->statefile, &session->downloads);
-		while(!closing) {
-			getlogtime_str(time_str);
-			dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
+	load_state(session->statefile, &session->downloads);
+	printList(session->downloads);
+	while(!closing) {
+		getlogtime_str(time_str);
+		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
 #if FROM_XML_FILE
-			xmldata = readFile("feed.xml", &fileLen);
-			if(xmldata != NULL) {
-				fileLen = strlen(xmldata);
-				parse_xmldata(xmldata, fileLen);
-				am_free(xmldata);
-			}
-#else
-			current = session->feeds;
-			count = 0;
-			while(current && current->data) {
-				++count;
-				dbg_printf(P_MSG, "Checking feed %d ...", count);
-				processFeed(session, current->data);
-				current = current->next;
-			}
-			dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
-#endif
-			sleep(session->check_interval * 60);
+		xmldata = readFile("feed.xml", &fileLen);
+		if(xmldata != NULL) {
+			fileLen = strlen(xmldata);
+			parse_xmldata(xmldata, fileLen);
+			am_free(xmldata);
 		}
-		shutdown_daemon(session);
+#else
+		current = session->feeds;
+		count = 0;
+		while(current && current->data) {
+			++count;
+			dbg_printf(P_MSG, "Checking feed %d ...", count);
+			processFeed(session, current->data);
+			current = current->next;
+		}
+		dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+#endif
+		sleep(session->check_interval * 60);
 	}
+	shutdown_daemon(session);
 	return 0;
 }
