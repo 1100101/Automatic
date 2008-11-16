@@ -185,6 +185,8 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		}
 	} else if(!strcmp(opt, "torrent-folder")) {
 		set_path(param, &as->torrent_folder);
+	} else if(!strcmp(opt, "watch-folder")) {
+		set_path(param, &as->watch_folder);
 	} else if(!strcmp(opt, "statefile")) {
 		set_path(param, &as->statefile);
 	} else if(!strcmp(opt, "rpc-host")) {

@@ -20,6 +20,11 @@
 #define MSGSIZE_MAX 700
 
 #define TIME_STR_SIZE 30
+
+#define dbg_printf( n, ... ) am_printf( __FILE__, __LINE__, n, __VA_ARGS__ )
+
+
+
 enum debug_type {
 	P_NONE = -1,
 	P_ERROR = 0,
@@ -31,5 +36,6 @@ enum debug_type {
 
 typedef enum debug_type debug_type;
 
-void dbg_printf(debug_type type, const char *format, ...);
+/* void dbg_printf(debug_type type, const char *format, ... ); */
 char* getlogtime_str(char *buf);
+void am_printf( const char * file, int line, debug_type type, const char * format, ... );

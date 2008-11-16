@@ -51,9 +51,9 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 	size_t realsize = size * nmemb;
 	WebData *mem = data;
 	char *buf = NULL;
-	char tmp[20];
-	char *p = NULL, *filename = NULL;
-	const char* content_pattern = "Content-Disposition: (inline|attachment); filename=\"(.+)\"$";
+	char *tmp = NULL;
+	char *filename = NULL;
+	const char* content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"(.+)\"$";
 	int content_length = 0;
 	uint32_t i;
 
@@ -72,25 +72,28 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 		if(buf[i] == '\r' || buf[i] == '\n')
 			buf[i] = '\0';
 	}
+	dbg_printf(P_INFO2, "%s", buf);
 
 	/* parse header for Content-Length to allocate correct size for data->response->data */
 	if(!strncmp(buf, "Content-Length:", 15)) {
-		p = strtok(buf, " ");
-		while(p != NULL) {
-			strcpy(tmp, p);
-			p = strtok(NULL, " ");
-		}
-		content_length = atoi(tmp);
-		if(content_length > 0) {
-			mem->content_length = content_length;
-			mem->response->data = am_realloc(mem->response->data, content_length + 1);
+		tmp = getRegExMatch("Content-Length:\\s(\\d+)", buf, 1);
+		if(tmp != NULL) {
+			dbg_printf(P_INFO2, "Content-Length: %s", tmp);
+			content_length = atoi(tmp);
+			if(content_length > 0) {
+				mem->content_length = content_length;
+				mem->response->data = am_realloc(mem->response->data, content_length + 1);
+			}
+			am_free(tmp);
 		}
 	} else {
 		/* parse header for Content-Disposition to get correct filename */
-		filename = getRegExMatch(content_pattern, buf, 2);
-		if(filename) {
-			mem->content_filename = filename;
-			dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
+		if(!strncmp(buf, "Content-Disposition", 19)) {
+			filename = getRegExMatch(content_pattern, buf, 2);
+			if(filename) {
+				mem->content_filename = filename;
+				dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
+			}
 		}
 	}
 

@@ -33,20 +33,39 @@ static char *rand_str(uint8_t size) {
 static int testIntegerList(void){
 	uint32_t i;
 
-	int *number;
-	simple_list list = NULL;
+	int *number, *number2;
+	simple_list list = NULL, list2 = NULL, tmp1 = NULL, tmp2 = NULL;
 
 	assert(listCount(list) == 0);
+
+	assert(addItem(NULL, NULL) == -1);
+	assert(addItem(NULL, &list) == -1);
+
+
 	for(i = 0; i < LIST_SIZE; i++) {
 		number = (int*)am_malloc(sizeof(int));
+		number2 = (int*)am_malloc(sizeof(int));
 		*number = i;
-		addItem(number, &list);
+		*number2 = i;
+		assert(addItem(number, NULL) == -1);
+		assert(addItem(number, &list) == 0);
+		assert(addToTail(number2, &list2) == 0);
 	}
 	assert(listCount(list) == LIST_SIZE);
+	assert(listCount(list2) == LIST_SIZE);
 	assert(*(int*)list->data == *number);
 	reverseList(&list);
 	assert(*(int*)list->data == 0);
 	assert(listCount(list) == LIST_SIZE);
+
+	tmp1 = list;
+	tmp2 = list2;
+	while(tmp1 != NULL) {
+		assert(*(int*)tmp1->data == *(int*)tmp2->data);
+		tmp1 = tmp1->next;
+		tmp2 = tmp2->next;
+	}
+
 	removeFirst(&list, NULL);
 	assert(*(int*)list->data == 1);
 	assert(listCount(list) == LIST_SIZE - 1);
@@ -56,6 +75,9 @@ static int testIntegerList(void){
 	freeList(&list, NULL);
 	assert(listCount(list) == 0);
 	assert(list == NULL);
+	freeList(&list2, NULL);
+	assert(listCount(list2) == 0);
+	assert(list2 == NULL);
 	return 0;
 }
 

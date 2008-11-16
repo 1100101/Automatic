@@ -89,7 +89,7 @@ int8_t uploadTorrent(const void *t_data, int t_size, const char *host, const cha
 				dbg_printf(P_MSG, "Torrent upload successful!");
 				ret = 0;
 			} else if(!strncmp(response, "duplicate torrent", 17)) {
-				dbg_printf(P_MSG, "Duplicate Torrent");
+				dbg_printf(P_MSG, "Torrent has already been added to Transmission");
 				ret = 0;
 			} else {
 				dbg_printf(P_ERROR, "Error uploading torrent: %s", response);

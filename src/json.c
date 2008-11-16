@@ -81,7 +81,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size) {
  */
 
 const char* parseResponse(const char* response) {
-	const char* result_regex = "\"result\": \"(.+)\"\n";
+	const char* result_regex = "\"result\":\\s+\"(.+)\"";
 	char *result_str = NULL;
 	result_str = getRegExMatch(result_regex, response, 1);
 	return result_str;

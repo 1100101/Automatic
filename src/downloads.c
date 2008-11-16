@@ -72,7 +72,7 @@ uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
 
 	res = bucket_hasURL(url, bucket);
 	if (res) {
-		dbg_printf(P_INFO2, "Torrent has already been downloaded");
+		dbg_printf(P_INFO2, "Duplicate torrent");
 	}
 	return res;
 }
@@ -89,9 +89,9 @@ uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
  */
 int addToBucket(const char* identifier, NODE **head, const int maxBucketItems) {
 
-	addItem(am_strdup(identifier), head);
+	addToHead(am_strdup(identifier), head);
 	if(maxBucketItems > 0 && listCount(*head) > (uint32_t)maxBucketItems) {
-		dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting head item...\n");
+		dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting last item...\n");
 		removeLast(*head, NULL);
 	}
 	return 0;

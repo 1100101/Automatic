@@ -56,14 +56,13 @@
  * save_state() stores the content of the torrent bucket list on disk so Automatic won't
  * download old torrents after a restart.
  */
-int save_state(const char* state_file, const simple_list downloads) {
+int save_state(const char* state_file, const simple_list const downloads) {
 	FILE *fp;
 	char tmp[MAX_LINE_LEN + 1];
 	NODE *current = NULL;
 
 	if(state_file) {
 		current = downloads;
-		reverseList(&current);
 		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(current));
 		if((fp = fopen(state_file, "wb")) == NULL) {
 			dbg_printf(P_ERROR, "Error: Unable to open statefile '%s' for writing: %s", state_file, strerror(errno));
@@ -76,7 +75,7 @@ int save_state(const char* state_file, const simple_list downloads) {
 				fclose(fp);
 				return -1;
 			}
-			current = current->next ;
+			current = current->next;
 		}
 		fclose(fp);
 	}
@@ -105,7 +104,7 @@ int load_state(const char* state_file, NODE **head) {
 		len = strlen(line);
 		if(len > 20) {  /* arbitrary threshold for the length of a URL */
 			data = am_strndup(line, len-1);  /* len-1 to get rid of the \n at the end of each line */
-			addItem(data, head);
+			addToTail(data, head);
 		}
 	}
 	fclose(fp);

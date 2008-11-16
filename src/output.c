@@ -38,7 +38,6 @@
 #include <sys/time.h>
 
 #include "output.h"
-#include "automatic.h"
 
 
 /** \brief Print log information to stdout.
@@ -51,25 +50,32 @@
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
  * on the command-line) which dictates what kind of messages are printed and what not.
  */
-void dbg_printf(debug_type type, const char *format, ...) {
-	va_list va;
+
+
+void am_printf( const char * file, int line, debug_type type, const char * format, ... ) {
+  va_list va;
   char tmp[MSGSIZE_MAX];
-	FILE *fp = stderr;
+  FILE *fp = stderr;
 
-extern	int8_t verbose;
+  extern	int8_t verbose;
 
-	if(verbose >= type) {
-		va_start(va, format);
-		vsnprintf(tmp, MSGSIZE_MAX, format, va);
-		va_end(va);
-		tmp[MSGSIZE_MAX-1] = '\0';
+  if(verbose >= type) {
+    va_start(va, format);
+    vsnprintf(tmp, MSGSIZE_MAX, format, va);
+    va_end(va);
+    tmp[MSGSIZE_MAX-1] = '\0';
 
-		if(fp == NULL)
-			fp = stderr;
+    if(fp == NULL) {
+      fp = stderr;
+    }
 
-		fprintf(fp,"%s\n", tmp);
-		fflush(fp);
-	}
+    if(type >= P_INFO2) {
+      fprintf(fp,"%s, %d: %s\n", file, line, tmp);
+    } else {
+      fprintf(fp,"%s\n", tmp);
+    }
+    fflush(fp);
+  }
 }
 
 /** \brief Get the current date and time in form of a string.

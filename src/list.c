@@ -45,7 +45,7 @@
 
 
 /* private functions */
-static void pushNode(NODE **ptr_to_head, NODE *newnode) {
+static void addNodeFirst(NODE **ptr_to_head, NODE *newnode) {
 
 	if(*ptr_to_head == NULL) {					/* empty list */
 		*ptr_to_head = newnode;
@@ -53,6 +53,32 @@ static void pushNode(NODE **ptr_to_head, NODE *newnode) {
 	} else {
 		newnode->next = *ptr_to_head;
 		*ptr_to_head = newnode;
+	}
+}
+
+static void addNodeLast(NODE **ptr_to_head, NODE *newnode) {
+	NODE *current = *ptr_to_head;
+
+	if(current == NULL) {					/* empty list */
+		*ptr_to_head = newnode;
+		newnode->next = NULL;
+	} else {
+		while(current != NULL && current->next != NULL) {
+			current = current->next;
+		}
+		current->next = newnode;
+		newnode->next = NULL;
+	}
+}
+
+static void deleteFirst(NODE **ptr_to_head) {
+	NODE *p = NULL;
+
+	if(*ptr_to_head != NULL) {
+		p = *ptr_to_head;
+		*ptr_to_head = p->next;
+		am_free(p);
+		p = NULL;
 	}
 }
 
@@ -78,19 +104,6 @@ static NODE* getLastNode(NODE *ptr_to_head) {
 	}
 	return current;
 }
-
-static void deleteFirst(NODE **ptr_to_head) {
-	NODE *p = NULL;
-
-	if(*ptr_to_head != NULL) {
-		p = *ptr_to_head;
-		*ptr_to_head = p->next;
-		am_free(p);
-		p = NULL;
-	}
-}
-
-
 
 /* public functions */
 
@@ -146,7 +159,7 @@ void printList(const simple_list head) {
 	NODE *current = head;
 	while (current != NULL) {
 		if(current->data) {
-			dbg_printf(P_MSG, "\t%d", *(int*)current->data);
+			dbg_printf(P_MSG, "\t%s", (char*)current->data);
 		}
 		current = current->next;
 	}
@@ -163,20 +176,41 @@ void printList(const simple_list head) {
  */
 
 int addItem(void* elem, NODE **head) {
+	return addToHead(elem, head);
+}
+
+int addToHead(void* elem, NODE **head) {
 	NODE *newnode = NULL;
 
-	if(elem != NULL) {
+	if(head != NULL && elem != NULL) {
 		newnode = (NODE*)am_malloc(sizeof(struct NODE));
 
 		if(newnode != NULL) {
 			newnode->data = elem;
 			newnode->next = NULL;
-			pushNode(head, newnode);
+			addNodeFirst(head, newnode);
 			return 0;
 		}
-		return 1;
+		return -1;
 	}
-	return 1;
+	return -1;
+}
+
+int addToTail(void* elem, NODE **head) {
+	NODE *newnode = NULL;
+
+	if(head != NULL && elem != NULL) {
+		newnode = (NODE*)am_malloc(sizeof(struct NODE));
+
+		if(newnode != NULL) {
+			newnode->data = elem;
+			newnode->next = NULL;
+			addNodeLast(head, newnode);
+			return 0;
+		}
+		return -1;
+	}
+	return -1;
 }
 
 /** \brief Free a list and all memory associated with it
@@ -191,7 +225,7 @@ int addItem(void* elem, NODE **head) {
 void freeList( NODE **head, listFuncPtr freeFunc ) {
 	NODE* node = NULL;
 
-	dbg_printf(P_INFO2, "[cleanupList] size before: %d\n", listCount(*head));
+	dbg_printf(P_INFO2, "[cleanupList] size before: %d", listCount(*head));
 	while (*head != NULL) {
 		node = *head;
 		*head = (*head)->next;
@@ -202,7 +236,7 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
 		}
 		am_free(node);
 	}
-	dbg_printf(P_INFO2, "[cleanupList] size after: %d\n", listCount(*head));
+	dbg_printf(P_INFO2, "[cleanupList] size after: %d", listCount(*head));
 }
 
 /** \brief Remove the last item of a list
@@ -218,7 +252,7 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
  */
 void removeLast(NODE *head, listFuncPtr freeFunc) {
 	NODE *lastNode = NULL;
-	dbg_printf(P_DBG, "Removing last item...\n");
+	dbg_printf(P_DBG, "Removing last item...");
 	lastNode = getLastNode(head);
 
 	if(lastNode) {
@@ -241,7 +275,7 @@ void removeLast(NODE *head, listFuncPtr freeFunc) {
  * For complex nodes (e.g. structs) the user needs to provide a node-specific free() function.
  */
 void removeFirst(NODE  **head, listFuncPtr freeFunc) {
-	dbg_printf(P_DBG, "Removing first item...\n");
+	dbg_printf(P_DBG, "Removing first item...");
 	if (*head != NULL) {
 		if(freeFunc) {
 			freeFunc((*head)->data);

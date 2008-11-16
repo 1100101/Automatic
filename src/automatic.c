@@ -99,18 +99,13 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
 	}
 }
 
-static void do_cleanup(auto_handle *as) {
-	session_free(as);
-}
-
 static void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
 	if (as && as->bucket_changed) {
 		save_state(as->statefile, as->downloads);
 	}
-	do_cleanup(as);
-	dbg_printf(P_MSG, "Total memory used: %d", getMemUsed());
+	session_free(as);
 	exit(EXIT_SUCCESS);
 }
 
@@ -210,6 +205,7 @@ auto_handle* session_init(void) {
 	/* strings */
 	ses->transmission_path 		= get_tr_folder();
 	ses->torrent_folder 			= get_temp_folder();
+	ses->watch_folder 				= NULL;
 	ses->host 								= NULL;
 	ses->auth 								= NULL;
 	home = get_home_folder();
@@ -230,6 +226,7 @@ static void session_free(auto_handle *as) {
 		am_free(as->transmission_path);
 		am_free(as->statefile);
 		am_free(as->torrent_folder);
+		am_free(as->watch_folder);
 		am_free(as->host);
 		am_free(as->auth);
 		freeList(&as->feeds, feed_free);
@@ -246,18 +243,14 @@ static WebData* downloadTorrent(const char* url) {
 static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 													 uint32_t t_size, const char *fname) {
 	uint8_t success = 0;
-	uint32_t res;
 	if (!ah->use_transmission) {
-		res = saveFile(fname, t_data, t_size);
-		if (res == 0) {
+		if(saveFile(fname, t_data, t_size) == 0) {
 			success = 1;
 		}
 	} else if (ah->transmission_version == AM_TRANSMISSION_1_2) {
-		res = saveFile(fname, t_data, t_size);
-		if (res == 0) {
+		if (saveFile(fname, t_data, t_size) == 0) {
 			if (call_transmission(ah->transmission_path, fname) == -1) {
-				dbg_printf(P_ERROR,
-						"[processTorrent] error adding torrent '%s' to Transmission");
+				dbg_printf(P_ERROR, "[addTorrentToTM] error adding torrent '%s' to Transmission");
 			} else {
 				success = 1;
 			}
@@ -272,26 +265,32 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 	return success;
 }
 
+
+static void startFolderWatch(const char* watchfolder) {
+
+	while(!closing) {
+		dbg_printf(P_INFO, "Started watching folder '%s'", watchfolder);
+		sleep(5);
+	}
+
+}
+
 static void processRSSList(auto_handle *session, const simple_list items) {
 
-	simple_list current = items;
+	simple_list current_item = items;
 	WebData *torrent = NULL;
 	char fname[MAXPATHLEN];
-	uint8_t success = 0;
 
-	while(current && current->data) {
-		feed_item item = (feed_item)current->data;
-
-		if (useFilters(session->filters, item)) {
-			if (!has_been_downloaded(session->downloads, item->url)) {
+	while(current_item && current_item->data) {
+		feed_item item = (feed_item)current_item->data;
+		if (isMatch(session->filters, item->name) && !has_been_downloaded(session->downloads, item->url)) {
 				dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
 				torrent = downloadTorrent(item->url);
 				if(torrent) {
 					get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
 					/* add torrent to Transmission */
-					success = addTorrentToTM(session, torrent->response->data, torrent->response->size, fname);
+				if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
 					/* add torrent url to bucket list */
-					if (success == 1) {
 						if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
 							session->bucket_changed = 1;
 						} else {
@@ -301,9 +300,9 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 					WebData_free(torrent);
 				}
 			}
+		current_item = current_item->next;
 		}
 	}
-}
 
 
 static void processFeed(auto_handle *session, const rss_feed feed) {
@@ -341,7 +340,7 @@ int main(int argc, char **argv) {
 	char time_str[TIME_STR_SIZE];
 	NODE *current = NULL;
 	uint32_t count = 0;
-	int status;
+	int status = 1;
 
 	readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -400,16 +399,14 @@ int main(int argc, char **argv) {
 	dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
 
-	status = fork();
+	if(as->watch_folder != NULL) {
+		status = fork();
+	}
 
 	if(status == -1) {
 		fprintf( stderr, "Error forking for watchdog! %d - %s", errno, strerror(errno));
 	} else if(status == 0) { /* folder watch process */
-		while(1) {
-			/* FIXME: this is just placeholder code */
-			printf("folder watch\n");
-			sleep(5);
-		}
+		startFolderWatch(session->watch_folder);
 	} else { /* RSS feed watching process */
 		load_state(session->statefile, &session->downloads);
 		while(!closing) {

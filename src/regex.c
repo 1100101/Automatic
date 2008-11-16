@@ -22,7 +22,7 @@ static pcre* init_regex(const char* pattern) {
 	re = pcre_compile(pattern, PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
 
 	if(re == NULL) {
-		dbg_printf(P_ERROR, "[init_regex] PCRE compilation failed at offset %d: %s", err, errbuf);
+		dbg_printf(P_ERROR, "[init_regex] PCRE compilation failed at offset %d: %s (pattern: %s)", err, errbuf, pattern);
 	}
 	return re;
 }
@@ -39,7 +39,7 @@ uint8_t isRegExMatch(const char* pattern, const char* str) {
 	pcre *preg = NULL;
 	uint8_t result = 0;
 
-	if(!str) {
+	if(!str || (str && strlen(str) == 0)) {
 		dbg_printf(P_ERROR, "[isMatch] Empty string!");
 		return 0;
 	}
