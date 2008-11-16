@@ -6,7 +6,14 @@
 #include "output.h"
 #include "utils.h"
 
+#ifdef MEMWATCH
+#include "memwatch.h"
+#endif
+
+
 #define OVECCOUNT 30
+
+
 
 static pcre* init_regex(const char* pattern) {
 	int err;

@@ -19,7 +19,7 @@
 
 #define AM_DEFAULT_CONFIGFILE 		"/etc/automatic.conf"
 #define AM_DEFAULT_STATEFILE  		".automatic.state"
-#define AM_DEFAULT_VERBOSE 				P_INFO
+#define AM_DEFAULT_VERBOSE 				P_MSG
 #define AM_DEFAULT_NOFORK 				0
 #define AM_DEFAULT_MAXBUCKET 			10
 #define AM_DEFAULT_USETRANSMISSION 	    1
@@ -103,7 +103,6 @@ static void shutdown_daemon(auto_handle *as) {
 	char time_str[TIME_STR_SIZE];
 	dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
 	if (as && as->bucket_changed) {
-		printList(as->downloads);
 		save_state(as->statefile, as->downloads);
 	}
 	session_free(as);
@@ -228,11 +227,8 @@ static void session_free(auto_handle *as) {
 		am_free(as->torrent_folder);
 		am_free(as->host);
 		am_free(as->auth);
-		dbg_printf(P_INFO2, "Freeing feed list (size: %d)", listCount(as->feeds));
 		freeList(&as->feeds, feed_free);
-		dbg_printf(P_INFO2, "Freeing download list (size: %d)", listCount(as->downloads));
 		freeList(&as->downloads, NULL);
-		dbg_printf(P_INFO2, "Freeing filter list (size: %d)", listCount(as->filters));
 		freeList(&as->filters, NULL);
 		am_free(as);
 	}
@@ -391,7 +387,6 @@ int main(int argc, char **argv) {
 	dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
 
 	load_state(session->statefile, &session->downloads);
-	printList(session->downloads);
 	while(!closing) {
 		getlogtime_str(time_str);
 		dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);

@@ -114,7 +114,7 @@ void feed_free(void* listItem) {
 
 	if(x != NULL) {
 		if(x->url != NULL) {
-			dbg_printf(P_MSG, "freeing feed URL: %s (%p)", x->url, (void*)x->url);
+			dbg_printf(P_INFO2, "Freeing feed URL: %s", x->url);
 			am_free(x->url);
 			x->url = NULL;
 		}
