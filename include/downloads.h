@@ -26,7 +26,7 @@
 
 #include "list.h"
 
-int addToBucket(const char* identifier, NODE **head, const int maxBucketItems);
+int addToBucket(const char* identifier, NODE **head, const uint16_t maxBucketItems);
 uint8_t has_been_downloaded(const simple_list bucket, const char *url);
 
 #endif
