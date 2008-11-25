@@ -46,7 +46,7 @@ struct auto_handle {
 	rss_feeds 	feeds;
 	simple_list downloads;
 	simple_list filters;
-	uint8_t 		max_bucket_items;
+	uint16_t 		max_bucket_items;
 	uint8_t 		bucket_changed;
 	uint8_t 		check_interval;
 	uint8_t 		use_transmission;
