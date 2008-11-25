@@ -238,7 +238,7 @@ WebData* getHTTPData(const char *url) {
 	curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
 	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
- 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+ 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, getenv( "AM_CURL_VERBOSE" ) != NULL);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, write_header_callback);
@@ -307,7 +307,7 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, getenv( "AM_CURL_VERBOSE" ) != NULL);
 
 	res = curl_easy_perform(curl_handle);
 
