@@ -324,8 +324,6 @@ int main(int argc, char **argv) {
   uint32_t count = 0;
   uint8_t first_run = 1;
   uint16_t bucket_size = 0;
-  uint8_t first_run = 1;
-  uint16_t bucket_size = 0;
 
   readargs(argc, argv, &config_file, &nofork, &verbose);
 
