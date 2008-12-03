@@ -335,6 +335,8 @@ int main(int argc, char **argv) {
   NODE *current = NULL;
   uint32_t count = 0;
   int status = 1;
+  uint8_t first_run = 1;
+  uint16_t bucket_size = 0;
 
   readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -393,7 +395,7 @@ int main(int argc, char **argv) {
   dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
 
-  if(as->watch_folder != NULL) {
+  if(session->watch_folder != NULL) {
     status = fork();
   }
 
@@ -417,7 +419,6 @@ int main(int argc, char **argv) {
       current = session->feeds;
       count = 0;
       while(current && current->data) {
-        dbg_printf(P_INFO, "first_run: %d", first_run);
         ++count;
         dbg_printf(P_MSG, "Checking feed %d ...", count);
         bucket_size = processFeed(session, current->data);
