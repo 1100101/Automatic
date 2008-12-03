@@ -42,6 +42,6 @@ statefile = "~/.config/automatic.state"
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter
 
-patterns =  { "Name of Something I Want to Download Automatically.*HDTV"
-              "Something else to download.*HDTV"
+patterns =  { "Name.of.Something.I.Want.to.Download.Automatically.*HDTV"
+              "Something.else.to.download.*HDTV"
             }

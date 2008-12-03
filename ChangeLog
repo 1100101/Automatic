@@ -1,7 +1,13 @@
+2008-11-29 v0.3
+            Fixed: Some HTTPS URLs could not be accessed properly
+            If you have multiple feeds, the statefile will now save as many downloads as there
+            are items in all feeds combined
+            Switch from POSIX regular expressions to PCRE. This now allows for exclusions
+
 2008-08-15 v0.2
             Support for Transmission 1.3
-						Support for multiple RSS feeds
-						Removed logging to logfile for now, was causing problems
+            Support for multiple RSS feeds
+            Removed logging to logfile for now, was causing problems
 
 2008-xx-xx v0.1.4
             Respect TTL interval in RSS feed (only if user-specified interval is shorter)

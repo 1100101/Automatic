@@ -78,7 +78,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 	xmlNodePtr cur = NULL, child = NULL;
 	uint32_t size, i;
 	feed_item item = NULL;
-	uint8_t name_set, url_set, is_torrent_feed = 0;
+	uint8_t name_set, url_set;
 	rssNode *enclosure = NULL;
 	simple_list itemList = NULL;
 
@@ -108,15 +108,11 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 								am_free(item->url);
 								item->url = am_strdup(enclosure->url);
 								url_set = 1;
-								is_torrent_feed = 1;
 								freeNode(enclosure);
 							}
 						}
 					}
 					child = child->next;
-				}
-				if (is_torrent_feed == 0) {
-					dbg_printf(P_INFO2, "Is this really a torrent feed?");
 				}
 				if (name_set && url_set) {
 					addItem(item, &itemList);

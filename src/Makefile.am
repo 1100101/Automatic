@@ -3,9 +3,7 @@ INCLUDES = -I$(top_srcdir)/include/
 
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
-bin_PROGRAMS =   \
-  automatic      \
-	automatic-mw
+bin_PROGRAMS = automatic
 
 automatic_SOURCES = \
    $(top_srcdir)/src/automatic.c      \
@@ -45,18 +43,6 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/web.h            \
    $(top_srcdir)/include/xml_parser.h
 
-automatic_mw_SOURCES =  \
-   $(automatic_SOURCES) \
-	 $(top_srcdir)/src/memwatch.c
-
-automatic_mw_HEADERS =  \
-   $(noinst_HEADERS)    \
-   $(top_srcdir)/include/memwatch.h
-
-
-automatic_mwdir = .
-
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG
 
 dist_sysconf_DATA = automatic.conf-sample
 
@@ -77,8 +63,6 @@ BUILT_SOURCES = \
 version.h:
 	echo '#define SVN_REVISION          "'`svn info | grep "Revision" | awk -F': ' '{print $$2}'`'"' > version.h
 	echo '#define LONG_VERSION_STRING   "'@VERSION_NUMBER@' ('`svn info | grep "Revision" | awk -F': ' '{print $$2}'`')"' >> version.h
-
-.PHONY: version.h
 
 strip:
 	$(STRIP) $(bin_PROGRAMS)

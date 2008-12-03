@@ -1,4 +1,2 @@
-DONE for Transmission 1.3, submit torrent data via HTTP rather than the system() call
  - revamp logging system
- - when having multiple feeds, bucket size must be sum of entries of all feeds
  - save cookies for password-protected feeds

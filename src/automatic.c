@@ -324,6 +324,8 @@ int main(int argc, char **argv) {
   uint32_t count = 0;
   uint8_t first_run = 1;
   uint16_t bucket_size = 0;
+  uint8_t first_run = 1;
+  uint16_t bucket_size = 0;
 
   readargs(argc, argv, &config_file, &nofork, &verbose);
 
@@ -397,19 +399,18 @@ int main(int argc, char **argv) {
     current = session->feeds;
     count = 0;
     while(current && current->data) {
-      dbg_printf(P_INFO, "first_run: %d", first_run);
       ++count;
       dbg_printf(P_MSG, "Checking feed %d ...", count);
       bucket_size = processFeed(session, current->data);
 
       if(first_run && bucket_size > 0) {
         session->max_bucket_items += bucket_size;
-        dbg_printf(P_INFO, "bucket size changed: %d", session->max_bucket_items);
+        dbg_printf(P_INFO2, "bucket size changed: %d", session->max_bucket_items);
       }
       current = current->next;
     }
     first_run = 0;
-    dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+    dbg_printf(P_INFO, "New bucket size: %d", session->max_bucket_items);
 #endif
     sleep(session->check_interval * 60);
   }

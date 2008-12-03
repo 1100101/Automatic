@@ -4,5 +4,5 @@ EXTRA_DIST =  \
    AUTHORS    \
    ChangeLog  \
    COPYING    \
-   README     \
-   doc
+   README
+
