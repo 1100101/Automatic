@@ -24,7 +24,7 @@ void testGetHTTP(void) {
 	assert(data == NULL);
 
 	//test HTTPS URL
-	data = getHTTPData("https://secure3.silverorange.com/rsstest/rss_with_ssl.xml");
+	data = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1");
 	assert(data && data->response);
 	WebData_free(data);
 }
