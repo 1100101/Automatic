@@ -17,12 +17,13 @@
  * 02111-1307, USA.
  */
 
-#define AM_DEFAULT_CONFIGFILE     "/etc/automatic.conf"
-#define AM_DEFAULT_STATEFILE      ".automatic.state"
+#define AM_DEFAULT_CONFIGFILE      "/etc/automatic.conf"
+#define AM_DEFAULT_STATEFILE       ".automatic.state"
 #define AM_DEFAULT_VERBOSE         P_INFO
-#define AM_DEFAULT_NOFORK         0
+#define AM_DEFAULT_NOFORK          0
 #define AM_DEFAULT_MAXBUCKET       10
-#define AM_DEFAULT_USETRANSMISSION       1
+#define AM_DEFAULT_USETRANSMISSION 1
+#define AM_DEFAULT_STARTTORRENTS   1
 
 #define FROM_XML_FILE 0
 #define TESTING 0
@@ -199,19 +200,20 @@ auto_handle* session_init(void) {
   ses->bucket_changed       = 0;
   ses->check_interval       = AM_DEFAULT_INTERVAL;
   ses->use_transmission     = AM_DEFAULT_USETRANSMISSION;
+  ses->use_transmission     = AM_DEFAULT_STARTTORRENTS;
   ses->transmission_version = AM_TRANSMISSION_1_3;
   ses->rpc_port             = AM_DEFAULT_RPCPORT;
 
   /* strings */
   ses->transmission_path     = get_tr_folder();
-  ses->torrent_folder       = get_temp_folder();
-  ses->watch_folder         = NULL;
-  ses->host                 = NULL;
-  ses->auth                 = NULL;
+  ses->torrent_folder        = get_temp_folder();
+  ses->watch_folder          = NULL;
+  ses->host                  = NULL;
+  ses->auth                  = NULL;
   home = get_home_folder();
   sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
   am_free(home);
-  ses->statefile            = am_strdup(path);
+  ses->statefile             = am_strdup(path);
 
   /* lists */
   ses->filters               = NULL;
@@ -258,7 +260,7 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
     }
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
     if (uploadTorrent(t_data, t_size, (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST,
-                      ah->auth, ah->rpc_port) == 0) {
+                      ah->auth, ah->rpc_port, ah->start_torrent) == 0) {
       success = 1;
     }
   }
@@ -391,6 +393,7 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
   dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
+  dbg_printf(P_INFO, "start torrents: %d", session->start_torrent);
   dbg_printf(P_INFO, "state file: %s", session->statefile);
   dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));

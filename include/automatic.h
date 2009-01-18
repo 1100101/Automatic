@@ -50,6 +50,7 @@ struct auto_handle {
 	uint8_t 		bucket_changed;
 	uint8_t 		check_interval;
 	uint8_t 		use_transmission;
+	uint8_t 		start_torrent;
 	uint16_t 		rpc_port;
 	uint8_t 		transmission_version;
 };

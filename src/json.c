@@ -33,7 +33,7 @@
  * The function Base64-encodes the given torrent content and encapsulates it in a JSON packet.
  * The packet can then be sent to Transmission via HTTP POST.
  */
-char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size) {
+char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_size) {
 
 	char *encoded = NULL;
 
@@ -45,15 +45,18 @@ char* makeJSON(const void *data, uint32_t tsize, uint32_t *setme_size) {
 		"\"method\": \"torrent-add\",\n"
 		"\"arguments\": {\n"
 		"\"metainfo\": \"%s\"\n"
+    "\"paused\": %d\n"
 		"}\n"
 		"}";
+
+  *setme_size = 0;
 
 	if(data != NULL) {
 		encoded = base64_encode(data, tsize, &enc_size);
 		if(encoded && enc_size > 0) {
-			buf_size = enc_size + 70;
+			buf_size = enc_size + strlen(JSONstr) + 10;
 			buf = am_malloc(buf_size);
-			json_size = snprintf(buf, buf_size, JSONstr, encoded);
+			json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 1 : 0);
 			if(json_size < 0 || json_size >= buf_size) {
 				dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
 				am_free(encoded);
