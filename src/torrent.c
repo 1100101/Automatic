@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "json.h"
 #include "web.h"
+#include "file.h"
 
 static int is_torrent(const char *str) {
 	if(strstr(str, ".torrent"))
@@ -79,7 +80,8 @@ int8_t uploadTorrent(const void *t_data, int t_size, const char *host, const cha
 
 	/* packet torrent data in a JSON package */
 	packet = makeJSON(t_data, t_size, start, &packet_size);
-	if(packet) {
+	if(packet && packet_size > 0) {
+    saveFile("/ffp/testfile.json", packet, packet_size);
 		snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
 		/* send JSON package to Transmission via HTTP POST */
 		res = sendHTTPData(url, auth, packet, packet_size);

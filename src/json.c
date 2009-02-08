@@ -44,33 +44,33 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
 		"{\n"
 		"\"method\": \"torrent-add\",\n"
 		"\"arguments\": {\n"
-		"\"metainfo\": \"%s\"\n"
+		"\"metainfo\": \"%s\",\n"
     "\"paused\": %d\n"
 		"}\n"
 		"}";
 
   *setme_size = 0;
 
-	if(data != NULL) {
-		encoded = base64_encode(data, tsize, &enc_size);
-		if(encoded && enc_size > 0) {
-			buf_size = enc_size + strlen(JSONstr) + 10;
-			buf = am_malloc(buf_size);
-			json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 1 : 0);
-			if(json_size < 0 || json_size >= buf_size) {
-				dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
-				am_free(encoded);
-				am_free(buf);
-				return NULL;
-			}
-			buf[json_size] = '\0';
-			if(setme_size) {
-				*setme_size = json_size;
-			}
-			am_free(encoded);
-			return buf;
-		}
-	}
+  encoded = base64_encode(data, tsize, &enc_size);
+
+  if(encoded && enc_size > 0) {
+    buf_size = enc_size + strlen(JSONstr) + 10;
+    buf = am_malloc(buf_size);
+    memset(buf, 0, buf_size);
+    json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 0 : 1);
+    if(json_size < 0 || json_size >= buf_size) {
+      dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+      am_free(encoded);
+      am_free(buf);
+      return NULL;
+    }
+    buf[json_size] = '\0';
+    if(setme_size) {
+      *setme_size = json_size;
+    }
+    am_free(encoded);
+    return buf;
+  }
 	return NULL;
 }
 

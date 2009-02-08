@@ -21,7 +21,7 @@
 #define AM_DEFAULT_STATEFILE       ".automatic.state"
 #define AM_DEFAULT_VERBOSE         P_INFO
 #define AM_DEFAULT_NOFORK          0
-#define AM_DEFAULT_MAXBUCKET       10
+#define AM_DEFAULT_MAXBUCKET       30
 #define AM_DEFAULT_USETRANSMISSION 1
 #define AM_DEFAULT_STARTTORRENTS   1
 
@@ -200,7 +200,7 @@ auto_handle* session_init(void) {
   ses->bucket_changed       = 0;
   ses->check_interval       = AM_DEFAULT_INTERVAL;
   ses->use_transmission     = AM_DEFAULT_USETRANSMISSION;
-  ses->use_transmission     = AM_DEFAULT_STARTTORRENTS;
+  ses->start_torrent        = AM_DEFAULT_STARTTORRENTS;
   ses->transmission_version = AM_TRANSMISSION_1_3;
   ses->rpc_port             = AM_DEFAULT_RPCPORT;
 
@@ -267,7 +267,6 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   return success;
 }
 
-
 static void startFolderWatch(const char* watchfolder) {
 
   while(!closing) {
@@ -306,7 +305,6 @@ static void processRSSList(auto_handle *session, const simple_list items) {
     }
   }
 
-
 static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
   WebData *wdata = NULL;
   uint32_t item_count = 0;
@@ -315,7 +313,7 @@ static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t f
     simple_list items = parse_xmldata(wdata->response->data, wdata->response->size, &item_count, &feed->ttl);
     if(firstrun) {
       session->max_bucket_items += item_count;
-      dbg_printf(P_INFO2, "bucket size changed: %d", session->max_bucket_items);
+      dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
     }
     processRSSList(session, items);
     freeList(&items, freeFeedItem);
