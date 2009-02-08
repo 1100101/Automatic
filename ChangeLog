@@ -1,3 +1,6 @@
+2009-01-16 v0.3.1
+            Fixed: Automatic didn't follow redirects (Code 302) when downloading files
+
 2008-11-29 v0.3
             Fixed: Some HTTPS URLs could not be accessed properly
             If you have multiple feeds, the statefile will now save as many downloads as there
