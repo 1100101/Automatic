@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-m4_define([version_number],0.3.1)
+m4_define([version_number],0.3.2)
 
 AC_INIT([Automatic],[version_number],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html])
 AC_SUBST(VERSION_NUMBER,[version_number])

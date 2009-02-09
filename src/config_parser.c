@@ -164,7 +164,7 @@ static int getFeeds(NODE **head, const char* strlist) {
 
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int numval;
-	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
+	dbg_printf(P_INFO, "%s=%s (type: %d)", opt, param, type);
 
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
@@ -216,6 +216,14 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 			as->use_transmission = 1;
 		} else {
 			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
+	} else if(!strcmp(opt, "start-torrents")) {
+		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
+			as->start_torrent = 0;
+		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
+			as->start_torrent = 1;
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter for option '%s': '%s'", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
 		addToList(&as->filters, param);

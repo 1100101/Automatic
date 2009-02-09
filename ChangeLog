@@ -1,3 +1,9 @@
+2009-01-16 v0.3.2
+            Fixed: Problems with download history if Automatic downloaded many torrents at once
+            Added: New option "start-torrents" in automatic.conf. If set to "yes", torrents will start
+                   to download automatically when added to Transmission (default behavior)
+                   If set to "no", they'll be added in a "Paused" state
+
 2009-01-16 v0.3.1
             Fixed: Automatic didn't follow redirects (Code 302) when downloading files
 

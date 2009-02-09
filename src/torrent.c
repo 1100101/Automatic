@@ -71,15 +71,15 @@ void get_filename(char *path, const char *content_filename, const char* url, con
 	snprintf(path, PATH_MAX - 1, "%s/%s%s", t_folder, buf, (is_torrent(buf) ? "" : ".torrent"));
 }
 
-int8_t uploadTorrent(const void *t_data, int t_size, const char *host, const char* auth, uint16_t port) {
+int8_t uploadTorrent(const void *t_data, int t_size, const char *host, const char* auth, uint16_t port, uint8_t start) {
 	char *packet = NULL, *res = NULL;
 	const char *response = NULL;
 	uint32_t packet_size = 0, ret = -1;
 	char url[MAX_URL_LEN];
 
 	/* packet torrent data in a JSON package */
-	packet = makeJSON(t_data, t_size, &packet_size);
-	if(packet) {
+	packet = makeJSON(t_data, t_size, start, &packet_size);
+	if(packet && packet_size > 0) {
 		snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
 		/* send JSON package to Transmission via HTTP POST */
 		res = sendHTTPData(url, auth, packet, packet_size);

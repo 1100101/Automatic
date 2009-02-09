@@ -32,6 +32,10 @@ interval = 30
 # Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
 use-transmission = yes
 
+# Instruct Transmission to immediately start downloading torrents after being added
+# If set to 'no' torrents will be added in a paused state
+start-torrents = yes
+
 # path where Automatic will store downloaded torrents
 torrent-folder = "/tmp"
 

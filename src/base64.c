@@ -35,7 +35,7 @@ char *base64_encode(const char *input, uint32_t len, uint32_t * setme_len) {
 	uint32_t enc_size, count = 0;
 	char *ret = NULL, *out = NULL;
 
-	if(!setme_len || !input) {
+	if(!setme_len || !input || len <= 0) {
 		*setme_len = 0;
 		return NULL;
 	}
