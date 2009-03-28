@@ -108,7 +108,7 @@ int load_state(const char* state_file, NODE **head) {
 		}
 	}
 	fclose(fp);
-	dbg_printf(P_MSG, "Restored %d old entries", listCount(*head));
+	dbg_printf(P_MSG, "Restored %d old entries from history file", listCount(*head));
 	return 0;
 }
 

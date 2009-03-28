@@ -379,15 +379,16 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
   dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
-  dbg_printf(P_INFO, "start torrents: %d", session->start_torrent == 1 ? "yes" : "no");
+  dbg_printf(P_INFO, "start torrents: %s", session->start_torrent == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "state file: %s", session->statefile);
-  dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
+  dbg_printf(P_MSG, "%d feed URL%s", listCount(session->feeds), listCount(session->feeds) > 
+  1 ?  "s" : "");
   dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
 
   load_state(session->statefile, &session->downloads);
   while(!closing) {
     getlogtime_str(time_str);
-    dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
+    dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
 #if FROM_XML_FILE
     xmldata = readFile("feed.xml", &fileLen);
     if(xmldata != NULL) {
@@ -400,7 +401,7 @@ int main(int argc, char **argv) {
     count = 0;
     while(current && current->data) {
       ++count;
-      dbg_printf(P_MSG, "Checking feed %d ...", count);
+      dbg_printf(P_INFO2, "Checking feed %d ...", count);
       processFeed(session, current->data, first_run);
       current = current->next;
     }

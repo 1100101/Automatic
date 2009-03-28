@@ -1,4 +1,4 @@
-2009-01-16 v0.3.2
+2009-02-09 v0.3.2
             Fixed: Problems with download history if Automatic downloaded many torrents at once
             Added: New option "start-torrents" in automatic.conf. If set to "yes", torrents will start
                    to download automatically when added to Transmission (default behavior)

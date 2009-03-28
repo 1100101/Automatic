@@ -164,7 +164,7 @@ static int getFeeds(NODE **head, const char* strlist) {
 
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int numval;
-	dbg_printf(P_INFO, "%s=%s (type: %d)", opt, param, type);
+	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
 
 	assert(as != NULL);
 	if(!strcmp(opt, "url")) {
