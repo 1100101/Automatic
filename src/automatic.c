@@ -219,6 +219,7 @@ auto_handle* session_init(void) {
   ses->filters               = NULL;
   ses->feeds                 = NULL;
   ses->downloads             = NULL;
+  ses->upspeed               = -1;
 
   return ses;
 }
@@ -252,17 +253,16 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   } else if (ah->transmission_version == AM_TRANSMISSION_1_2) {
     if (saveFile(fname, t_data, t_size) == 0) {
       if (call_transmission(ah->transmission_path, fname) == -1) {
-        dbg_printf(P_ERROR, "[addTorrentToTM] error adding torrent '%s' to Transmission");
+        dbg_printf(P_ERROR, "[addTorrentToTM] %s: Error adding torrent to Transmission", fname);
       } else {
         success = 1;
       }
       unlink(fname);
     }
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
-    if (uploadTorrent(t_data, t_size, (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST,
-                      ah->auth, ah->rpc_port, ah->start_torrent) == 0) {
-      success = 1;
-    }
+    success = (uploadTorrent(t_data, t_size,
+                     (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->auth, ah->rpc_port,
+                      ah->upspeed, ah->start_torrent) == 0);
   }
   return success;
 }
@@ -273,7 +273,6 @@ static void startFolderWatch(const char* watchfolder) {
     dbg_printf(P_INFO, "Started watching folder '%s'", watchfolder);
     sleep(5);
   }
-
 }
 
 static void processRSSList(auto_handle *session, const simple_list items) {
@@ -348,22 +347,12 @@ int main(int argc, char **argv) {
   session = session_init();
 
   if(parse_config_file(session, AutoConfigFile) != 0) {
+    fprintf(stderr, "Error parsing config file: %s\n", erbuf);
     if(errno == ENOENT) {
       snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
     } else {
       snprintf(erbuf, sizeof(erbuf), "Unknown error");
     }
-    fprintf(stderr, "Error parsing config file: %s\n", erbuf);
-    exit(1);
-  }
-
-  if(listCount(session->feeds) == 0) {
-    fprintf(stderr, "No feed URL specified in automatic.conf!\n");
-    shutdown_daemon(session);
-  }
-
-  if(listCount(session->filters) == 0) {
-    fprintf(stderr, "No patterns specified in automatic.conf!\n");
     shutdown_daemon(session);
   }
 
@@ -390,14 +379,24 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
   dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
   dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
+  dbg_printf(P_INFO, "Upload limit: %d KB/s", session->upspeed);
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
   dbg_printf(P_INFO, "start torrents: %d", session->start_torrent);
   dbg_printf(P_INFO, "state file: %s", session->statefile);
-  dbg_printf(P_MSG, "%d feed URLs", listCount(session->feeds));
-  dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
+  dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
+  dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
+
+  if(listCount(session->feeds) == 0) {
+    fprintf(stderr, "No feed URL specified in automatic.conf!\n");
+    shutdown_daemon(session);
+  }
+
+  if(listCount(session->filters) == 0) {
+    fprintf(stderr, "No patterns specified in automatic.conf!\n");
+    shutdown_daemon(session);
+  }
 
   if(session->watch_folder != NULL) {
-    status = fork();
   }
 
   if(status == -1) {

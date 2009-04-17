@@ -53,6 +53,7 @@ struct auto_handle {
 	uint8_t 		start_torrent;
 	uint16_t 		rpc_port;
 	uint8_t 		transmission_version;
+	int16_t     upspeed;
 };
 /** \endcond */
 

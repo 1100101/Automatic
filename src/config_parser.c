@@ -163,7 +163,7 @@ static int getFeeds(NODE **head, const char* strlist) {
 }
 
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
-	int numval;
+	int32_t numval;
 	dbg_printf(P_INFO, "%s=%s (type: %d)", opt, param, type);
 
 	assert(as != NULL);
@@ -193,6 +193,13 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		as->host = am_strdup(param);
 	} else if(!strcmp(opt, "rpc-auth")) {
 		as->auth = am_strdup(param);
+	} else if(!strcmp(opt, "upload-limit")) {
+		numval = parseUInt(param);
+		if(numval > 0) {
+			as->upspeed = (uint16_t)numval;
+		} else {
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+		}
 	} else if(!strcmp(opt, "rpc-port")) {
 		numval = parseUInt(param);
 		if (numval > 1024 && numval < 65535) {
