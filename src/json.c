@@ -82,8 +82,8 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint32_t *setme_size)
      "{\n"
      "\"method\": \"torrent-set\",\n"
      "\"arguments\": {\n"
-     "\"ids\": \"%d\",\n"
-     "\"uploadLimit\": \"%d\",\n"
+     "\"ids\": %d,\n"
+     "\"uploadLimit\": %d,\n"
      "\"uploadLimited\": true\n"
      "}\n"
      "}";

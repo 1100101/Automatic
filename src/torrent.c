@@ -80,18 +80,18 @@ static int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torren
   const char *response = NULL;
   uint8_t result = 0;
 
-
   if(torrentID > -1) {
     packet = makeChangeUpSpeedJSON(torrentID, upspeed, &packet_size);
     if(packet && packet_size > 0) {
-      am_free(res);
       res = sendHTTPData(url, auth, packet, packet_size);
       if(res != NULL) {
         response = parseResponse(res);
         if(response) {
           if(!strncmp(response, "success", 7)) {
-            dbg_printf(P_MSG, "Uplimit successfully changed!");
+            dbg_printf(P_MSG, "%d: upload limit successfully changed to %dkB/s!", torrentID, upspeed);
             result = 1;
+          } else {
+            dbg_printf(P_ERROR, "Error changing upload speed for torrent #%d: %s", torrentID, res);
           }
           am_free((void*)response);
         }

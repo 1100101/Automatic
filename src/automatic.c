@@ -19,7 +19,7 @@
 
 #define AM_DEFAULT_CONFIGFILE      "/etc/automatic.conf"
 #define AM_DEFAULT_STATEFILE       ".automatic.state"
-#define AM_DEFAULT_VERBOSE         P_INFO
+#define AM_DEFAULT_VERBOSE         P_MSG
 #define AM_DEFAULT_NOFORK          0
 #define AM_DEFAULT_MAXBUCKET       30
 #define AM_DEFAULT_USETRANSMISSION 1
@@ -349,8 +349,6 @@ int main(int argc, char **argv) {
   }
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
-  am_free(config_file);
-
   session = session_init();
 
   if(parse_config_file(session, AutoConfigFile) != 0) {
@@ -388,7 +386,7 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
   dbg_printf(P_INFO, "Upload limit: %d KB/s", session->upspeed);
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
-  dbg_printf(P_INFO, "start torrents: %d", session->start_torrent == 1 ? "yes" : "no");
+  dbg_printf(P_INFO, "start torrents: %s", session->start_torrent == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "state file: %s", session->statefile);
   dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
@@ -414,7 +412,7 @@ int main(int argc, char **argv) {
     load_state(session->statefile, &session->downloads);
     while(!closing) {
       getlogtime_str(time_str);
-      dbg_printf( P_MSG, "------ %s: Checking for new episodes ------", time_str);
+      dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
 #if FROM_XML_FILE
       xmldata = readFile("feed.xml", &fileLen);
       if(xmldata != NULL) {
@@ -427,7 +425,7 @@ int main(int argc, char **argv) {
       count = 0;
       while(current && current->data) {
         ++count;
-        dbg_printf(P_MSG, "Checking feed %d ...", count);
+        dbg_printf(P_INFO2, "Checking feed %d ...", count);
         processFeed(session, current->data, first_run);
         current = current->next;
       }
