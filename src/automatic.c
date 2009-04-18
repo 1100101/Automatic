@@ -227,15 +227,20 @@ auto_handle* session_init(void) {
 static void session_free(auto_handle *as) {
   if (as) {
     am_free(as->transmission_path);
-    am_free(as->statefile);
+    as->transmission_path = NULL;
     am_free(as->torrent_folder);
-    am_free(as->watch_folder);
+    as->torrent_folder = NULL;
+    am_free(as->statefile);
+    as->statefile = NULL;
     am_free(as->host);
+    as->host = NULL;
     am_free(as->auth);
+    as->auth = NULL;
     freeList(&as->feeds, feed_free);
     freeList(&as->downloads, NULL);
     freeList(&as->filters, NULL);
     am_free(as);
+    as = NULL;
   }
 }
 
@@ -344,6 +349,8 @@ int main(int argc, char **argv) {
   }
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
+  am_free(config_file);
+
   session = session_init();
 
   if(parse_config_file(session, AutoConfigFile) != 0) {
@@ -375,13 +382,13 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);
   dbg_printf(P_INFO, "RPC port: %d", session->rpc_port);
   dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
-  dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "true" : "false");
+  dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
   dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
   dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
   dbg_printf(P_INFO, "Upload limit: %d KB/s", session->upspeed);
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
-  dbg_printf(P_INFO, "start torrents: %d", session->start_torrent);
+  dbg_printf(P_INFO, "start torrents: %d", session->start_torrent == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "state file: %s", session->statefile);
   dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
