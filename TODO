@@ -1,4 +1,5 @@
 DONE for Transmission 1.3, submit torrent data via HTTP rather than the system() call
+DONE when having multiple feeds, bucket size must be sum of entries of all feeds
  - revamp logging system
- - when having multiple feeds, bucket size must be sum of entries of all feeds
  - save cookies for password-protected feeds
+ - New parameter "-o/--once": Quit Automatic after first check of RSS feed (for use with crontab)

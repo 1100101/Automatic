@@ -74,11 +74,10 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
 	return NULL;
 }
 
-char* makeChangeUpSpeedJSON(uint8_t tID, uin32_t upspeed, uint32_t *setme_size) {
+char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint32_t *setme_size) {
 
   char *buf = NULL;
   int buf_size, json_size;
-  uint32_t enc_size;
   const char *JSONstr =
      "{\n"
      "\"method\": \"torrent-set\",\n"
@@ -94,7 +93,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uin32_t upspeed, uint32_t *setme_size) 
   buf_size = strlen(JSONstr) + 10;
   buf = am_malloc(buf_size);
   memset(buf, 0, buf_size);
-  json_size = snprintf(buf, buf_size, tID, JSONstr, upspeed);
+  json_size = snprintf(buf, buf_size, JSONstr, tID, upspeed);
   if(json_size < 0 || json_size >= buf_size) {
     dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
     am_free(buf);
@@ -126,7 +125,7 @@ const char* parseResponse(const char* response) {
 
 
 int8_t getTorrentID(const char* response) {
-  const char* result_regex = "\"id\":\s+(\d+)";
+  const char* result_regex = "\"id\":\\s+(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);
