@@ -182,7 +182,7 @@ char* resolve_path(const char *path) {
  * \return Path to Transmissions default config folder.
  */
 char* get_tr_folder() {
-	static char *path = NULL;
+	char *path = NULL;
 	char buf[MAXPATHLEN];
 	char *home = NULL;
 
@@ -201,7 +201,7 @@ char* get_tr_folder() {
  * \return Path to the temporary folder.
  */
 char* get_temp_folder(void) {
-	static char *dir = NULL;
+	char *dir = NULL;
 
 	if(!dir) {
 		if(getenv("TEMPDIR")) {
