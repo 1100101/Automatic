@@ -215,7 +215,6 @@ auto_handle* session_init(void) {
   /* strings */
   ses->transmission_path     = get_tr_folder();
   ses->torrent_folder        = get_temp_folder();
-  ses->watch_folder          = NULL;
   ses->host                  = NULL;
   ses->auth                  = NULL;
   home = get_home_folder();
@@ -280,14 +279,6 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   return success;
 }
 
-static void startFolderWatch(const char* watchfolder) {
-
-  while(!closing) {
-    dbg_printf(P_INFO, "Started watching folder '%s'", watchfolder);
-    sleep(5);
-  }
-}
-
 static void processRSSList(auto_handle *session, const simple_list items) {
 
   simple_list current_item = items;
@@ -347,7 +338,6 @@ int main(int argc, char **argv) {
   char time_str[TIME_STR_SIZE];
   NODE *current = NULL;
   uint32_t count = 0;
-  int status = 1;
   uint8_t first_run = 1;
   uint8_t once = 0;
 
@@ -410,46 +400,39 @@ int main(int argc, char **argv) {
     shutdown_daemon(session);
   }
 
-  if(session->watch_folder != NULL) {
+  load_state(session->statefile, &session->downloads);
+
+  while(!closing) {
+    getlogtime_str(time_str);
+    dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
+#if FROM_XML_FILE
+    xmldata = readFile("feed.xml", &fileLen);
+    if(xmldata != NULL) {
+      fileLen = strlen(xmldata);
+      parse_xmldata(xmldata, fileLen);
+      am_free(xmldata);
+    }
+#else
+    current = session->feeds;
+    count = 0;
+    while(current && current->data) {
+      ++count;
+      dbg_printf(P_INFO2, "Checking feed %d ...", count);
+      processFeed(session, current->data, first_run);
+      current = current->next;
+    }
+    if(first_run) {
+      dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+    }
+    first_run = 0;
+#endif
+    /* leave loop when program is only supposed to run once */
+    if(once) {
+      break;
+    }
+    sleep(session->check_interval * 60);
   }
 
-  if(status == -1) {
-    fprintf( stderr, "Error forking for watchdog! %d - %s", errno, strerror(errno));
-  } else if(status == 0) { /* folder watch process */
-    startFolderWatch(session->watch_folder);
-  } else { /* RSS feed watching process */
-    load_state(session->statefile, &session->downloads);
-    while(!closing) {
-      getlogtime_str(time_str);
-      dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
-#if FROM_XML_FILE
-      xmldata = readFile("feed.xml", &fileLen);
-      if(xmldata != NULL) {
-        fileLen = strlen(xmldata);
-        parse_xmldata(xmldata, fileLen);
-        am_free(xmldata);
-      }
-#else
-      current = session->feeds;
-      count = 0;
-      while(current && current->data) {
-        ++count;
-        dbg_printf(P_INFO2, "Checking feed %d ...", count);
-        processFeed(session, current->data, first_run);
-        current = current->next;
-      }
-      if(first_run) {
-        dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
-      }
-      first_run = 0;
-#endif
-      /* leave loop when program is only supposed to run once */
-      if(once) {
-        break;
-      }
-      sleep(session->check_interval * 60);
-    }
-    shutdown_daemon(session);
-  }
+  shutdown_daemon(session);
   return 0;
 }
