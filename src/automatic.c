@@ -361,12 +361,12 @@ int main(int argc, char **argv) {
   session = session_init();
 
   if(parse_config_file(session, AutoConfigFile) != 0) {
-    fprintf(stderr, "Error parsing config file: %s\n", erbuf);
     if(errno == ENOENT) {
       snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
     } else {
       snprintf(erbuf, sizeof(erbuf), "Unknown error");
     }
+    fprintf(stderr, "Error parsing config file: %s\n", erbuf);
     shutdown_daemon(session);
   }
 
