@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([Automatic],[0.2],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html])
-VERSION_NUMBER="0.2"
+AC_INIT([Automatic],[0.2.1],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html])
+VERSION_NUMBER="0.2.1"
 AC_SUBST(VERSION_NUMBER,[$VERSION_NUMBER])
 AC_CONFIG_SRCDIR([src/automatic.c])
 AM_INIT_AUTOMAKE([1.10 foreign])

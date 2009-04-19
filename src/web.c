@@ -201,7 +201,6 @@ static void HTTPData_free(HTTPData* data) {
 struct WebData* WebData_new(const char *url) {
 	WebData *data = NULL;
 
-	dbg_printf(P_INFO, "alloc WebData\n");
 	data = am_malloc(sizeof(WebData));
 	if(!data)
 		return NULL;
@@ -266,7 +265,7 @@ WebData* getHTTPData(const char *url) {
 	dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", rc);
 	curl_easy_cleanup(curl_handle);
 	if(res != 0) {
-			dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s': %s", url, curl_easy_strerror(res));
+			dbg_printf(P_ERROR, "[uploadData] Failed to download '%s': %s", url, curl_easy_strerror(res));
 			WebData_free(data);
 			return NULL;
 	} else {
@@ -465,6 +464,7 @@ static int uploadData(const char *host, int port, const char* auth, void *data, 
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);

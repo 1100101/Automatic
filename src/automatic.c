@@ -332,7 +332,7 @@ void applyFilters(feed_item item) {
 	current_regex = session->filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
 		regex_str = (char*)current_regex->data;
-		dbg_printf(P_INFO2, "Current regex: %s", regex_str);
+		dbg_printf(P_INFO, "Current regex: %s", regex_str);
 		err = regcomp(&preg, regex_str, REG_EXTENDED|REG_ICASE);
 		if(err) {
 			regerror(err, &preg, erbuf, sizeof(erbuf));
@@ -340,7 +340,7 @@ void applyFilters(feed_item item) {
 			current_regex = current_regex->next;
 			continue;
 		}
-		dbg_printf(P_INFO2, "Current feed_item: %s", item->name);
+		dbg_printf(P_INFO, "Current feed_item: %s", item->name);
 		err = regexec(&preg, item->name, 0, NULL, 0);
 		if(!err && !has_been_downloaded(session->downloads, item->url)) {			/* regex matches and it hasn't been downloaded before */
 			dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
 		while(current && current->data) {
 			feed = (rss_feed)current->data;
 			++count;
-			printf("Checking feed %d ... ", count);
+			dbg_printf(P_MSG, "Checking feed %d ...", count);
 			wdata = getHTTPData(feed->url);
 			if(wdata && wdata->response && wdata->response->size > 0) {
 				ret = parse_xmldata(wdata->response->data, wdata->response->size);
@@ -485,7 +485,6 @@ int main(int argc, char **argv) {
 					dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
 				}
 			}
-			dbg_printf(P_MSG, "Done");
 			WebData_free(wdata);
 			current = current->next;
 		}

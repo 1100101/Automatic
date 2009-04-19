@@ -1,3 +1,6 @@
+2008-09-24 v0.2.1
+            Fixed segfault bug that occured as soon as the download history went full
+
 2008-08-15 v0.2
             Support for Transmission 1.3
 						Support for multiple RSS feeds

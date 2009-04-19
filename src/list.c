@@ -84,11 +84,12 @@ unsigned int listCount(NODE *head) {
 	return c;
 }
 
+/* highly dangerous and only for debugging purposes! */
 void printList(NODE *head) {
 	NODE *current = head;
 	while (current != NULL) {
 		if(current->data) {
-			printf("%s\n", current->data);
+			dbg_printf(P_DBG, "%s\n", current->data);
 		}
 		current = current->next;
 	}
@@ -151,6 +152,7 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
 	}
 	dbg_printf(P_INFO2, "[cleanupList] size after: %d\n", listCount(*head));
 }
+
 void removeLast(NODE *head, listFuncPtr freeFunc) {
 	NODE *lastNode = NULL;
 	dbg_printf(P_DBG, "Removing last item...\n");

@@ -54,7 +54,6 @@ int addToBucket(char* identifier, NODE **head, int maxBucketItems) {
 	if(maxBucketItems > 0 && listCount(*head) > maxBucketItems) {
 		dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large (%d), deleting head item...", maxBucketItems);
 		removeLast(*head, NULL);
-		dbg_printf(P_INFO, "Done");
 	}
 	return 0;
 }
