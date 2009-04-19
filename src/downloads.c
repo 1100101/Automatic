@@ -91,7 +91,7 @@ int addToBucket(const char* identifier, NODE **head, const int maxBucketItems) {
 
 	addToHead(am_strdup(identifier), head);
 	if(maxBucketItems > 0 && listCount(*head) > (uint32_t)maxBucketItems) {
-		dbg_printf(P_INFO, "[add_to_bucket] bucket gets too large, deleting last item...\n");
+		dbg_printf(P_INFO2, "[add_to_bucket] bucket gets too large, deleting last item...\n");
 		removeLast(*head, NULL);
 	}
 	return 0;
