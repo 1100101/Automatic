@@ -13,8 +13,7 @@
 #include "output.h"
 #include "json.h"
 
-
-int8_t verbose = P_DBG;
+int8_t verbose = P_NONE;
 
 int main(void) {
 
@@ -32,11 +31,12 @@ int main(void) {
   assert(json == NULL && size == 0);
   dbg_printf(P_INFO, "makeJSON(str, strlen(str), 1, ...)");
   json = makeJSON(str, strlen(str), 1, &size);
-  assert(strlen(json) == size && size == 152);
+  dbg_printf(P_INFO, "\n%s\n (%d)", json, size);
+  assert(strlen(json) == size && size == 153);
   am_free(json);
   dbg_printf(P_INFO, "makeJSON(str, strlen(str), 0, ...)");
   json = makeJSON(str, strlen(str), 0, &size);
-  assert(strlen(json) == size && size == 152);
+  assert(strlen(json) == size && size == 153);
   am_free(json);
   return 0;
 }
