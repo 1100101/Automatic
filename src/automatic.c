@@ -70,16 +70,21 @@ static void usage(void) {
     "  -h --help                 Display this message\n"
     "  -v --verbose <level>      Set output level to <level> (default=1)\n"
     "  -c --configfile <path>    Path to configuration file\n"
+    "  -o --once                 Quit Automatic after first check of RSS feeds"
     "\n", LONG_VERSION_STRING );
   exit(0);
 }
 
 static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
-    uint8_t * verbose) {
-  char optstr[] = "fhv:c:";
-  struct option longopts[] = { { "verbose", required_argument, NULL, 'v' }, {
-      "nodaemon", no_argument, NULL, 'f' }, { "help", no_argument, NULL, 'h' },
-      { "configfile", required_argument, NULL, 'c' }, { NULL, 0, NULL, 0 } };
+    uint8_t * verbose, uint8_t *once) {
+  char optstr[] = "fhv:c:o";
+  struct option longopts[] = {
+    { "verbose",    required_argument, NULL, 'v' },
+    { "nodaemon",   no_argument,       NULL, 'f' },
+    { "help",       no_argument,       NULL, 'h' },
+    { "configfile", required_argument, NULL, 'c' },
+    { "once",       no_argument,       NULL, 'o' },
+    { NULL, 0, NULL, 0 } };
   int opt;
 
   while (0 <= (opt = getopt_long(argc, argv, optstr, longopts, NULL ))) {
@@ -92,6 +97,9 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
         break;
       case 'c':
         *c_file = optarg;
+        break;
+      case 'o':
+        *once = 1;
         break;
       default:
         usage();
@@ -341,8 +349,9 @@ int main(int argc, char **argv) {
   uint32_t count = 0;
   int status = 1;
   uint8_t first_run = 1;
+  uint8_t once = 0;
 
-  readargs(argc, argv, &config_file, &nofork, &verbose);
+  readargs(argc, argv, &config_file, &nofork, &verbose, &once);
 
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
@@ -434,6 +443,10 @@ int main(int argc, char **argv) {
       }
       first_run = 0;
 #endif
+      /* leave loop when program is only supposed to run once */
+      if(once) {
+        break;
+      }
       sleep(session->check_interval * 60);
     }
     shutdown_daemon(session);
