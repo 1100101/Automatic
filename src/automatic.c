@@ -77,9 +77,14 @@ static void usage(void) {
 static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
     uint8_t * verbose) {
   char optstr[] = "fhv:c:";
-  struct option longopts[] = { { "verbose", required_argument, NULL, 'v' }, {
-      "nodaemon", no_argument, NULL, 'f' }, { "help", no_argument, NULL, 'h' },
-      { "configfile", required_argument, NULL, 'c' }, { NULL, 0, NULL, 0 } };
+  struct option longopts[] = {
+    { "verbose", required_argument, NULL, 'v' },
+    { "nodaemon", no_argument, NULL, 'f' },
+    { "help", no_argument, NULL, 'h' },
+    { "configfile", required_argument, NULL, 'c' },
+    { NULL, 0, NULL, 0 }
+  };
+
   int opt;
 
   while (0 <= (opt = getopt_long(argc, argv, optstr, longopts, NULL ))) {
@@ -225,14 +230,20 @@ auto_handle* session_init(void) {
 static void session_free(auto_handle *as) {
   if (as) {
     am_free(as->transmission_path);
-    am_free(as->statefile);
+    as->transmission_path = NULL;
     am_free(as->torrent_folder);
+    as->torrent_folder = NULL;
+    am_free(as->statefile);
+    as->statefile = NULL;
     am_free(as->host);
+    as->host = NULL;
     am_free(as->auth);
+    as->auth = NULL;
     freeList(&as->feeds, feed_free);
     freeList(&as->downloads, NULL);
     freeList(&as->filters, NULL);
     am_free(as);
+    as = NULL;
   }
 }
 
@@ -250,17 +261,16 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   } else if (ah->transmission_version == AM_TRANSMISSION_1_2) {
     if (saveFile(fname, t_data, t_size) == 0) {
       if (call_transmission(ah->transmission_path, fname) == -1) {
-        dbg_printf(P_ERROR, "[addTorrentToTM] error adding torrent '%s' to Transmission");
+        dbg_printf(P_ERROR, "[addTorrentToTM] %s: Error adding torrent to Transmission", fname);
       } else {
         success = 1;
       }
       unlink(fname);
     }
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
-    if (uploadTorrent(t_data, t_size, (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST,
-                      ah->auth, ah->rpc_port, ah->start_torrent) == 0) {
-      success = 1;
-    }
+    success = (uploadTorrent(t_data, t_size,
+                     (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->auth, ah->rpc_port,
+                      ah->start_torrent) == 0);
   }
   return success;
 }
@@ -339,19 +349,9 @@ int main(int argc, char **argv) {
     if(errno == ENOENT) {
       snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
     } else {
-      snprintf(erbuf, sizeof(erbuf), "Unknown error");
+      snprintf(erbuf, sizeof(erbuf), "Unknown error: %s", strerror(errno));
     }
     fprintf(stderr, "Error parsing config file: %s\n", erbuf);
-    exit(1);
-  }
-
-  if(listCount(session->feeds) == 0) {
-    fprintf(stderr, "No feed URL specified in automatic.conf!\n");
-    shutdown_daemon(session);
-  }
-
-  if(listCount(session->filters) == 0) {
-    fprintf(stderr, "No patterns specified in automatic.conf!\n");
     shutdown_daemon(session);
   }
 
@@ -381,11 +381,22 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
   dbg_printf(P_INFO, "start torrents: %s", session->start_torrent == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "state file: %s", session->statefile);
-  dbg_printf(P_MSG, "%d feed URL%s", listCount(session->feeds), listCount(session->feeds) > 
-  1 ?  "s" : "");
-  dbg_printf(P_MSG, "Read %d patterns from config file", listCount(session->filters));
+  dbg_printf(P_MSG, "%d feed URL%s", listCount(session->feeds),
+                listCount(session->feeds) > 1 ?  "s" : "");
+  dbg_printf(P_MSG, "Read %d pattern%s from config file", listCount(session->filters),
+                listCount(session->filters) > 1 ?  "s" : "");
 
-  load_state(session->statefile, &session->downloads);
+  if(listCount(session->feeds) == 0) {
+    fprintf(stderr, "Error: No feed URL specified in automatic.conf!\n");
+    shutdown_daemon(session);
+  }
+
+  if(listCount(session->filters) == 0) {
+    fprintf(stderr, "Error: No patterns specified in automatic.conf!\n");
+    shutdown_daemon(session);
+  }
+
+load_state(session->statefile, &session->downloads);
   while(!closing) {
     getlogtime_str(time_str);
     dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
@@ -410,6 +421,7 @@ int main(int argc, char **argv) {
     }
     first_run = 0;
 #endif
+      /* leave loop when program is only supposed to run once */
     sleep(session->check_interval * 60);
   }
   shutdown_daemon(session);
