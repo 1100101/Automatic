@@ -6,7 +6,6 @@ TESTS = $(check_PROGRAMS)
 
 GLOBAL_SOURCES = \
    $(top_srcdir)/src/output.c     \
-   $(top_srcdir)/src/memwatch.c   \
    $(top_srcdir)/src/utils.c
 
 
@@ -39,7 +38,6 @@ noinst_HEADERS = \
    $(top_srcdir)/include/base64.h   \
    $(top_srcdir)/include/list.h     \
    $(top_srcdir)/include/utils.h    \
-   $(top_srcdir)/include/memwatch.h \
    $(top_srcdir)/include/regex.h    \
    $(top_srcdir)/include/json.h     \
    $(top_srcdir)/include/web.h      \
@@ -54,4 +52,4 @@ regex_test_CFLAGS = $(PCRE_CFLAGS)
 json_test_LDADD  = $(PCRE_LIBS)
 json_test_CFLAGS = $(PCRE_CFLAGS)
 
-CFLAGS = -g -O0 -DMEMWATCH -DDEBUG
+CFLAGS = -g -O0 -DDEBUG

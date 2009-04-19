@@ -41,13 +41,12 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
-am__objects_1 = output.$(OBJEXT) memwatch.$(OBJEXT) utils.$(OBJEXT)
+am__objects_1 = output.$(OBJEXT) utils.$(OBJEXT)
 am_base64_test_OBJECTS = $(am__objects_1) base64.$(OBJEXT) \
 	base64_test.$(OBJEXT)
 base64_test_OBJECTS = $(am_base64_test_OBJECTS)
 base64_test_LDADD = $(LDADD)
-am__objects_2 = http_test-output.$(OBJEXT) \
-	http_test-memwatch.$(OBJEXT) http_test-utils.$(OBJEXT)
+am__objects_2 = http_test-output.$(OBJEXT) http_test-utils.$(OBJEXT)
 am_http_test_OBJECTS = $(am__objects_2) http_test-http_test.$(OBJEXT) \
 	http_test-web.$(OBJEXT) http_test-regex.$(OBJEXT) \
 	http_test-file.$(OBJEXT)
@@ -56,8 +55,7 @@ am__DEPENDENCIES_1 =
 http_test_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 http_test_LINK = $(CCLD) $(http_test_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_3 = json_test-output.$(OBJEXT) \
-	json_test-memwatch.$(OBJEXT) json_test-utils.$(OBJEXT)
+am__objects_3 = json_test-output.$(OBJEXT) json_test-utils.$(OBJEXT)
 am_json_test_OBJECTS = $(am__objects_3) json_test-json.$(OBJEXT) \
 	json_test-base64.$(OBJEXT) json_test-regex.$(OBJEXT) \
 	json_test-json_test.$(OBJEXT)
@@ -69,8 +67,7 @@ am_list_test_OBJECTS = $(am__objects_1) list.$(OBJEXT) \
 	list_test.$(OBJEXT)
 list_test_OBJECTS = $(am_list_test_OBJECTS)
 list_test_LDADD = $(LDADD)
-am__objects_4 = regex_test-output.$(OBJEXT) \
-	regex_test-memwatch.$(OBJEXT) regex_test-utils.$(OBJEXT)
+am__objects_4 = regex_test-output.$(OBJEXT) regex_test-utils.$(OBJEXT)
 am_regex_test_OBJECTS = $(am__objects_4) regex_test-regex.$(OBJEXT) \
 	regex_test-regex_test.$(OBJEXT)
 regex_test_OBJECTS = $(am_regex_test_OBJECTS)
@@ -102,7 +99,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = -g -O0 -DMEMWATCH -DDEBUG
+CFLAGS = -g -O0 -DDEBUG
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURL_MINIMUM = @CURL_MINIMUM@
@@ -197,7 +194,6 @@ INCLUDES = -I$(top_srcdir)/include/
 TESTS = $(check_PROGRAMS)
 GLOBAL_SOURCES = \
    $(top_srcdir)/src/output.c     \
-   $(top_srcdir)/src/memwatch.c   \
    $(top_srcdir)/src/utils.c
 
 http_test_SOURCES = $(GLOBAL_SOURCES) \
@@ -229,7 +225,6 @@ noinst_HEADERS = \
    $(top_srcdir)/include/base64.h   \
    $(top_srcdir)/include/list.h     \
    $(top_srcdir)/include/utils.h    \
-   $(top_srcdir)/include/memwatch.h \
    $(top_srcdir)/include/regex.h    \
    $(top_srcdir)/include/json.h     \
    $(top_srcdir)/include/web.h      \
@@ -303,7 +298,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-http_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-utils.Po@am__quote@
@@ -311,15 +305,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-base64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-json.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-json_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_test-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-regex_test.Po@am__quote@
@@ -353,20 +344,6 @@ output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
-
-memwatch.o: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT memwatch.o -MD -MP -MF $(DEPDIR)/memwatch.Tpo -c -o memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/memwatch.Tpo $(DEPDIR)/memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='memwatch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-
-memwatch.obj: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT memwatch.obj -MD -MP -MF $(DEPDIR)/memwatch.Tpo -c -o memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/memwatch.Tpo $(DEPDIR)/memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='memwatch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
 utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT utils.o -MD -MP -MF $(DEPDIR)/utils.Tpo -c -o utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
@@ -409,20 +386,6 @@ http_test-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='http_test-output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -c -o http_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
-
-http_test-memwatch.o: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -MT http_test-memwatch.o -MD -MP -MF $(DEPDIR)/http_test-memwatch.Tpo -c -o http_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/http_test-memwatch.Tpo $(DEPDIR)/http_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='http_test-memwatch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -c -o http_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-
-http_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -MT http_test-memwatch.obj -MD -MP -MF $(DEPDIR)/http_test-memwatch.Tpo -c -o http_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/http_test-memwatch.Tpo $(DEPDIR)/http_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='http_test-memwatch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -c -o http_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
 http_test-utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(http_test_CFLAGS) $(CFLAGS) -MT http_test-utils.o -MD -MP -MF $(DEPDIR)/http_test-utils.Tpo -c -o http_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
@@ -507,20 +470,6 @@ json_test-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='json_test-output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -c -o json_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
-
-json_test-memwatch.o: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -MT json_test-memwatch.o -MD -MP -MF $(DEPDIR)/json_test-memwatch.Tpo -c -o json_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/json_test-memwatch.Tpo $(DEPDIR)/json_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='json_test-memwatch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -c -o json_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-
-json_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -MT json_test-memwatch.obj -MD -MP -MF $(DEPDIR)/json_test-memwatch.Tpo -c -o json_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/json_test-memwatch.Tpo $(DEPDIR)/json_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='json_test-memwatch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -c -o json_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
 json_test-utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(json_test_CFLAGS) $(CFLAGS) -MT json_test-utils.o -MD -MP -MF $(DEPDIR)/json_test-utils.Tpo -c -o json_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
@@ -619,20 +568,6 @@ regex_test-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='regex_test-output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -c -o regex_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
-
-regex_test-memwatch.o: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -MT regex_test-memwatch.o -MD -MP -MF $(DEPDIR)/regex_test-memwatch.Tpo -c -o regex_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/regex_test-memwatch.Tpo $(DEPDIR)/regex_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='regex_test-memwatch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -c -o regex_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
-
-regex_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -MT regex_test-memwatch.obj -MD -MP -MF $(DEPDIR)/regex_test-memwatch.Tpo -c -o regex_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/regex_test-memwatch.Tpo $(DEPDIR)/regex_test-memwatch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='regex_test-memwatch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -c -o regex_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
 
 regex_test-utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -MT regex_test-utils.o -MD -MP -MF $(DEPDIR)/regex_test-utils.Tpo -c -o regex_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
