@@ -124,8 +124,22 @@ const char* parseResponse(const char* response) {
 }
 
 
-int8_t getTorrentID(const char* response) {
+int8_t parseTorrentID(const char* response) {
   const char* result_regex = "\"id\":\\s+(\\d+)";
+  char *result_str = NULL;
+  int8_t result = -1;
+  result_str = getRegExMatch(result_regex, response, 1);
+  if(result_str) {
+   result = atoi(result_str);
+   am_free(result_str);
+  }
+
+  return result;
+}
+
+
+int8_t parseRPCVersion(const char* response) {
+  const char* result_regex = "\"rpc-version\":\\s+(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);

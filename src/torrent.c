@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <limits.h>
 
-
 #include "output.h"
 #include "utils.h"
 #include "json.h"
@@ -72,7 +71,7 @@ void get_filename(char *path, const char *content_filename, const char* url, con
   snprintf(path, PATH_MAX - 1, "%s/%s%s", t_folder, buf, (is_torrent(buf) ? "" : ".torrent"));
 }
 
-static int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID, uint16_t upspeed) {
+int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID, uint16_t upspeed) {
 
   uint32_t packet_size;
   char *packet = NULL;
@@ -104,35 +103,31 @@ static int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torren
 }
 
 int8_t uploadTorrent(const void *t_data, int t_size,
-                     const char *host, const char* auth, uint16_t port,
-                     int16_t upspeed, uint8_t start) {
+                     const char *url, const char* auth, uint8_t start) {
   char *packet = NULL, *res = NULL;
   const char *response = NULL;
   uint32_t packet_size = 0, ret = -1;
-  char url[MAX_URL_LEN];
 
   /* packet torrent data in a JSON package */
   packet = makeJSON(t_data, t_size, start, &packet_size);
   if(packet && packet_size > 0) {
-    snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
     /* send JSON package to Transmission via HTTP POST */
     res = sendHTTPData(url, auth, packet, packet_size);
     if(res != NULL) {
       response = parseResponse(res);
-      if(!strncmp(response, "success", 7)) {
-        dbg_printf(P_MSG, "Torrent upload successful!");
-        if(upspeed > 0) {
-          changeUploadSpeed(url, auth, getTorrentID(res), upspeed);
+      if(response != NULL) {
+        if(!strncmp(response, "success", 7)) {
+          dbg_printf(P_MSG, "Torrent upload successful!");
+          ret = parseTorrentID(res);
+        } else if(!strncmp(response, "duplicate torrent", 17)) {
+          dbg_printf(P_MSG, "Torrent has already been added to Transmission");
+          ret = 0;
+        } else {
+          dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
+          ret = -1;
         }
-        ret = 0;
-      } else if(!strncmp(response, "duplicate torrent", 17)) {
-        dbg_printf(P_MSG, "Torrent has already been added to Transmission");
-        ret = 0;
-      } else {
-        dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
-        ret = -1;
+        am_free((void*)response);
       }
-      am_free((void*)response);
       am_free(res);
     }
     am_free(packet);

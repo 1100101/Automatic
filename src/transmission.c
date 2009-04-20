@@ -21,7 +21,8 @@
 #include <stdint.h>
 
 #include "output.h"
-
+#include "web.h"
+#include "json.h"
 
 /** \brief (Deprecated) Call Transmission via system() call to add a torrent
  *
@@ -55,3 +56,39 @@ int8_t call_transmission(const char* tm_path, const char *filename) {
 		return -1;
 	}
 }
+
+int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
+
+	char url[MAX_URL_LEN];
+	int8_t result = 0;
+	char *response = NULL;
+	char *res = NULL;
+	const char *JSONstr =
+	 "{\n"
+	 "\"method\": \"session-get\",\n"
+	 "\"arguments\": {}\n"
+	 "}";
+
+	if(!host) {
+		return 0;
+	}
+
+	snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
+
+  res = sendHTTPData(url, auth, JSONstr, strlen(JSONstr));
+	if(res != NULL) {
+		response = parseResponse(res);
+		if(response) {
+			if(!strncmp(response, "success", 7)) {
+				result = parseRPCVersion(res);
+			}
+			am_free((void*)response);
+		}
+		am_free(res);
+	}
+	return result;
+}
+
+
+
+
