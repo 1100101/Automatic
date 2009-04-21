@@ -293,7 +293,7 @@ static WebData* downloadTorrent(const char* url) {
 static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname) {
   uint8_t success = 0;
-  uint8_t result;
+  int8_t result;
   char url[MAX_URL_LEN];
 
   if (!ah->use_transmission) {
@@ -311,13 +311,12 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
     }
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
-            (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, port);
-    result = uploadTorrent(t_data, t_size, url, ah->auth,
-                            ah->upspeed, ah->start_torrent);
+            (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
+    result = uploadTorrent(t_data, t_size, url, ah->auth,ah->start_torrent);
     if(result >= 0) {
       success = 1;
-      if(result > 0 && ah->up_speed > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
-        changeUploadSpeed(url, ah->auth, result, upspeed, ah->rpc_version);
+      if(result > 0 && ah->upspeed > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+        changeUploadSpeed(url, ah->auth, result, ah->upspeed, ah->rpc_version);
       }
     } else {
       success = 0;
@@ -476,11 +475,10 @@ int main(int argc, char **argv) {
     startFolderWatch(session->watch_folder);
   } else { /* RSS feed watching process */
     /* determine RPC version */
-    if(ah->transmission_version == AM_TRANSMISSION_1_3) {
-      ah->rpc_version = getRPCVersion(
-            (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST,
-            ah->rpc_port,
-            ah->auth);
+    if(session->transmission_version == AM_TRANSMISSION_1_3) {
+      session->rpc_version = getRPCVersion(
+            (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
+            session->rpc_port,session->auth);
     }
 
     load_state(session->statefile, &session->downloads);

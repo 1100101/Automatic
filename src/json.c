@@ -114,7 +114,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
   dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] allocated %d byte for JSON string", buf_size);
   memset(buf, 0, buf_size);
 
-  if(rpcVersion < = 4) {
+  if(rpcVersion <= 4) {
     json_size = snprintf(buf, buf_size, JSONstr, tID, "speed-limit-up", upspeed, "speed-limit-up-enabled");
   } else if(rpcVersion >= 5 ) {
     json_size = snprintf(buf, buf_size, JSONstr, tID, "uploadLimit", upspeed, "uploadLimited");
@@ -144,7 +144,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
  * Possible values are "success", "duplicate torrent" or failure messages.
  */
 
-const char* parseResponse(const char* response) {
+char* parseResponse(const char* response) {
 	const char* result_regex = "\"result\":\\s+\"(.+)\"";
 	char *result_str = NULL;
 	result_str = getRegExMatch(result_regex, response, 1);

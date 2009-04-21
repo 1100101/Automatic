@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#define MSGSIZE_MAX 700
+#define MSGSIZE_MAX 1500
 
 #define TIME_STR_SIZE 30
 

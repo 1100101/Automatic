@@ -23,6 +23,7 @@
 #include "output.h"
 #include "web.h"
 #include "json.h"
+#include "utils.h"
 
 /** \brief (Deprecated) Call Transmission via system() call to add a torrent
  *
@@ -77,15 +78,17 @@ int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
 
   res = sendHTTPData(url, auth, JSONstr, strlen(JSONstr));
 	if(res != NULL) {
+	  dbg_printf(P_DBG, "[getRPCVersion] got response!");
 		response = parseResponse(res);
 		if(response) {
 			if(!strncmp(response, "success", 7)) {
-				result = parseRPCVersion(res);
+				result = parseRPCVersion(res);				
 			}
 			am_free((void*)response);
 		}
 		am_free(res);
 	}
+	dbg_printf(P_DBG, "[getRPCVersion] RPC version: %d", result);
 	return result;
 }
 

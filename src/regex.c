@@ -54,7 +54,7 @@ uint8_t isRegExMatch(const char* pattern, const char* str) {
 	preg = init_regex(pattern);
 
 	if(preg) {
-		dbg_printf(P_INFO2, "[isMatch] Text to match against: %s", str);
+		dbg_printf(P_DBG, "[isMatch] Text to match against: %s", str);
 		err = pcre_exec(preg, NULL, str, strlen(str), 0, 0, NULL, 0);
 		dbg_printf(P_DBG, "[getMatch] err=%d", err);
 		if (!err) { /* regex matches */
