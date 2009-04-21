@@ -71,7 +71,8 @@ void get_filename(char *path, const char *content_filename, const char* url, con
   snprintf(path, PATH_MAX - 1, "%s/%s%s", t_folder, buf, (is_torrent(buf) ? "" : ".torrent"));
 }
 
-int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID, uint16_t upspeed) {
+int8_t changeUploadSpeed(const char* url, const char* auth,
+                         int8_t torrentID, uint16_t upspeed, uint8_t rpcVersion) {
 
   uint32_t packet_size;
   char *packet = NULL;
@@ -80,7 +81,7 @@ int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID, ui
   uint8_t result = 0;
 
   if(torrentID > -1) {
-    packet = makeChangeUpSpeedJSON(torrentID, upspeed, &packet_size);
+    packet = makeChangeUpSpeedJSON(torrentID, upspeed, rpcVersion, &packet_size);
     if(packet && packet_size > 0) {
       res = sendHTTPData(url, auth, packet, packet_size);
       if(res != NULL) {

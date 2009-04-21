@@ -12,6 +12,7 @@ void get_filename(char *filename, const char *content_filename, const char *url,
 int8_t uploadTorrent(const void *t_data, int t_size,
                      const char *url, const char* auth, uint8_t start);
 
-int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID, uint16_t upspeed);
+int8_t changeUploadSpeed(const char* url, const char* auth, int8_t torrentID,
+                         uint16_t upspeed, uint8_t rpcVersion);
 
 #endif /* TORRENT_H_ */

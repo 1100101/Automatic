@@ -61,6 +61,9 @@ uint8_t closing = 0;
 uint8_t verbose = AM_DEFAULT_VERBOSE;
 uint8_t nofork  = AM_DEFAULT_NOFORK;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void usage(void) {
   printf("usage: automatic [-fh] [-v level] [-c file]\n"
     "\n"
@@ -74,6 +77,9 @@ static void usage(void) {
     "\n", LONG_VERSION_STRING );
   exit(0);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
     uint8_t * verbose, uint8_t *once) {
@@ -108,6 +114,9 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void shutdown_daemon(auto_handle *as) {
   char time_str[TIME_STR_SIZE];
   dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
@@ -117,6 +126,9 @@ static void shutdown_daemon(auto_handle *as) {
   session_free(as);
   exit(EXIT_SUCCESS);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static int daemonize(void) {
   int fd;
@@ -173,6 +185,9 @@ static int daemonize(void) {
   return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void signal_handler(int sig) {
   switch (sig) {
     case SIGINT:
@@ -184,6 +199,9 @@ static void signal_handler(int sig) {
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void setup_signals(void) {
   signal(SIGCHLD, SIG_IGN);       /* ignore child       */
   signal(SIGTSTP, SIG_IGN);       /* ignore tty signals */
@@ -193,9 +211,15 @@ static void setup_signals(void) {
   signal(SIGINT , signal_handler); /* catch kill signal */
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 uint8_t am_get_verbose(void) {
   return verbose;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 auto_handle* session_init(void) {
   char path[MAXPATHLEN];
@@ -233,6 +257,9 @@ auto_handle* session_init(void) {
   return ses;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void session_free(auto_handle *as) {
   if (as) {
     am_free(as->transmission_path);
@@ -253,9 +280,15 @@ static void session_free(auto_handle *as) {
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static WebData* downloadTorrent(const char* url) {
   return getHTTPData(url);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname) {
@@ -283,8 +316,8 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                             ah->upspeed, ah->start_torrent);
     if(result >= 0) {
       success = 1;
-      if(ah->up_speed > 0) {
-        changeUploadSpeed(url, ah->auth, result, upspeed);
+      if(result > 0 && ah->up_speed > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+        changeUploadSpeed(url, ah->auth, result, upspeed, ah->rpc_version);
       }
     } else {
       success = 0;
@@ -293,6 +326,9 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   return success;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 static void startFolderWatch(const char* watchfolder) {
 
   while(!closing) {
@@ -300,6 +336,9 @@ static void startFolderWatch(const char* watchfolder) {
     sleep(5);
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void processRSSList(auto_handle *session, const simple_list items) {
 
@@ -310,27 +349,30 @@ static void processRSSList(auto_handle *session, const simple_list items) {
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if (isMatch(session->filters, item->name) && !has_been_downloaded(session->downloads, item->url)) {
-        dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
-        torrent = downloadTorrent(item->url);
-        if(torrent) {
-          get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
-          /* add torrent to Transmission */
+      dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
+      torrent = downloadTorrent(item->url);
+      if(torrent) {
+        get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
+        /* add torrent to Transmission */
         if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
-          /* add torrent url to bucket list */
-            if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
-              session->bucket_changed = 1;
-            } else {
-              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
-            }
+        /* add torrent url to bucket list */
+          if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
+            session->bucket_changed = 1;
+          } else {
+            dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
           }
-          WebData_free(torrent);
         }
+        WebData_free(torrent);
       }
-    current_item = current_item->next;
     }
+    current_item = current_item->next;
   }
+}
 
-static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+  static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
   WebData *wdata = NULL;
   uint32_t item_count = 0;
   wdata = getHTTPData(feed->url);
@@ -347,7 +389,9 @@ static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t f
   return item_count;
 }
 
-/* main function */
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char **argv) {
   auto_handle *session = NULL;
   char *config_file = NULL;
