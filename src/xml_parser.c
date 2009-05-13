@@ -84,7 +84,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 
 	size = (nodes) ? nodes->nodeNr : 0;
 
-	dbg_printf(P_INFO, "%d items in XML", size);
+	dbg_printf(P_INFO2, "%d items in XML", size);
 	for (i = 0; i < size; ++i) {
 		assert(nodes->nodeTab[i]);
 		if (nodes->nodeTab[i]->type == XML_ELEMENT_NODE) {

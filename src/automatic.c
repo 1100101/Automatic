@@ -479,6 +479,7 @@ int main(int argc, char **argv) {
       session->rpc_version = getRPCVersion(
             (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
             session->rpc_port,session->auth);
+      dbg_printf(P_INFO, "RPC Version: %d", session->rpc_version);
     }
 
     load_state(session->statefile, &session->downloads);

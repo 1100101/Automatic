@@ -125,7 +125,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
     am_free(buf);
     return NULL;
   }
-  dbg_printf(P_DBG, "[makeChangeUpSpeedJSON] actual string length: %d", json_size);
+  dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] actual string length: %d", json_size);
   buf[json_size] = '\0';
 
   if(setme_size) {
