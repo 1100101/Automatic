@@ -51,7 +51,7 @@ void* am_malloc( size_t size ) {
   if(size > 0) {
     tmp = malloc(size);
     if(tmp) {
-      dbg_printf(P_DBG, "Allocated %d bytes (%p)", size, tmp);
+      dbg_printf(P_MEM, "Allocated %d bytes (%p)", size, tmp);
     }
     return tmp;
   }
@@ -68,10 +68,11 @@ void* am_malloc( size_t size ) {
  * This is because some implementations of realloc() crash if p is NULL.
  */
 void* am_realloc(void *p, size_t size) {
-  if(!p)
+  if(!p) {
     return am_malloc(size);
-  else
-    return realloc(p, size);
+  }
+  dbg_printf(P_MEM, "Reallocating %p to %d bytes", p, size);
+  return realloc(p, size);
 }
 
 /** \brief Free allocated memory
@@ -82,7 +83,7 @@ void* am_realloc(void *p, size_t size) {
  */
 void am_free(void * p) {
   if(p) {
-    dbg_printf(P_DBG, "Freeing %p", p);
+    dbg_printf(P_MEM, "Freeing %p", p);
     free(p);
 /*     p = NULL; */
   }

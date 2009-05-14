@@ -74,38 +74,66 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
 	return NULL;
 }
 
-char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint32_t *setme_size) {
+char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {
 
   char *buf = NULL;
-  int buf_size, json_size;
+  int buf_size, json_size = 0;
   const char *JSONstr =
      "{\n"
      "\"method\": \"torrent-set\",\n"
      "\"arguments\": {\n"
      "\"ids\": %d,\n"
-     "\"uploadLimit\": %d,\n"
-     "\"uploadLimited\": true\n"
+     "\"%s\": %d,\n"
+     "\"%s\": true\n"
      "}\n"
      "}";
 
   *setme_size = 0;
 
-  buf_size = strlen(JSONstr) + 10;
+  if(rpcVersion <= 0) {
+    dbg_printf(P_ERROR, "Invalid RPC version: %d", rpcVersion);
+    return NULL;
+  }
+
+  if(upspeed <= 0) {
+    dbg_printf(P_ERROR, "Invalid upspeed value: %d", upspeed);
+    return NULL;
+  }
+
+  if(tID <= 0) {
+    dbg_printf(P_ERROR, "Invalid torrent ID: %d", tID);
+    return NULL;
+  }
+
+  buf_size = strlen(JSONstr) + 60;
   buf = am_malloc(buf_size);
+  if(!buf) {
+    dbg_printf(P_DBG, "Mem alloc for JSON string failed!");
+    return NULL;
+  }
+  dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] allocated %d byte for JSON string", buf_size);
   memset(buf, 0, buf_size);
-  json_size = snprintf(buf, buf_size, JSONstr, tID, upspeed);
+
+  if(rpcVersion <= 4) {
+    json_size = snprintf(buf, buf_size, JSONstr, tID, "speed-limit-up", upspeed, "speed-limit-up-enabled");
+  } else if(rpcVersion >= 5 ) {
+    json_size = snprintf(buf, buf_size, JSONstr, tID, "uploadLimit", upspeed, "uploadLimited");
+  }
+
   if(json_size < 0 || json_size >= buf_size) {
     dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
     am_free(buf);
     return NULL;
   }
+  dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] actual string length: %d", json_size);
   buf[json_size] = '\0';
+
   if(setme_size) {
     *setme_size = json_size;
   }
+
   return buf;
 }
-
 
 /** \brief Parse the JSON-encoded response from Transmission after uploading a torrent via JSON-RPC.
  *
@@ -116,7 +144,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint32_t *setme_size)
  * Possible values are "success", "duplicate torrent" or failure messages.
  */
 
-const char* parseResponse(const char* response) {
+char* parseResponse(const char* response) {
 	const char* result_regex = "\"result\":\\s+\"(.+)\"";
 	char *result_str = NULL;
 	result_str = getRegExMatch(result_regex, response, 1);
@@ -124,8 +152,22 @@ const char* parseResponse(const char* response) {
 }
 
 
-int8_t getTorrentID(const char* response) {
+int8_t parseTorrentID(const char* response) {
   const char* result_regex = "\"id\":\\s+(\\d+)";
+  char *result_str = NULL;
+  int8_t result = -1;
+  result_str = getRegExMatch(result_regex, response, 1);
+  if(result_str) {
+   result = atoi(result_str);
+   am_free(result_str);
+  }
+
+  return result;
+}
+
+
+int8_t parseRPCVersion(const char* response) {
+  const char* result_regex = "\"rpc-version\":\\s+(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);

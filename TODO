@@ -1,5 +1,6 @@
 DONE for Transmission 1.3, submit torrent data via HTTP rather than the system() call
 DONE when having multiple feeds, bucket size must be sum of entries of all feeds
+DONE New parameter "-o/--once": Quit Automatic after first check of RSS feed (for use with crontab)
+DONE use RPC command "session-get" -> "rpc-version" to determine RPC version (necessary for "torrent-set" -> "upload-limit")
  - revamp logging system
  - save cookies for password-protected feeds
- - New parameter "-o/--once": Quit Automatic after first check of RSS feed (for use with crontab)

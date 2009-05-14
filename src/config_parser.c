@@ -178,10 +178,10 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
 				as->transmission_version = AM_TRANSMISSION_1_3;
 			} else {
-				dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+				dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 			}
 		} else {
-			dbg_printf(P_ERROR,"Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "torrent-folder")) {
 		set_path(param, &as->torrent_folder);
@@ -196,7 +196,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		if(numval > 0) {
 			as->upspeed = (uint16_t)numval;
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "rpc-port")) {
 		numval = parseUInt(param);
@@ -205,7 +205,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		} else if(numval != -1) {
 			dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "interval")) {
 		numval = parseUInt(param);
@@ -214,7 +214,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		} else if(numval != -1) {
 			dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "use-transmission")) {
 		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
@@ -222,7 +222,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
 			as->use_transmission = 1;
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 		}
 	} else if(!strcmp(opt, "start-torrents")) {
 		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
@@ -230,7 +230,7 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
 			as->start_torrent = 1;
 		} else {
-			dbg_printf(P_ERROR, "Unknown parameter '%s' for option '%s'", param, opt);
+			dbg_printf(P_ERROR, "Unknown parameter for option '%s': '%s'", opt, param);
 		}
 	} else if(!strcmp(opt, "patterns")) {
 		addToList(&as->filters, param);

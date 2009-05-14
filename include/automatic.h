@@ -23,7 +23,7 @@
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
-
+#define AM_DEFAULT_RPC_VERSION  4
 #define AM_DEFAULT_INTERVAL			30
 #define AM_DEFAULT_HOST  				"localhost"
 #define AM_DEFAULT_RPCPORT 			9091
@@ -45,6 +45,7 @@ struct auto_handle {
 	rss_feeds 	feeds;
 	simple_list downloads;
 	simple_list filters;
+	int8_t      rpc_version;
 	uint16_t 		max_bucket_items;
 	uint8_t 		bucket_changed;
 	uint8_t 		check_interval;
