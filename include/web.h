@@ -50,6 +50,6 @@ typedef struct WebData WebData;
 WebData* getHTTPData(const char *url);
 char* 	 sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
 void 		 WebData_free(struct WebData *data);
-
+void     am_freeSessionId(void);
 
 #endif /* WEB_H_ */
