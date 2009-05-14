@@ -24,6 +24,14 @@
 	#include "memwatch.h"
 #endif
 
+#ifndef UNUSED
+ #ifdef __GNUC__
+  #define UNUSED __attribute__ ( ( unused ) )
+ #else
+  #define UNUSED
+ #endif
+#endif
+
 #include <stdlib.h>
 
 void* am_malloc(size_t size);

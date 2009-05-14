@@ -124,6 +124,7 @@ static void shutdown_daemon(auto_handle *as) {
     save_state(as->statefile, as->downloads);
   }
   session_free(as);
+  am_freeSessionId();
   exit(EXIT_SUCCESS);
 }
 

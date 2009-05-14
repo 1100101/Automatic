@@ -1,3 +1,10 @@
+2009-05-14 v0.4
+            Added: New option "upload-limit" in automatic.conf. Set to a value in KB/s, Automatic
+                   will limit the upload speed for each new torrent to this value.
+            Added: New commandline option "-o/--once": Quit Automatic after checking RSS feeds once.
+                   Use this if you want to use Automatic in conjunction with crontab.
+            Fixed: Compatibility issue with Transmission 1.53+ and 1.61+ (CSRF protection)
+
 2009-04-19 v0.3.3
             Fixed: Possible memory leak in get_tr_folder() and get_temp_folder()
 
