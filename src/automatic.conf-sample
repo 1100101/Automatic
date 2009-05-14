@@ -29,6 +29,9 @@ url = ""
 # interval in minutes between checks for new downloads
 interval = 30
 
+# Limit upload speed (in KB/s) for each torrent that is added to Transmission via Automatic
+#upload-limit = 10
+
 # Automatically add downloaded torrents to Transmission (requires transmission-daemon and transmission-remote to be installed)
 use-transmission = yes
 
@@ -46,6 +49,6 @@ statefile = "~/.config/automatic.state"
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter
 
-patterns =  { "Name of Something I Want to Download Automatically.*HDTV"
-              "Something else to download.*HDTV"
+patterns =  { "Name.of.Something.I.Want.to.Download.Automatically.*HDTV"
+              "Something.else.to.download.*HDTV"
             }
