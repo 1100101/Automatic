@@ -32,7 +32,7 @@ enum debug_type {
 	P_INFO = 2,
 	P_INFO2 = 3,
 	P_DBG = 4,
-  P_MEM = 5
+    P_MEM = 5
 };
 
 typedef enum debug_type debug_type;
