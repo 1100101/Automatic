@@ -145,7 +145,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
  */
 
 char* parseResponse(const char* response) {
-	const char* result_regex = "\"result\":\\s+\"(.+)\"";
+	const char* result_regex = "\"result\":\\s*\"(.+)\"";
 	char *result_str = NULL;
 	result_str = getRegExMatch(result_regex, response, 1);
 	return result_str;
@@ -153,7 +153,7 @@ char* parseResponse(const char* response) {
 
 
 int8_t parseTorrentID(const char* response) {
-  const char* result_regex = "\"id\":\\s+(\\d+)";
+  const char* result_regex = "\"id\":\\s*(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);
@@ -167,7 +167,7 @@ int8_t parseTorrentID(const char* response) {
 
 
 int8_t parseRPCVersion(const char* response) {
-  const char* result_regex = "\"rpc-version\":\\s+(\\d+)";
+  const char* result_regex = "\"rpc-version\":\\s*(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);

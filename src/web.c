@@ -399,8 +399,8 @@ static CURL* am_curl_init(void * data, const char* auth, struct curl_slist ** he
  * \return Web server response
  */
 char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
-  CURL *curl_handle = NULL;
   CURLcode res;
+  CURL *curl_handle = NULL;
   long rc, i = 0, tries = 2;
   WebData* response_data = NULL;
   char *ret = NULL;
@@ -429,7 +429,8 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
       curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
       curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
 
-      if( ( res = curl_easy_perform(curl_handle) ) ) {
+      res = curl_easy_perform(curl_handle);
+      if(res) {
         dbg_printf(P_ERROR, "[uploadData] Failed to upload to '%s': %s", url, curl_easy_strerror(res));
         ret = NULL;
       } else {
@@ -460,7 +461,7 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
       }
 
     } else {
-      dbg_printf(P_ERROR, "[uploadData] am_curl_init() failed", url, curl_easy_strerror(res));
+      dbg_printf(P_ERROR, "[uploadData] am_curl_init() failed");
       ret = NULL;
       break;
     }

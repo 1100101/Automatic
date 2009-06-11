@@ -120,6 +120,7 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
 static void shutdown_daemon(auto_handle *as) {
   char time_str[TIME_STR_SIZE];
   dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
+  dbg_printf(P_INFO2, "bucket_changed: %s", as->bucket_changed ? "Yes" : "No");
   if (as && as->bucket_changed) {
     save_state(as->statefile, as->downloads);
   }
@@ -340,7 +341,8 @@ static void processRSSList(auto_handle *session, const simple_list items) {
         get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
         /* add torrent to Transmission */
         if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
-        /* add torrent url to bucket list */
+          /* add torrent url to bucket list */
+          dbg_printf(P_INFO2, "Adding '%s' to bucket list", item->name);
           if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
             session->bucket_changed = 1;
           } else {

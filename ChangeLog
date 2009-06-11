@@ -1,3 +1,6 @@
+2009-06-10 v0.4.1
+            Fixed: New torrents weren't added to the history anymore since Transmission 1.71
+
 2009-05-14 v0.4
             Added: New option "upload-limit" in automatic.conf. Set to a value in KB/s, Automatic
                    will limit the upload speed for each new torrent to this value.
