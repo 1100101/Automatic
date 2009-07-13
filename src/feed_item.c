@@ -74,8 +74,9 @@ uint8_t isMatch(const simple_list filters, const char* string) {
 feed_item newFeedItem(void) {
 	feed_item i = (feed_item)am_malloc(sizeof(struct feed_item));
 	if(i != NULL) {
-		i->name = NULL;
-		i->url = NULL;
+		i->name     = NULL;
+		i->url      = NULL;
+    i->category = NULL;
 	}
 	return i;
 }
@@ -94,6 +95,10 @@ void freeFeedItem(void *data) {
 		if(item->url != NULL) {
 			am_free(item->url);
 			item->url = NULL;
+		}
+		if(item->category != NULL) {
+			am_free(item->category);
+			item->category = NULL;
 		}
 		am_free(item);
 		item = NULL;

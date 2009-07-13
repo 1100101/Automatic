@@ -288,7 +288,7 @@ static void WebData_clear(struct WebData *data) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static HTTPResponse* HTTPResonse_new(void) {
+static HTTPResponse* HTTPResponse_new(void) {
   HTTPResponse* resp = (HTTPResponse*)am_malloc(sizeof(struct HTTPResponse));
   if(resp) {
     resp->size = 0;
@@ -315,7 +315,6 @@ void HTTPResponse_free(struct HTTPResponse *response) {
 
 static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
   CURL * curl = curl_easy_init();
-  int len;
 
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_callback);
@@ -366,7 +365,7 @@ HTTPResponse* getHTTPData(const char *url) {
   }
 
   curl_global_init(CURL_GLOBAL_ALL);
-  if( ( curl_handle = am_curl_init(data, NULL, FALSE) ) ) {
+  if( ( curl_handle = am_curl_init(data, NULL, 0) ) ) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     res = curl_easy_perform(curl_handle);
     curl_easy_cleanup(curl_handle);
@@ -376,7 +375,7 @@ HTTPResponse* getHTTPData(const char *url) {
     } else {
       resp = HTTPResponse_new();
       curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
-      dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", rc);
+      dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", resp->responseCode);
 
       //copy data if present
       if(data->response->data) {
@@ -390,8 +389,7 @@ HTTPResponse* getHTTPData(const char *url) {
     }
   } else {
     dbg_printf(P_ERROR, "am_curl_init() failed");
-    ret = NULL;
-    break;
+    resp = NULL;
   }
   WebData_free(data);
   return resp;
@@ -413,7 +411,7 @@ HTTPResponse* getHTTPData(const char *url) {
 char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
   CURL *curl_handle = NULL;
   CURLcode res;
-  long rc, tries = 2;
+  long rc, tries = 2, len;
   WebData* response_data = NULL;
   char *ret = NULL;
   char sessionKey[MAXLEN];
@@ -431,18 +429,18 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
     WebData_clear(response_data);
 
     if( curl_handle == NULL) {
-      if( ( curl_handle = am_curl_init(response_data, auth, TRUE) ) ) {
+      if( ( curl_handle = am_curl_init(response_data, auth, 1) ) ) {
         //Transmission-specific options for HTTP POST
         if(strstr(response_data->url, "transmission") != NULL) {
-          curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, parse_Transmission_response );
-         *header = curl_slist_append(headers, "Content-Type: application/json");
+          curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parse_Transmission_response );
+         headers = curl_slist_append(headers, "Content-Type: application/json");
           if( gSessionID ) {
             if((len = snprintf(sessionKey, MAXLEN, "X-Transmission-Session-Id: %s", gSessionID)) > 0) {
               sessionKey[len] = '\0';
             }
-            *header = curl_slist_append(headers, sessionKey);
+            headers = curl_slist_append(headers, sessionKey);
           }
-          curl_easy_setopt( curl, CURLOPT_HTTPHEADER, headers );
+          curl_easy_setopt( curl_handle, CURLOPT_HTTPHEADER, headers );
         }
         curl_easy_setopt(curl_handle, CURLOPT_URL, response_data->url);
       } else {

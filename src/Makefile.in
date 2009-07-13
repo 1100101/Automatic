@@ -49,10 +49,10 @@ PROGRAMS = $(bin_PROGRAMS)
 am_automatic_OBJECTS = automatic.$(OBJEXT) base64.$(OBJEXT) \
 	config_parser.$(OBJEXT) downloads.$(OBJEXT) \
 	feed_item.$(OBJEXT) file.$(OBJEXT) json.$(OBJEXT) \
-	list.$(OBJEXT) output.$(OBJEXT) regex.$(OBJEXT) \
-	rss_feed.$(OBJEXT) state.$(OBJEXT) torrent.$(OBJEXT) \
-	transmission.$(OBJEXT) utils.$(OBJEXT) web.$(OBJEXT) \
-	xml_parser.$(OBJEXT)
+	list.$(OBJEXT) output.$(OBJEXT) prowl.$(OBJEXT) \
+	regex.$(OBJEXT) rss_feed.$(OBJEXT) state.$(OBJEXT) \
+	torrent.$(OBJEXT) transmission.$(OBJEXT) utils.$(OBJEXT) \
+	web.$(OBJEXT) xml_parser.$(OBJEXT)
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -64,9 +64,9 @@ am__objects_1 = automatic_mw-automatic.$(OBJEXT) \
 	automatic_mw-downloads.$(OBJEXT) \
 	automatic_mw-feed_item.$(OBJEXT) automatic_mw-file.$(OBJEXT) \
 	automatic_mw-json.$(OBJEXT) automatic_mw-list.$(OBJEXT) \
-	automatic_mw-output.$(OBJEXT) automatic_mw-regex.$(OBJEXT) \
-	automatic_mw-rss_feed.$(OBJEXT) automatic_mw-state.$(OBJEXT) \
-	automatic_mw-torrent.$(OBJEXT) \
+	automatic_mw-output.$(OBJEXT) automatic_mw-prowl.$(OBJEXT) \
+	automatic_mw-regex.$(OBJEXT) automatic_mw-rss_feed.$(OBJEXT) \
+	automatic_mw-state.$(OBJEXT) automatic_mw-torrent.$(OBJEXT) \
 	automatic_mw-transmission.$(OBJEXT) \
 	automatic_mw-utils.$(OBJEXT) automatic_mw-web.$(OBJEXT) \
 	automatic_mw-xml_parser.$(OBJEXT)
@@ -222,6 +222,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/json.c           \
    $(top_srcdir)/src/list.c           \
    $(top_srcdir)/src/output.c         \
+   $(top_srcdir)/src/prowl.c          \
    $(top_srcdir)/src/regex.c          \
    $(top_srcdir)/src/rss_feed.c       \
    $(top_srcdir)/src/state.c          \
@@ -241,6 +242,7 @@ noinst_HEADERS = \
    $(top_srcdir)/include/json.h           \
    $(top_srcdir)/include/list.h           \
    $(top_srcdir)/include/output.h         \
+   $(top_srcdir)/include/prowl.h          \
    $(top_srcdir)/include/regex.h          \
    $(top_srcdir)/include/rss_feed.h       \
    $(top_srcdir)/include/state.h          \
@@ -353,6 +355,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-prowl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-rss_feed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-state.Po@am__quote@
@@ -369,6 +372,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rss_feed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
@@ -517,6 +521,20 @@ output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
+
+prowl.o: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT prowl.o -MD -MP -MF $(DEPDIR)/prowl.Tpo -c -o prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl.Tpo $(DEPDIR)/prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='prowl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+
+prowl.obj: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT prowl.obj -MD -MP -MF $(DEPDIR)/prowl.Tpo -c -o prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl.Tpo $(DEPDIR)/prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='prowl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
 
 regex.o: $(top_srcdir)/src/regex.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT regex.o -MD -MP -MF $(DEPDIR)/regex.Tpo -c -o regex.o `test -f '$(top_srcdir)/src/regex.c' || echo '$(srcdir)/'`$(top_srcdir)/src/regex.c
@@ -755,6 +773,20 @@ automatic_mw-output.obj: $(top_srcdir)/src/output.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='automatic_mw-output.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
+
+automatic_mw-prowl.o: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-prowl.o -MD -MP -MF $(DEPDIR)/automatic_mw-prowl.Tpo -c -o automatic_mw-prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-prowl.Tpo $(DEPDIR)/automatic_mw-prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='automatic_mw-prowl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+
+automatic_mw-prowl.obj: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-prowl.obj -MD -MP -MF $(DEPDIR)/automatic_mw-prowl.Tpo -c -o automatic_mw-prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-prowl.Tpo $(DEPDIR)/automatic_mw-prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='automatic_mw-prowl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
 
 automatic_mw-regex.o: $(top_srcdir)/src/regex.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-regex.o -MD -MP -MF $(DEPDIR)/automatic_mw-regex.Tpo -c -o automatic_mw-regex.o `test -f '$(top_srcdir)/src/regex.c' || echo '$(srcdir)/'`$(top_srcdir)/src/regex.c

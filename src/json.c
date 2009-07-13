@@ -111,7 +111,6 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
     dbg_printf(P_DBG, "Mem alloc for JSON string failed!");
     return NULL;
   }
-  dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] allocated %d byte for JSON string", buf_size);
   memset(buf, 0, buf_size);
 
   if(rpcVersion <= 4) {
@@ -125,7 +124,6 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
     am_free(buf);
     return NULL;
   }
-  dbg_printf(P_INFO, "[makeChangeUpSpeedJSON] actual string length: %d", json_size);
   buf[json_size] = '\0';
 
   if(setme_size) {
@@ -145,7 +143,7 @@ char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, u
  */
 
 char* parseResponse(const char* response) {
-	const char* result_regex = "\"result\":\\s+\"(.+)\"";
+	const char* result_regex = "\"result\":\\s*\"(.+)\"";
 	char *result_str = NULL;
 	result_str = getRegExMatch(result_regex, response, 1);
 	return result_str;
@@ -153,7 +151,7 @@ char* parseResponse(const char* response) {
 
 
 int8_t parseTorrentID(const char* response) {
-  const char* result_regex = "\"id\":\\s+(\\d+)";
+  const char* result_regex = "\"id\":\\s*(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);
@@ -167,7 +165,7 @@ int8_t parseTorrentID(const char* response) {
 
 
 int8_t parseRPCVersion(const char* response) {
-  const char* result_regex = "\"rpc-version\":\\s+(\\d+)";
+  const char* result_regex = "\"rpc-version\":\\s*(\\d+)";
   char *result_str = NULL;
   int8_t result = -1;
   result_str = getRegExMatch(result_regex, response, 1);

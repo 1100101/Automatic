@@ -128,8 +128,12 @@ int8_t uploadTorrent(const void *t_data, int t_size,
           ret = -1;
         }
         am_free((void*)response);
+      } else {
+        dbg_printf(P_ERROR, "parseResponse() failed!");
       }
       am_free(res);
+    } else {
+      dbg_printf(P_ERROR, "sendHTTPData() failed!");
     }
     am_free(packet);
   }

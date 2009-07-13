@@ -107,7 +107,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
 			dbg_printf(P_DBG, "[getMatch] result: '%s' (%d -> %d)", result_str, ovector[2 * which_result], ovector[2 * which_result + 1]);
 		} else if(err < 0) {
 			if(err == PCRE_ERROR_NOMATCH) {
-				dbg_printf(P_INFO, "[getMatch] No match");
+				dbg_printf(P_DBG, "[getMatch] No match");
 			} else {
 				dbg_printf(P_ERROR, "[getMatch] regexec error: %d", err);
 			}

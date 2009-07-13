@@ -31,7 +31,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 check_PROGRAMS = list_test$(EXEEXT) base64_test$(EXEEXT) \
-	regex_test$(EXEEXT) http_test$(EXEEXT) json_test$(EXEEXT)
+	regex_test$(EXEEXT) http_test$(EXEEXT) json_test$(EXEEXT) \
+	prowl_test$(EXEEXT)
 subdir = src/tests
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -69,9 +70,17 @@ am_list_test_OBJECTS = $(am__objects_1) list.$(OBJEXT) \
 	list_test.$(OBJEXT)
 list_test_OBJECTS = $(am_list_test_OBJECTS)
 list_test_LDADD = $(LDADD)
-am__objects_4 = regex_test-output.$(OBJEXT) \
+am__objects_4 = prowl_test-output.$(OBJEXT) \
+	prowl_test-memwatch.$(OBJEXT) prowl_test-utils.$(OBJEXT)
+am_prowl_test_OBJECTS = $(am__objects_4) prowl_test-prowl.$(OBJEXT) \
+	prowl_test-web.$(OBJEXT)
+prowl_test_OBJECTS = $(am_prowl_test_OBJECTS)
+prowl_test_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+prowl_test_LINK = $(CCLD) $(prowl_test_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am__objects_5 = regex_test-output.$(OBJEXT) \
 	regex_test-memwatch.$(OBJEXT) regex_test-utils.$(OBJEXT)
-am_regex_test_OBJECTS = $(am__objects_4) regex_test-regex.$(OBJEXT) \
+am_regex_test_OBJECTS = $(am__objects_5) regex_test-regex.$(OBJEXT) \
 	regex_test-regex_test.$(OBJEXT)
 regex_test_OBJECTS = $(am_regex_test_OBJECTS)
 regex_test_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -86,10 +95,10 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(base64_test_SOURCES) $(http_test_SOURCES) \
 	$(json_test_SOURCES) $(list_test_SOURCES) \
-	$(regex_test_SOURCES)
+	$(prowl_test_SOURCES) $(regex_test_SOURCES)
 DIST_SOURCES = $(base64_test_SOURCES) $(http_test_SOURCES) \
 	$(json_test_SOURCES) $(list_test_SOURCES) \
-	$(regex_test_SOURCES)
+	$(prowl_test_SOURCES) $(regex_test_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -224,6 +233,10 @@ json_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/regex.c         \
     json_test.c
 
+prowl_test_SOURCES = $(GLOBAL_SOURCES) \
+    $(top_srcdir)/src/prowl.c          \
+    $(top_srcdir)/src/web.c
+
 noinst_HEADERS = \
    $(top_srcdir)/include/output.h   \
    $(top_srcdir)/include/base64.h   \
@@ -237,6 +250,8 @@ noinst_HEADERS = \
 
 http_test_LDADD = $(LIBCURL_LIBS) $(PCRE_LIBS)
 http_test_CFLAGS = $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
+prowl_test_LDADD = $(LIBCURL_LIBS) $(LIBXML_LIBS)
+prowl_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS)
 regex_test_LDADD = $(PCRE_LIBS)
 regex_test_CFLAGS = $(PCRE_CFLAGS)
 json_test_LDADD = $(PCRE_LIBS)
@@ -289,6 +304,9 @@ json_test$(EXEEXT): $(json_test_OBJECTS) $(json_test_DEPENDENCIES)
 list_test$(EXEEXT): $(list_test_OBJECTS) $(list_test_DEPENDENCIES) 
 	@rm -f list_test$(EXEEXT)
 	$(LINK) $(list_test_OBJECTS) $(list_test_LDADD) $(LIBS)
+prowl_test$(EXEEXT): $(prowl_test_OBJECTS) $(prowl_test_DEPENDENCIES) 
+	@rm -f prowl_test$(EXEEXT)
+	$(prowl_test_LINK) $(prowl_test_OBJECTS) $(prowl_test_LDADD) $(LIBS)
 regex_test$(EXEEXT): $(regex_test_OBJECTS) $(regex_test_DEPENDENCIES) 
 	@rm -f regex_test$(EXEEXT)
 	$(regex_test_LINK) $(regex_test_OBJECTS) $(regex_test_LDADD) $(LIBS)
@@ -319,6 +337,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-memwatch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-prowl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-web.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-memwatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-regex.Po@am__quote@
@@ -605,6 +628,76 @@ list.obj: $(top_srcdir)/src/list.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/list.c' object='list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list.obj `if test -f '$(top_srcdir)/src/list.c'; then $(CYGPATH_W) '$(top_srcdir)/src/list.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/list.c'; fi`
+
+prowl_test-output.o: $(top_srcdir)/src/output.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-output.o -MD -MP -MF $(DEPDIR)/prowl_test-output.Tpo -c -o prowl_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-output.Tpo $(DEPDIR)/prowl_test-output.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='prowl_test-output.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
+
+prowl_test-output.obj: $(top_srcdir)/src/output.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-output.obj -MD -MP -MF $(DEPDIR)/prowl_test-output.Tpo -c -o prowl_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-output.Tpo $(DEPDIR)/prowl_test-output.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/output.c' object='prowl_test-output.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-output.obj `if test -f '$(top_srcdir)/src/output.c'; then $(CYGPATH_W) '$(top_srcdir)/src/output.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/output.c'; fi`
+
+prowl_test-memwatch.o: $(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-memwatch.o -MD -MP -MF $(DEPDIR)/prowl_test-memwatch.Tpo -c -o prowl_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-memwatch.Tpo $(DEPDIR)/prowl_test-memwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='prowl_test-memwatch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-memwatch.o `test -f '$(top_srcdir)/src/memwatch.c' || echo '$(srcdir)/'`$(top_srcdir)/src/memwatch.c
+
+prowl_test-memwatch.obj: $(top_srcdir)/src/memwatch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-memwatch.obj -MD -MP -MF $(DEPDIR)/prowl_test-memwatch.Tpo -c -o prowl_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-memwatch.Tpo $(DEPDIR)/prowl_test-memwatch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/memwatch.c' object='prowl_test-memwatch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-memwatch.obj `if test -f '$(top_srcdir)/src/memwatch.c'; then $(CYGPATH_W) '$(top_srcdir)/src/memwatch.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/memwatch.c'; fi`
+
+prowl_test-utils.o: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-utils.o -MD -MP -MF $(DEPDIR)/prowl_test-utils.Tpo -c -o prowl_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-utils.Tpo $(DEPDIR)/prowl_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='prowl_test-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
+
+prowl_test-utils.obj: $(top_srcdir)/src/utils.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-utils.obj -MD -MP -MF $(DEPDIR)/prowl_test-utils.Tpo -c -o prowl_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-utils.Tpo $(DEPDIR)/prowl_test-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/utils.c' object='prowl_test-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-utils.obj `if test -f '$(top_srcdir)/src/utils.c'; then $(CYGPATH_W) '$(top_srcdir)/src/utils.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/utils.c'; fi`
+
+prowl_test-prowl.o: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-prowl.o -MD -MP -MF $(DEPDIR)/prowl_test-prowl.Tpo -c -o prowl_test-prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-prowl.Tpo $(DEPDIR)/prowl_test-prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='prowl_test-prowl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-prowl.o `test -f '$(top_srcdir)/src/prowl.c' || echo '$(srcdir)/'`$(top_srcdir)/src/prowl.c
+
+prowl_test-prowl.obj: $(top_srcdir)/src/prowl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-prowl.obj -MD -MP -MF $(DEPDIR)/prowl_test-prowl.Tpo -c -o prowl_test-prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-prowl.Tpo $(DEPDIR)/prowl_test-prowl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/prowl.c' object='prowl_test-prowl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-prowl.obj `if test -f '$(top_srcdir)/src/prowl.c'; then $(CYGPATH_W) '$(top_srcdir)/src/prowl.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/prowl.c'; fi`
+
+prowl_test-web.o: $(top_srcdir)/src/web.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-web.o -MD -MP -MF $(DEPDIR)/prowl_test-web.Tpo -c -o prowl_test-web.o `test -f '$(top_srcdir)/src/web.c' || echo '$(srcdir)/'`$(top_srcdir)/src/web.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-web.Tpo $(DEPDIR)/prowl_test-web.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/web.c' object='prowl_test-web.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-web.o `test -f '$(top_srcdir)/src/web.c' || echo '$(srcdir)/'`$(top_srcdir)/src/web.c
+
+prowl_test-web.obj: $(top_srcdir)/src/web.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-web.obj -MD -MP -MF $(DEPDIR)/prowl_test-web.Tpo -c -o prowl_test-web.obj `if test -f '$(top_srcdir)/src/web.c'; then $(CYGPATH_W) '$(top_srcdir)/src/web.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/web.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/prowl_test-web.Tpo $(DEPDIR)/prowl_test-web.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/web.c' object='prowl_test-web.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -c -o prowl_test-web.obj `if test -f '$(top_srcdir)/src/web.c'; then $(CYGPATH_W) '$(top_srcdir)/src/web.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/web.c'; fi`
 
 regex_test-output.o: $(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(regex_test_CFLAGS) $(CFLAGS) -MT regex_test-output.o -MD -MP -MF $(DEPDIR)/regex_test-output.Tpo -c -o regex_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c

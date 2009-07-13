@@ -36,7 +36,7 @@ json_test_SOURCES = $(GLOBAL_SOURCES) \
 
 prowl_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/prowl.c          \
-    $(top_srcdir/src/web.c
+    $(top_srcdir)/src/web.c
 
 noinst_HEADERS = \
    $(top_srcdir)/include/output.h   \

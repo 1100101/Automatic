@@ -347,7 +347,9 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
-    if (!has_been_downloaded(session->downloads, item->url) && isMatch(session->filters, item->name)) {
+    if (!has_been_downloaded(session->downloads, item->url) &&
+        (isMatch(session->filters, item->name)       ||
+         isMatch(session->filters, item->category)) ) {
       dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(item->url);
       if(torrent) {
@@ -359,7 +361,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
             if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
               session->bucket_changed = 1;
             } else {
-              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
+              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->url);
             }
           }
         } else {

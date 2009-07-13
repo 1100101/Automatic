@@ -8,6 +8,8 @@
 #ifndef PROWL_H__
 #define PROWL_H__
 
+#include <inttypes.h>
+
 
 int8_t sendProwlNotification(const char* apikey, const char* event, const char* desc);
 int8_t verifyProwlAPIKey(const char* apikey);

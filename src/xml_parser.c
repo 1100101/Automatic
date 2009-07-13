@@ -101,6 +101,8 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
 						if (url_set == 0) { /* if "enclosure" was scanned before "link", use the former */
 							url_set = getNodeText(child->children, &item->url);
 						}
+					} else if ((strcmp((char*) child->name, "category") == 0)) {
+							getNodeText(child->children, &item->category);
 					} else if ((strcmp((char*) child->name, "enclosure") == 0)) {
 						enclosure = getNodeAttributes(child);
 						if ((strcmp(enclosure->type, "application/x-bittorrent") == 0)) {

@@ -18,11 +18,6 @@
  */
 
 
-#include "prowl.h"
-#include "web.h"
-#include "output.h"
-#include "utils.h"
-
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -30,13 +25,25 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h> 
+#include <string.h>
 
-#define PROWL_URL "https:\/\/prowl.weks.net"
+#ifdef MEMWATCH
+#include "memwatch.h"
+#endif
+
+#include "prowl.h"
+#include "web.h"
+#include "output.h"
+#include "utils.h"
+
+
+#define PROWL_URL "https://prowl.weks.net"
 #define PROWL_ADD "/publicapi/add"
 #define PROWL_VERIFY "/publicapi/verify"
 
 static char* createProwlMessage(const char* apikey, const char* event, const char* desc, int32_t *size) {
-  int32_t result;
+  int32_t result, apikey_length, event_length, desc_length, total_size;
 
   char *msg = NULL;
 
@@ -47,15 +54,16 @@ static char* createProwlMessage(const char* apikey, const char* event, const cha
     return NULL;
   }
 
-  int32_t apikey_length = strlen(apikey);
-  int32_t event_length  = strlen(event);
-  int32_t desc_length   = strlen(desc);
+  apikey_length = strlen(apikey);
+  event_length  = event ? strlen(event) : 0;
+  desc_length   = desc  ? strlen(desc)  : 0;
 
-  msg = (char*)am_malloc(apikey_length + event_length + desc_length + 80);
+  total_size = apikey_length + event_length + desc_length + 80;
+  msg = (char*)am_malloc(total_size);
 
   if(msg) {
-    result = snprintf(msg, max_size, "apikey=%s&priority=0&application=Automatic&event=%s&description=%s",
-        apikey, event, description);
+    result = snprintf(msg, total_size, "apikey=%s&priority=0&application=Automatic&event=%s&description=%s",
+        apikey, event, desc);
     *size = result;
   }
   return msg;
@@ -76,21 +84,21 @@ int8_t sendProwlNotification(const char* apikey, const char* event, const char* 
 
   am_free(response);
   am_free(data);
+  return 0; //FIXME: return actual value
 }
 
 int8_t verifyProwlAPIKey(const char* apikey) {
 
-  int8_t result;
+  int8_t result = 0;
   char url[128];
-  WebData *response = NULL;
+  HTTPResponse *response = NULL;
 
   if(apikey) {
     snprintf(url, 128, "%s%s&apikey=%s", PROWL_URL, PROWL_ADD, apikey);
-//    response = sendHTTPData(url, NULL, data, data_size);
     response = getHTTPData(url);
   }
 
-  WebData_free(response);
+  HTTPResponse_free(response);
   return result;
 }
 
