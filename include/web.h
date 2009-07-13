@@ -32,6 +32,13 @@ struct HTTPData {
  /** \{ */
 };
 
+struct HTTPResponse {
+ char    *data;
+ char    *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
+ size_t   content_length;      /**< size of the received data determined through header field "Content-Length" */
+ uint16_t responseCode;
+};
+
 /** Struct storing information about data downloaded from the web */
 struct WebData {
 	/** \{ */
@@ -44,12 +51,14 @@ struct WebData {
 	/** \} */
 };
 
+typedef struct HTTPResponse HTTPResponse;
 typedef struct HTTPData HTTPData;
 typedef struct WebData WebData;
 
-WebData* getHTTPData(const char *url);
+HTTPResponse* getHTTPData(const char *url);
 char* 	 sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
 void 		 WebData_free(struct WebData *data);
-void     am_freeSessionId(void);
+void     HTTPResponse_free(struct HTTPResponse *response);
+void     SessionID_free(void);
 
 #endif /* WEB_H_ */

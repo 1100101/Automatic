@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include/
 
-check_PROGRAMS = list_test base64_test regex_test http_test json_test
+check_PROGRAMS = list_test base64_test regex_test http_test json_test prowl_test
 
 TESTS = $(check_PROGRAMS)
 
@@ -34,6 +34,10 @@ json_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/regex.c         \
     json_test.c
 
+prowl_test_SOURCES = $(GLOBAL_SOURCES) \
+    $(top_srcdir)/src/prowl.c          \
+    $(top_srcdir/src/web.c
+
 noinst_HEADERS = \
    $(top_srcdir)/include/output.h   \
    $(top_srcdir)/include/base64.h   \
@@ -47,6 +51,9 @@ noinst_HEADERS = \
 
 http_test_LDADD  = $(LIBCURL_LIBS) $(PCRE_LIBS)
 http_test_CFLAGS = $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
+
+prowl_test_LDADD  = $(LIBCURL_LIBS) $(LIBXML_LIBS)
+prowl_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS)
 
 regex_test_LDADD  = $(PCRE_LIBS)
 regex_test_CFLAGS = $(PCRE_CFLAGS)

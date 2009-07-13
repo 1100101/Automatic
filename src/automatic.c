@@ -124,7 +124,7 @@ static void shutdown_daemon(auto_handle *as) {
     save_state(as->statefile, as->downloads);
   }
   session_free(as);
-  am_freeSessionId();
+  SessionID_free();
   exit(EXIT_SUCCESS);
 }
 
@@ -284,7 +284,7 @@ static void session_free(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static WebData* downloadTorrent(const char* url) {
+static HTTPResponse* downloadTorrent(const char* url) {
   return getHTTPData(url);
 }
 
@@ -330,7 +330,6 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void startFolderWatch(const char* watchfolder) {
-
   while(!closing) {
     dbg_printf(P_INFO, "Started watching folder '%s'", watchfolder);
     sleep(5);
@@ -343,26 +342,30 @@ static void startFolderWatch(const char* watchfolder) {
 static void processRSSList(auto_handle *session, const simple_list items) {
 
   simple_list current_item = items;
-  WebData *torrent = NULL;
+  HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
-    if (isMatch(session->filters, item->name) && !has_been_downloaded(session->downloads, item->url)) {
+    if (!has_been_downloaded(session->downloads, item->url) && isMatch(session->filters, item->name)) {
       dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(item->url);
       if(torrent) {
-        get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
-        /* add torrent to Transmission */
-        if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
-        /* add torrent url to bucket list */
-          if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
-            session->bucket_changed = 1;
-          } else {
-            dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
+        if(torrent->responseCode == 200) {
+          get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
+          /* add torrent to Transmission */
+          if (addTorrentToTM(session, torrent->data, torrent->size, fname) == 1) {
+          /* add url to bucket list */
+            if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
+              session->bucket_changed = 1;
+            } else {
+              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
+            }
           }
+        } else {
+          dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
         }
-        WebData_free(torrent);
+        HTTPResponse_free(torrent);
       }
     }
     current_item = current_item->next;
@@ -373,19 +376,23 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
-  WebData *wdata = NULL;
+  HTTPResponse *response = NULL;
   uint32_t item_count = 0;
-  wdata = getHTTPData(feed->url);
-  if (wdata && wdata->response) {
-    simple_list items = parse_xmldata(wdata->response->data, wdata->response->size, &item_count, &feed->ttl);
-    if(firstrun) {
-      session->max_bucket_items += item_count;
-      dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
+  response = getHTTPData(feed->url);
+
+  if (response) {
+    if(response->responseCode == 200 && response->data) {
+      simple_list items = parse_xmldata(response->data, response->size, &item_count, &feed->ttl);
+      if(firstrun) {
+        session->max_bucket_items += item_count;
+        dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
+      }
+      processRSSList(session, items);
+      freeList(&items, freeFeedItem);
     }
-    processRSSList(session, items);
-    freeList(&items, freeFeedItem);
+    HTTPResponse_free(response);
   }
-  WebData_free(wdata);
+
   return item_count;
 }
 

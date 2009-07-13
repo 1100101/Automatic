@@ -10,11 +10,11 @@
 
 #include "output.h"
 #include "utils.h"
-#include "web.h"
+#include "prowl.h"
 
 int8_t verbose = P_NONE;
 
-void testGetHTTP(void) {
+void testVerifyAPIKey(void) {
 	int ret = 1;
 	WebData *data = NULL;
 
@@ -23,14 +23,7 @@ void testGetHTTP(void) {
 	data = getHTTPData(NULL);
 	assert(data == NULL);
 
-	//test invalid URL 2
-	data = getHTTPData("http://thisurldoesntexist.co.ge");
-	assert(data);
-	assert(data->responseCode != 200);
-	assert(data->response->data == NULL);
-	WebData_free(data);
-
-	//test HTTP URL
+	//test HTTPS URL
 	data = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1");
 	assert(data && data->response);
 	WebData_free(data);
