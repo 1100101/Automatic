@@ -53,6 +53,7 @@
 #include "downloads.h"
 #include "transmission.h"
 #include "torrent.h"
+#include "prowl.h"
 
 static char AutoConfigFile[MAXPATHLEN + 1];
 static void session_free(auto_handle *as);
@@ -248,6 +249,9 @@ auto_handle* session_init(void) {
   sprintf(path, "%s/%s", home, AM_DEFAULT_STATEFILE);
   am_free(home);
   ses->statefile             = am_strdup(path);
+  ses->prowl_key             = NULL;
+  ses->prowl_key_valid       = 0;
+  ses->transmission_external = NULL;
 
   /* lists */
   ses->filters               = NULL;
@@ -273,6 +277,10 @@ static void session_free(auto_handle *as) {
     as->host = NULL;
     am_free(as->auth);
     as->auth = NULL;
+    am_free(as->prowl_key);
+    as->prowl_key = NULL;
+    am_free(as->transmission_external);
+    as->transmission_external = NULL;
     freeList(&as->feeds, feed_free);
     freeList(&as->downloads, NULL);
     freeList(&as->filters, NULL);
@@ -291,15 +299,30 @@ static HTTPResponse* downloadTorrent(const char* url) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
+static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname) {
-  uint8_t success = 0;
+  int8_t success = -1;
   int8_t result;
   char url[MAX_URL_LEN];
 
   if (!ah->use_transmission) {
     if(saveFile(fname, t_data, t_size) == 0) {
       success = 1;
+    } else {
+      success = -1;
+    }
+  } else if(ah->transmission_version == AM_TRANSMISSION_EXTERNAL) {
+    /* transmssion version set to external */
+    if (saveFile(fname, t_data, t_size) == 0) {
+      if (call_external(ah->transmission_external, fname) != 0) {
+        dbg_printf(P_ERROR, "[addTorrentToTM] %s: Error adding torrent to Transmission-external", fname);
+        success = -1;
+      } else {
+        success = 1;
+      }
+      unlink(fname);
+    } else {
+      success = -1;
     }
   } else if (ah->transmission_version == AM_TRANSMISSION_1_2) {
     if (saveFile(fname, t_data, t_size) == 0) {
@@ -313,14 +336,16 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
             (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
-    result = uploadTorrent(t_data, t_size, url, ah->auth,ah->start_torrent);
-    if(result >= 0) {
+    result = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent);
+    if(result > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
       success = 1;
-      if(result > 0 && ah->upspeed > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+      if(ah->upspeed > 0) {
         changeUploadSpeed(url, ah->auth, result, ah->upspeed, ah->rpc_version);
       }
-    } else {
+    } else if(result == 0) {  /* duplicate torrent */
       success = 0;
+    } else {      /* torrent was not added */
+      success = -1;
     }
   }
   return success;
@@ -344,24 +369,33 @@ static void processRSSList(auto_handle *session, const simple_list items) {
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
+  int8_t result;
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if (!has_been_downloaded(session->downloads, item->url) &&
-        (isMatch(session->filters, item->name)       ||
-         isMatch(session->filters, item->category)) ) {
+        (isMatch(session->filters, item->name)
+        /*|| isMatch(session->filters, item->category)*/) ) {
       dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(item->url);
       if(torrent) {
         if(torrent->responseCode == 200) {
           get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
           /* add torrent to Transmission */
-          if (addTorrentToTM(session, torrent->data, torrent->size, fname) == 1) {
-          /* add url to bucket list */
+          result = addTorrentToTM(session, torrent->data, torrent->size, fname);
+          if( result >= 0) {  //result == 0 -> duplicate torrent
+            if(result > 0 && session->prowl_key_valid) {  //torrent was added
+              prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+            }
+            /* add url to bucket list */
             if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
               session->bucket_changed = 1;
             } else {
               dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->url);
+            }
+          } else {  //an error occurred
+            if(session->prowl_key_valid) {
+              prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
             }
           }
         } else {
@@ -463,8 +497,12 @@ int main(int argc, char **argv) {
   dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
   dbg_printf(P_INFO, "start torrents: %s", session->start_torrent == 1 ? "yes" : "no");
   dbg_printf(P_INFO, "state file: %s", session->statefile);
+  if(session->prowl_key) {
+    dbg_printf(P_INFO, "Prowl API key: %s", session->prowl_key);
+  }
   dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
+
 
   if(listCount(session->feeds) == 0) {
     fprintf(stderr, "No feed URL specified in automatic.conf!\n");
@@ -490,6 +528,11 @@ int main(int argc, char **argv) {
             (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
             session->rpc_port,session->auth);
       dbg_printf(P_INFO, "RPC Version: %d", session->rpc_version);
+    }
+
+    /* check if Prowl API key is given, and if it is valid */
+    if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) ) {
+        session->prowl_key_valid = 1;
     }
 
     load_state(session->statefile, &session->downloads);
@@ -527,3 +570,4 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
+

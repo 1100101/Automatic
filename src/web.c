@@ -50,6 +50,30 @@
 
 static char *gSessionID = NULL;
 
+/** Generic struct storing data and the size of the contained data */
+struct HTTPData {
+	/** \{ */
+ char *data; 	/**< Stored data */
+ size_t size; /**< Size of the stored data */
+ /** \{ */
+};
+
+/** Struct storing information about data downloaded from the web */
+struct WebData {
+	/** \{ */
+	char *url;                  /**< URL of the WebData object */
+	long responseCode;          /**< HTTP response code        */
+	size_t content_length;      /**< size of the received data determined through header field "Content-Length" */
+	char *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
+	struct HTTPData* header;    /**< complete header information in a HTTPData object */
+	struct HTTPData* response;  /**< HTTP response in a HTTPData object */
+	/** \} */
+};
+
+typedef struct HTTPData HTTPData;
+typedef struct WebData WebData;
+
+
 void SessionID_free(void) {
    am_free(gSessionID);
    gSessionID = NULL;
@@ -207,13 +231,32 @@ static void HTTPData_free(HTTPData* data) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/** \brief Free a WebData object and all memory associated with it
+ *
+ * \param[in] data Pointer to a WebData object
+ */
+static void WebData_free(struct WebData *data) {
+
+  if(data) {
+    am_free(data->url);
+    am_free(data->content_filename);
+    HTTPData_free(data->header);
+    HTTPData_free(data->response);
+    am_free(data);
+    data = NULL;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /** \brief Create a new WebData object
  *
  * \param[in] url URL for a WebData object
  *
  * The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
  */
-struct WebData* WebData_new(const char *url) {
+static struct WebData* WebData_new(const char *url) {
   WebData *data = NULL;
 
   data = am_malloc(sizeof(WebData));
@@ -242,25 +285,6 @@ struct WebData* WebData_new(const char *url) {
     return NULL;
   }
   return data;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/** \brief Free a WebData object and all memory associated with it
- *
- * \param[in] data Pointer to a WebData object
- */
-void WebData_free(struct WebData *data) {
-
-  if(data) {
-    am_free(data->url);
-    am_free(data->content_filename);
-    HTTPData_free(data->header);
-    HTTPData_free(data->response);
-    am_free(data);
-    data = NULL;
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +395,6 @@ HTTPResponse* getHTTPData(const char *url) {
     curl_easy_cleanup(curl_handle);
     if(res != 0) {
         dbg_printf(P_ERROR, "[getHTTPData] '%s': %s", url, curl_easy_strerror(res));
-        WebData_free(data);
     } else {
       resp = HTTPResponse_new();
       curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
@@ -408,12 +431,12 @@ HTTPResponse* getHTTPData(const char *url) {
  * \param data_size size of the data
  * \return Web server response
  */
-char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
+HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
   CURL *curl_handle = NULL;
   CURLcode res;
   long rc, tries = 2, len;
   WebData* response_data = NULL;
-  char *ret = NULL;
+  HTTPResponse* resp = NULL;
   char sessionKey[MAXLEN];
 
   struct curl_slist * headers = NULL;
@@ -445,7 +468,6 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
         curl_easy_setopt(curl_handle, CURLOPT_URL, response_data->url);
       } else {
         dbg_printf(P_ERROR, "am_curl_init() failed");
-        ret = NULL;
         break;
       }
     }
@@ -455,7 +477,6 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
 
     if( ( res = curl_easy_perform(curl_handle) ) ) {
       dbg_printf(P_ERROR, "Upload to '%s' failed: %s", url, curl_easy_strerror(res));
-      ret = NULL;
       break;
     } else {
       curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
@@ -471,9 +492,18 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
         headers = NULL;
         curl_handle = NULL;
       } else {
-        response_data->responseCode = rc;
+        resp = HTTPResponse_new();
+        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
+        dbg_printf(P_INFO2, "response code: %ld", resp->responseCode);
+
+        //copy data if present
         if(response_data->response->data) {
-          ret = am_strndup(response_data->response->data, response_data->response->size);
+          resp->size = response_data->response->size;
+          resp->data = am_strndup(response_data->response->data, resp->size);
+        }
+        //copy filename if present
+        if(response_data->content_filename) {
+          resp->content_filename = am_strdup(response_data->content_filename);
         }
         break;
       }
@@ -491,6 +521,6 @@ char *sendHTTPData(const char *url, const char* auth, const void *data, uint32_t
 
   WebData_free(response_data);
 
-  return ret;
+  return resp;
 }
 

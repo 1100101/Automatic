@@ -1,35 +1,95 @@
-/*
- * main.c*
- *
- *
- *  Created on: Oct 16, 2008
- *      Author: aurich
- */
-
 #include <assert.h>
+#include <string.h>
 
-#include "output.h"
 #include "utils.h"
+#include "output.h"
 #include "prowl.h"
 
-int8_t verbose = P_NONE;
+#ifdef MEMWATCH
+	#include "memwatch.h"
+#endif
 
-void testVerifyAPIKey(void) {
-	int ret = 1;
-	WebData *data = NULL;
+int8_t verbose = P_MSG;
 
+const char* correct_key = "828f3ab6310f1126ca0a4c998abdc9b0b481304c";
+const char* wrong_key = "132ieosdsd";
 
-	//test invalid URL
-	data = getHTTPData(NULL);
-	assert(data == NULL);
+void testSendNotification(void) {
+	int ret = 0;
 
-	//test HTTPS URL
-	data = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1");
-	assert(data && data->response);
-	WebData_free(data);
+  ret = sendProwlNotification(NULL, NULL, NULL);
+  assert(ret == -1);
+  ret = sendProwlNotification(wrong_key, NULL, NULL);
+  assert(ret == -1);
+  ret = sendProwlNotification(wrong_key, "Event", NULL);
+  assert(ret == -401);
+  ret = sendProwlNotification(wrong_key, NULL, "Desc");
+  assert(ret == -401);
+  ret = sendProwlNotification(wrong_key, "Event", "Desc");
+  assert(ret == -401);
+  ret = sendProwlNotification(correct_key, NULL, NULL);
+  assert(ret == -1);
+  ret = sendProwlNotification(correct_key, "Event", NULL);
+  assert(ret == 1);
+  ret = sendProwlNotification(correct_key, NULL, "Desc");
+  assert(ret == 1);
+  ret = sendProwlNotification(correct_key, "Event", "Desc");
+  assert(ret == 1);
 }
 
+void testVerifyAPIKey(void) {
+	int ret = 0;
+
+  ret = verifyProwlAPIKey(NULL);
+  assert(ret == -1);
+
+  ret = verifyProwlAPIKey(wrong_key);
+  assert(ret == -401);
+
+  ret = verifyProwlAPIKey(correct_key);
+  assert(ret == 1);
+
+}
+
+void testSendNotification2(void) {
+	int ret = 0;
+
+  ret = prowl_sendNotification(0, NULL, NULL);
+  assert(ret == 0);
+  ret = prowl_sendNotification(0, NULL, "file");
+  assert(ret == 0);
+  ret = prowl_sendNotification(0, wrong_key, NULL);
+  assert(ret == 0);
+  ret = prowl_sendNotification(0, wrong_key, "File");
+  assert(ret == 0);
+  ret = prowl_sendNotification(0, correct_key, NULL);
+  assert(ret == 0);
+  ret = prowl_sendNotification(0, correct_key, "File");
+  assert(ret == 0);
+  ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, wrong_key, NULL);
+  assert(ret == 0);
+  ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, wrong_key, "file");
+  assert(ret == 0);
+  ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, wrong_key, NULL);
+  assert(ret == 0);
+  ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, wrong_key, "file");
+  assert(ret == 0);
+
+  ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, correct_key, NULL);
+  assert(ret == 1);
+  ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, correct_key, "file");
+  assert(ret == 1);
+  ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, correct_key, NULL);
+  assert(ret == 1);
+  ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, correct_key, "file");
+  assert(ret == 1);
+}
+
+
+
 int main(void) {
-	testGetHTTP();
+//	testVerifyAPIKey();
+//  testSendNotification();
+  testSendNotification2();
 	return 0;
 }

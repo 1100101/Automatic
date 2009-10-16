@@ -25,7 +25,7 @@ static pcre* init_regex(const char* pattern) {
 		return NULL;
 	}
 
-	dbg_printf(P_INFO2, "[init_regex] Regular expression: %s", pattern);
+	dbg_printf(P_DBG, "[init_regex] Regular expression: %s", pattern);
 	re = pcre_compile(pattern, PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
 
 	if(re == NULL) {

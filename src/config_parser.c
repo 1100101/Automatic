@@ -62,7 +62,7 @@ typedef struct am_option am_option_t;
 
 /** \endcond */
 
-static const char *delim = ";;";
+static const char *delim = "|";
 
 static void set_path(char *src, char **dst) {
 	char *tmp;
@@ -70,7 +70,9 @@ static void set_path(char *src, char **dst) {
 	if(src && strlen(src) < MAXPATHLEN) {
 		tmp = resolve_path(src);
 		if(tmp) {
-			am_free(*dst);
+                	if ( *dst != NULL ) {
+                            am_free(*dst);
+                        }
 			*dst = am_strdup(tmp);
 			am_free(tmp);
 		}
@@ -162,6 +164,15 @@ static int getFeeds(NODE **head, const char* strlist) {
 	return 0;
 }
 
+/** \brief parse option from configuration file.
+ *
+ * \param[in,out] as Pointer to session handle
+ * \param[in] opt name of option to set (left of =)
+ * \param[in] param name of value for option (right of =)
+ * \param type type for param, currently unused
+ * \return 0 if parsing was successful, -1 if an error occured.  currently
+ * always returns 0
+ */
 static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
 	int32_t numval;
 	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
@@ -171,19 +182,23 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		getFeeds(&as->feeds, param);
 	} else if(!strcmp(opt, "transmission-home")) {
 		set_path(param, &as->transmission_path);
+	} else if(!strcmp(opt, "prowl-apikey")) {
+		as->prowl_key = am_strdup(param);
 	} else if(!strcmp(opt, "transmission-version")) {
-		if(strlen(param) >= 3) {
-			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
-				as->transmission_version = AM_TRANSMISSION_1_2;
-			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
-				as->transmission_version = AM_TRANSMISSION_1_3;
-			} else {
-				dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-			}
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "torrent-folder")) {
+    if (!strcmp(param, "external")) {
+      /* we should probably only set this when transmission-external is set */
+      as->transmission_version = AM_TRANSMISSION_EXTERNAL;
+    } else if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
+      as->transmission_version = AM_TRANSMISSION_1_2;
+    } else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
+      as->transmission_version = AM_TRANSMISSION_1_3;
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+    }
+  } else if (!strcmp(opt, "transmission-external")) {
+    set_path(param, &as->transmission_external);
+    as->transmission_version = AM_TRANSMISSION_EXTERNAL;
+  } else if(!strcmp(opt, "torrent-folder")) {
 		set_path(param, &as->torrent_folder);
 	} else if(!strcmp(opt, "watch-folder")) {
 		set_path(param, &as->watch_folder);

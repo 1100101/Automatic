@@ -18,14 +18,9 @@
  */
 
 
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <string.h>
 
 #ifdef MEMWATCH
@@ -37,10 +32,34 @@
 #include "output.h"
 #include "utils.h"
 
-
 #define PROWL_URL "https://prowl.weks.net"
 #define PROWL_ADD "/publicapi/add"
 #define PROWL_VERIFY "/publicapi/verify"
+
+static const char* getProwlErrorMessage(const uint16_t responseCode) {
+  const char* response;
+
+  switch(responseCode) {
+    case 400:
+      response = "Bad request";
+      break;
+    case 401:
+      response = "Invald API key";
+      break;
+    case 405:
+      response = "Method not allowed (non-SSL connection)";
+      break;
+    case 406:
+      response = "API limit exceeded";
+      break;
+    case 500:
+      response = "Internal server error";
+      break;
+    default:
+      response = "Unknown error!";
+  }
+  return response;
+}
 
 static char* createProwlMessage(const char* apikey, const char* event, const char* desc, int32_t *size) {
   int32_t result, apikey_length, event_length, desc_length, total_size;
@@ -49,7 +68,14 @@ static char* createProwlMessage(const char* apikey, const char* event, const cha
 
   *size = 0;
 
-  if(!apikey || (!event && !desc)) {
+  if(!apikey) {
+    dbg_printf(P_ERROR, "[createProwlMessage] apikey == NULL");
+    *size = 0;
+    return NULL;
+  }
+
+  if((!event && !desc)) {
+    dbg_printf(P_ERROR, "[createProwlMessage] event == NULL && desc == NULL");
     *size = 0;
     return NULL;
   }
@@ -68,38 +94,83 @@ static char* createProwlMessage(const char* apikey, const char* event, const cha
   }
   return msg;
 }
-
-int8_t sendProwlNotification(const char* apikey, const char* event, const char* desc) {
-  int32_t data_size;
-  char url[128];
-  char *response = NULL;
-  char *data = NULL;
+int16_t sendProwlNotification(const char* apikey, const char* event, const char* desc) {
+  int16_t        result = -1;
+  int32_t       data_size;
+  char          url[128];
+  HTTPResponse *response = NULL;
+  char         *data = NULL;
 
   data = createProwlMessage(apikey, event, desc, &data_size);
 
   if(data) {
     snprintf(url, 128, "%s%s", PROWL_URL, PROWL_ADD);
     response = sendHTTPData(url, NULL, data, data_size);
+    if(response) {
+      if(response->responseCode == 200) {
+        result = 1;
+      } else {
+        dbg_printf(P_ERROR, "Prowl Notification failed: %s (%d)",
+              getProwlErrorMessage(response->responseCode),
+              response->responseCode);
+        result = -response->responseCode;
+      }
+      HTTPResponse_free(response);
+    }
+    am_free(data);
   }
-
-  am_free(response);
-  am_free(data);
-  return 0; //FIXME: return actual value
+  return result;
 }
 
-int8_t verifyProwlAPIKey(const char* apikey) {
+int16_t verifyProwlAPIKey(const char* apikey) {
 
-  int8_t result = 0;
+  int16_t result = -1;
   char url[128];
   HTTPResponse *response = NULL;
 
   if(apikey) {
-    snprintf(url, 128, "%s%s&apikey=%s", PROWL_URL, PROWL_ADD, apikey);
+    snprintf(url, 128, "%s%s?apikey=%s", PROWL_URL, PROWL_VERIFY, apikey);
     response = getHTTPData(url);
+    if(response) {
+      if(response->responseCode == 200) {
+        dbg_printf(P_INFO, "Prowl API key '%s' is valid", apikey);
+        result = 1;
+      } else {
+        dbg_printf(P_ERROR, "Error: Prowl API  key '%s' is invalid!", apikey);
+        result = -response->responseCode;
+      }
+      HTTPResponse_free(response);
+    }
   }
-
-  HTTPResponse_free(response);
   return result;
 }
 
 
+int8_t prowl_sendNotification(enum prowl_event event, const char* apikey, const char *filename) {
+  int8_t result;
+  char desc[500];
+  char *event_str = NULL;
+
+  switch(event) {
+    case PROWL_NEW_DOWNLOAD:
+      event_str = "Torrent File Auto-Added";
+      snprintf(desc, 500, "%s", filename);
+      break;
+    case PROWL_DOWNLOAD_FAILED:
+      event_str = "Auto-Add Failed";
+      snprintf(desc, 500, "%s", filename);
+      break;
+    default:
+      dbg_printf(P_ERROR, "Unknown Prowl event code %d", event);
+      return 0;
+  }
+
+  dbg_printf(P_INFO2, "[prowl_sendNotification] I: %d E: %s\tD: %s", event, event_str, desc);
+
+  if(sendProwlNotification(apikey, event_str, desc) == 1) {
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
