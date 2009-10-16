@@ -16,17 +16,24 @@ int8_t verbose = P_NONE;
 
 void testGetHTTP(void) {
 	int ret = 1;
-	WebData *data = NULL;
+	HTTPResponse *response = NULL;
 
 
 	//test invalid URL
-	data = getHTTPData(NULL);
-	assert(data == NULL);
+	response = getHTTPData(NULL);
+	assert(response == NULL);
 
-	//test HTTPS URL
-	data = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1");
-	assert(data && data->response);
-	WebData_free(data);
+	//test invalid URL 2
+	response = getHTTPData("http://thisurldoesntexist.co.ge");
+	assert(response);
+	assert(response->responseCode != 200);
+	assert(response->data == NULL);
+	HTTPResponse_free(response);
+
+	//test HTTP URL
+	response = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1");
+	assert(response && response->data);
+	HTTPResponse_free(response);
 }
 
 int main(void) {

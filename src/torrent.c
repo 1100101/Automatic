@@ -76,7 +76,7 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
 
   uint32_t packet_size;
   char *packet = NULL;
-  char *res = NULL;
+  HTTPResponse *res = NULL;
   const char *response = NULL;
   uint8_t result = 0;
 
@@ -84,7 +84,8 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
     packet = makeChangeUpSpeedJSON(torrentID, upspeed, rpcVersion, &packet_size);
     if(packet && packet_size > 0) {
       res = sendHTTPData(url, auth, packet, packet_size);
-      response = parseResponse(res);
+      if(res != NULL && res->responseCode == 200) {
+        response = parseResponse(res->data);
       if(response) {
         if(!strncmp(response, "success", 7)) {
           dbg_printf(P_MSG, "%d: upload limit successfully changed to %dkB/s!", torrentID, upspeed);
@@ -94,7 +95,8 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
         }
         am_free((void*)response);
       }
-      am_free(res);
+        HTTPResponse_free(res);
+      }
       am_free(packet);
     }
   }
@@ -103,7 +105,8 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
 
 int8_t uploadTorrent(const void *t_data, int t_size,
                      const char *url, const char* auth, uint8_t start) {
-  char *packet = NULL, *res = NULL;
+  char         *packet = NULL;
+  HTTPResponse *res = NULL;
   const char *response = NULL;
   uint32_t packet_size = 0, ret = -1;
 
@@ -112,12 +115,12 @@ int8_t uploadTorrent(const void *t_data, int t_size,
   if(packet && packet_size > 0) {
     /* send JSON package to Transmission via HTTP POST */
     res = sendHTTPData(url, auth, packet, packet_size);
-    if(res != NULL) {
-      response = parseResponse(res);
+    if(res != NULL && res->responseCode == 200) {
+      response = parseResponse(res->data);
       if(response != NULL) {
         if(!strncmp(response, "success", 7)) {
           dbg_printf(P_MSG, "Torrent upload successful!");
-          ret = parseTorrentID(res);
+          ret = parseTorrentID(res->data);
         } else if(!strncmp(response, "duplicate torrent", 17)) {
           dbg_printf(P_MSG, "Torrent has already been added to Transmission");
           ret = 0;
@@ -126,10 +129,12 @@ int8_t uploadTorrent(const void *t_data, int t_size,
           ret = -1;
         }
         am_free((void*)response);
+      } else {
+        dbg_printf(P_ERROR, "parseResponse() failed!");
       }
-      am_free(res);
+      HTTPResponse_free(res);
     } else {
-      dbg_printf(P_ERROR, "Error during torrent upload! res == NULL");
+      dbg_printf(P_ERROR, "sendHTTPData() failed!");
     }
     am_free(packet);
   }

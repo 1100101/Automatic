@@ -101,7 +101,7 @@ char* am_strndup(const char *str, int len) {
   char *buf = NULL;
   if(str) {
     buf = am_malloc(len + 1);
-    strncpy(buf, str, len);
+    memcpy(buf, str, len);
     buf[len]= '\0';
   }
   return buf;

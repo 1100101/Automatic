@@ -120,12 +120,11 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
 static void shutdown_daemon(auto_handle *as) {
   char time_str[TIME_STR_SIZE];
   dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
-  dbg_printf(P_INFO2, "bucket_changed: %s", as->bucket_changed ? "Yes" : "No");
   if (as && as->bucket_changed) {
     save_state(as->statefile, as->downloads);
   }
   session_free(as);
-  am_freeSessionId();
+  SessionID_free();
   exit(EXIT_SUCCESS);
 }
 
@@ -284,16 +283,16 @@ static void session_free(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static WebData* downloadTorrent(const char* url) {
+static HTTPResponse* downloadTorrent(const char* url) {
   return getHTTPData(url);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
+static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname) {
-  uint8_t success = 0;
+  int8_t success = -1;
   int8_t result;
   char url[MAX_URL_LEN];
 
@@ -314,13 +313,15 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
             (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
     result = uploadTorrent(t_data, t_size, url, ah->auth,ah->start_torrent);
-    if(result >= 0) {
+    if(result > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
       success = 1;
-      if(result > 0 && ah->upspeed > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+      if(ah->upspeed > 0) {
         changeUploadSpeed(url, ah->auth, result, ah->upspeed, ah->rpc_version);
       }
-    } else {
+    } else if(result == 0) {  /* duplicate torrent */
       success = 0;
+    } else {      /* torrent was not added */
+      success = -1;
     }
   }
   return success;
@@ -329,27 +330,34 @@ static uint8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 static void processRSSList(auto_handle *session, const simple_list items) {
 
   simple_list current_item = items;
-  WebData *torrent = NULL;
+  HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
+  int8_t result;
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
-    if (isMatch(session->filters, item->name) && !has_been_downloaded(session->downloads, item->url)) {
+    if (!has_been_downloaded(session->downloads, item->url) &&
+        (isMatch(session->filters, item->name)
+        /*|| isMatch(session->filters, item->category)*/) ) {
       dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(item->url);
       if(torrent) {
-        get_filename(fname, torrent->content_filename, torrent->url, session->torrent_folder);
+        if(torrent->responseCode == 200) {
+          get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
         /* add torrent to Transmission */
-        if (addTorrentToTM(session, torrent->response->data, torrent->response->size, fname) == 1) {
-          /* add torrent url to bucket list */
-          dbg_printf(P_INFO2, "Adding '%s' to bucket list", item->name);
-          if (addToBucket(torrent->url, &session->downloads, session->max_bucket_items) == 0) {
-            session->bucket_changed = 1;
-          } else {
-            dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", torrent->url);
+          result = addTorrentToTM(session, torrent->data, torrent->size, fname);
+          if( result >= 0) {  //result == 0 -> duplicate torrent
+            /* add url to bucket list */
+            if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
+              session->bucket_changed = 1;
+            } else {
+              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->url);
+            }
           }
+        } else {
+          dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
         }
-        WebData_free(torrent);
+        HTTPResponse_free(torrent);
       }
     }
   current_item = current_item->next;
@@ -360,11 +368,13 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
-  WebData *wdata = NULL;
+  HTTPResponse *response = NULL;
   uint32_t item_count = 0;
-  wdata = getHTTPData(feed->url);
-  if (wdata && wdata->response) {
-    simple_list items = parse_xmldata(wdata->response->data, wdata->response->size, &item_count, &feed->ttl);
+  response = getHTTPData(feed->url);
+
+  if (response) {
+    if(response->responseCode == 200 && response->data) {
+      simple_list items = parse_xmldata(response->data, response->size, &item_count, &feed->ttl);
     if(firstrun) {
       session->max_bucket_items += item_count;
       dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
@@ -372,7 +382,9 @@ static void processRSSList(auto_handle *session, const simple_list items) {
     processRSSList(session, items);
     freeList(&items, freeFeedItem);
   }
-  WebData_free(wdata);
+    HTTPResponse_free(response);
+  }
+
   return item_count;
 }
 
@@ -443,6 +455,7 @@ int main(int argc, char **argv) {
   dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
   dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
 
+
   if(listCount(session->feeds) == 0) {
     fprintf(stderr, "No feed URL specified in automatic.conf!\n");
     shutdown_daemon(session);
@@ -493,7 +506,7 @@ int main(int argc, char **argv) {
     }
     sleep(session->check_interval * 60);
   }
-
   shutdown_daemon(session);
   return 0;
 }
+

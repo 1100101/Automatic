@@ -24,32 +24,19 @@
 
 #define MAX_URL_LEN 1024
 
-/** Generic struct storing data and the size of the contained data */
-struct HTTPData {
-	/** \{ */
- char *data; 	/**< Stored data */
- size_t size; /**< Size of the stored data */
- /** \{ */
-};
 
-/** Struct storing information about data downloaded from the web */
-struct WebData {
-	/** \{ */
-	char *url;                  /**< URL of the WebData object */
-	long responseCode;          /**< HTTP response code        */
-	size_t content_length;      /**< size of the received data determined through header field "Content-Length" */
+struct HTTPResponse {
+ char    *data;
 	char *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
-	struct HTTPData* header;    /**< complete header information in a HTTPData object */
-	struct HTTPData* response;  /**< HTTP response in a HTTPData object */
-	/** \} */
+ size_t   size;      /**< size of the received data determined through header field  "Content-Length" */
+ uint16_t responseCode;
 };
 
-typedef struct HTTPData HTTPData;
-typedef struct WebData WebData;
+typedef struct HTTPResponse HTTPResponse;
 
-WebData* getHTTPData(const char *url);
-char* 	 sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
-void 		 WebData_free(struct WebData *data);
-void     am_freeSessionId(void);
+HTTPResponse* getHTTPData(const char *url);
+HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
+void     HTTPResponse_free(struct HTTPResponse *response);
+void     SessionID_free(void);
 
 #endif /* WEB_H_ */
