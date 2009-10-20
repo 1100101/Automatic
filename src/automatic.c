@@ -390,6 +390,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
             /* add url to bucket list */
             if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
               session->bucket_changed = 1;
+              save_state(session->statefile, session->downloads);
             } else {
               dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->url);
             }

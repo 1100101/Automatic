@@ -4,3 +4,4 @@ DONE New parameter "-o/--once": Quit Automatic after first check of RSS feed (fo
 DONE use RPC command "session-get" -> "rpc-version" to determine RPC version (necessary for "torrent-set" -> "upload-limit")
  - revamp logging system
  - save cookies for password-protected feeds
+ - save state file after each successful download to survice a kill -9
