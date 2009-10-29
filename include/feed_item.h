@@ -35,6 +35,7 @@ struct feed_item {
 	/** \{ */
 	char *name; /**< "Name" field of the RSS item */
 	char *url;  /**< URL field of the RSS item    */
+  char *category;
 	/** \} */
 };
 

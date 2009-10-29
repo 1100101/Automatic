@@ -1,3 +1,10 @@
+2009-10-29 v0.4.2
+            Added: Prowl notification support
+            Fixed: URLs with semicolons were wrongly parsed
+          Changed: Reconfigured libcurl a little to deal with infinite timeouts
+            Added: External script support. You can now specify an external script that
+                   gets fired whenever Automatic finds a match in the RSS feeds
+
 2009-06-10 v0.4.1
             Fixed: New torrents weren't added to the history anymore since Transmission 1.71
 

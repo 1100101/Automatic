@@ -58,6 +58,52 @@ int8_t call_transmission(const char* tm_path, const char *filename) {
 	}
 }
 
+/** \brief Call external program via system() call to add a torrent
+ *
+ * \param external_name Full path to program to call
+ * \param filename Full path to the new torrent
+ * \return -1 for an internal error, or external program's return value
+ * (probably 0 for success or non-0 for failure)
+ *
+ * This function is used when transmission-version is set to "external".
+ * external_name is populated from the value of transmission-external.
+ * This is used when using a client other than transmission or using
+ * transmission with special needs, like external accounting or directory
+ * setup.
+ */
+int8_t call_external(const char *external_name, const char *filename) {
+  char buf[PATH_MAX];
+  int8_t status;
+
+  if ( (external_name == NULL) || (filename == NULL) || (strlen(filename) < 1) )
+  {
+    dbg_printf(P_ERROR, "[call_external] Error: invalid parameter\n");
+    return -1;
+  }
+
+  snprintf(buf, PATH_MAX, "%s %s", external_name, filename);
+  dbg_printf(P_INFO2, "[call_external] Calling %s", buf);
+  /* system needs SIGCHLD set to default */
+  signal(SIGCHLD, SIG_DFL);
+  /* note: automatic will ignore SIGTERM, SIGINT, etc. while waiting for the
+    system() call to complete */
+  status = system(buf);
+  if( status == -1 ) {
+    dbg_printf(P_ERROR, "[call_external] system failed: %s", strerror(errno));
+    /* could call setup_signals() from automatic.c here */
+    signal(SIGCHLD, SIG_IGN);
+    return -1;
+  } else {
+    dbg_printf(WEXITSTATUS(status) != 0 ? P_ERROR : P_INFO2,
+               "[call_external] External exit status %d",
+               WEXITSTATUS(status));
+    /* could call setup_signals() from automatic.c here */
+    signal(SIGCHLD, SIG_IGN);
+    return WEXITSTATUS(status);
+  }
+  /*NOTREACHED*/
+}
+
 int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
 
 	char url[MAX_URL_LEN];

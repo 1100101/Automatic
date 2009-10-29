@@ -76,6 +76,7 @@ feed_item newFeedItem(void) {
 	if(i != NULL) {
 		i->name = NULL;
 		i->url = NULL;
+    i->category = NULL;
 	}
 	return i;
 }
@@ -94,6 +95,10 @@ void freeFeedItem(void *data) {
 		if(item->url != NULL) {
 			am_free(item->url);
 			item->url = NULL;
+		}
+		if(item->category != NULL) {
+			am_free(item->category);
+			item->category = NULL;
 		}
 		am_free(item);
 		item = NULL;

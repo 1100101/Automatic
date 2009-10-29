@@ -182,18 +182,22 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
 		getFeeds(&as->feeds, param);
 	} else if(!strcmp(opt, "transmission-home")) {
 		set_path(param, &as->transmission_path);
+	} else if(!strcmp(opt, "prowl-apikey")) {
+		as->prowl_key = am_strdup(param);
 	} else if(!strcmp(opt, "transmission-version")) {
-		if(strlen(param) >= 3) {
-			if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
+    if (!strcmp(param, "external")) {
+      /* we should probably only set this when transmission-external is set */
+      as->transmission_version = AM_TRANSMISSION_EXTERNAL;
+    } else if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
 				as->transmission_version = AM_TRANSMISSION_1_2;
 			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
 				as->transmission_version = AM_TRANSMISSION_1_3;
 			} else {
 				dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
 			}
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
+  } else if (!strcmp(opt, "transmission-external")) {
+    set_path(param, &as->transmission_external);
+    as->transmission_version = AM_TRANSMISSION_EXTERNAL;
 	} else if(!strcmp(opt, "torrent-folder")) {
 		set_path(param, &as->torrent_folder);
 	} else if(!strcmp(opt, "statefile")) {

@@ -29,6 +29,7 @@
 #define AM_DEFAULT_RPCPORT 			9091
 #define AM_TRANSMISSION_1_2			2
 #define AM_TRANSMISSION_1_3			3
+#define AM_TRANSMISSION_EXTERNAL		1
 
 #include <stdint.h>
 
@@ -42,6 +43,8 @@ struct auto_handle {
 	char *torrent_folder;
 	char *auth;
 	char *host;
+  char *prowl_key;
+ 	char *transmission_external;
 	rss_feeds 	feeds;
 	simple_list downloads;
 	simple_list filters;
@@ -54,6 +57,7 @@ struct auto_handle {
 	uint16_t 		rpc_port;
 	uint8_t 		transmission_version;
 	int16_t     upspeed;
+  uint8_t     prowl_key_valid;
 };
 /** \endcond */
 
