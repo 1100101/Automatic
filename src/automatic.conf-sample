@@ -60,6 +60,9 @@ torrent-folder = "/tmp"
 # path to the file which stores information about already downloaded torrents (so they don't get readded to Transmission)
 statefile = "~/.config/automatic.state"
 
+# Prowl API key. See http://prowl.weks.net for more information
+#prowl-apikey = ""
+
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter

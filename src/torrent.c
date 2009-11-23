@@ -69,7 +69,7 @@ void get_filename(char *path, const char *content_filename, const char* url, con
       p = strtok(NULL, "/");
     }
   }
-  snprintf(path, PATH_MAX - 1, "%s/%s%s", t_folder, buf, (is_torrent(buf) ? "" : ".torrent"));
+  snprintf(path, PATH_MAX - 1, "%s/%s", t_folder, buf);
 }
 
 int8_t changeUploadSpeed(const char* url, const char* auth,

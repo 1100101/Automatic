@@ -438,7 +438,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 		}
 		param[param_pos] = '\0';
 		dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
-		dbg_printf(P_INFO2, "[parse_config_file] param: %s", param);
+		dbg_printf(P_INFO2, "[parse_config_file] param: %s (%d byte)", param, strlen(param));
 		dbg_printf(P_INFO2, "[parse_config_file] -----------------");
 		set_option(as, opt, param, type);
 

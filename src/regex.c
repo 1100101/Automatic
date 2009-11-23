@@ -114,5 +114,5 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
 		}
 		pcre_free(result_preg);
 	}
-	return result_str;
+	return strstrip(result_str);
 }

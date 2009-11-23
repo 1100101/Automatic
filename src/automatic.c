@@ -524,7 +524,8 @@ int main(int argc, char **argv) {
     startFolderWatch(session->watch_folder);
   } else { /* RSS feed watching process */
     /* determine RPC version */
-    if(session->transmission_version == AM_TRANSMISSION_1_3) {
+  if(session->use_transmission && 
+     session->transmission_version == AM_TRANSMISSION_1_3) {
       session->rpc_version = getRPCVersion(
             (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
             session->rpc_port,session->auth);

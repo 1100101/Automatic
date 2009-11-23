@@ -32,6 +32,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
 
@@ -99,7 +100,7 @@ void am_free(void * p) {
  */
 char* am_strndup(const char *str, int len) {
   char *buf = NULL;
-  if(str) {
+  if(str && *str) {
     buf = am_malloc(len + 1);
     memcpy(buf, str, len);
     buf[len]= '\0';
@@ -113,7 +114,7 @@ char* am_strndup(const char *str, int len) {
  * \return Pointer to a copy of the given string
  */
 char* am_strdup(const char *str) {
-  if(str) {
+  if(str && *str) {
     return am_strndup(str, strlen(str));
   }
   return NULL;
@@ -214,4 +215,30 @@ char* get_temp_folder(void) {
     }
   }
   return dir;
+}
+
+/* Function strstrip() lazily obtained from the Transmission project,
+** licensed unter the GPL version 2. http://www.transmissionbt.com
+*/
+
+char* strstrip( char * str ) {
+  if( str && *str )
+  {
+    size_t pos;
+    size_t len = strlen( str );
+
+    while( len && isspace( str[len - 1] ) ) {
+      --len;
+    }
+
+    for( pos = 0; pos < len && isspace( str[pos] ); ) {
+      ++pos;
+    }
+
+    len -= pos;
+    memmove( str, str + pos, len );
+    str[len] = '\0';
+  }
+
+  return str;
 }
