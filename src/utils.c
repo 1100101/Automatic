@@ -215,3 +215,29 @@ char* get_temp_folder(void) {
   }
   return dir;
 }
+
+/* Function strstrip() lazily obtained from the Transmission project,
+** licensed unter the GPL version 2. http://www.transmissionbt.com
+*/
+
+char* strstrip( char * str ) {
+  if( str != NULL )
+  {
+    size_t pos;
+    size_t len = strlen( str );
+
+    while( len && isspace( str[len - 1] ) ) {
+      --len;
+    }
+
+    for( pos = 0; pos < len && isspace( str[pos] ); ) {
+      ++pos;
+    }
+
+    len -= pos;
+    memmove( str, str + pos, len );
+    str[len] = '\0';
+  }
+
+  return str;
+}

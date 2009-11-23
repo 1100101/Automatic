@@ -45,5 +45,5 @@ char* get_home_folder(void);
 char* get_temp_folder(void);
 char* get_tr_folder(void);
 
-
+char* strstrip( char * str );
 #endif
