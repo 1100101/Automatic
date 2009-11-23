@@ -501,7 +501,8 @@ int main(int argc, char **argv) {
   }
 
   /* determine RPC version */
-  if(session->transmission_version == AM_TRANSMISSION_1_3) {
+  if(session->use_transmission && 
+     session->transmission_version == AM_TRANSMISSION_1_3) {
     session->rpc_version = getRPCVersion(
           (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
           session->rpc_port,session->auth);
@@ -510,7 +511,7 @@ int main(int argc, char **argv) {
 
   /* check if Prowl API key is given, and if it is valid */
   if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) ) {
-      session->prowl_key_valid = 1;
+    session->prowl_key_valid = 1;
   }
 
   load_state(session->statefile, &session->downloads);

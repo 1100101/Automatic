@@ -32,6 +32,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
 
@@ -99,7 +100,7 @@ void am_free(void * p) {
  */
 char* am_strndup(const char *str, int len) {
   char *buf = NULL;
-  if(str) {
+  if(str && *str) {
     buf = am_malloc(len + 1);
     memcpy(buf, str, len);
     buf[len]= '\0';
@@ -113,7 +114,7 @@ char* am_strndup(const char *str, int len) {
  * \return Pointer to a copy of the given string
  */
 char* am_strdup(const char *str) {
-  if(str) {
+  if(str && *str) {
     return am_strndup(str, strlen(str));
   }
   return NULL;

@@ -61,7 +61,7 @@ torrent-folder = "/tmp"
 statefile = "~/.config/automatic.state"
 
 # Prowl API key. See http://prowl.weks.net for more information
-prowl-apikey = "828f3ab6310f1126ca0a4c998abdc9b0b481304c"
+#prowl-apikey = ""
 
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
