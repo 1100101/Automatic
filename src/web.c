@@ -340,16 +340,23 @@ void HTTPResponse_free(struct HTTPResponse *response) {
 static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
   CURL * curl = curl_easy_init();
 
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L );
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_callback);
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, data);
   curl_easy_setopt(curl, CURLOPT_WRITEHEADER, data);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, getenv( "AM_CURL_VERBOSE" ) != NULL);
   curl_easy_setopt(curl, CURLOPT_POST, isPost ? 1 : 0);
-  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L );
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L );
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 55L );
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+  curl_easy_setopt(curl, CURLOPT_DNS_CACHE_TIMEOUT, 600L );
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L );
+  curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1L );
+  curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L );
+  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, -1L );
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L );
 
   if(auth) {
     dbg_printf(P_INFO2, "auth: %s", auth);

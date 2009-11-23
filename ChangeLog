@@ -1,3 +1,9 @@
+2009-11-23 v0.4.3
+			Fixed: Properly strip HTTP header lines
+			Fixed: Only acquire Transmission RPC version if Transmission is to be used
+			Fixed: Only check Prowl API key if there actually is a key available
+			Added: The above changes make Automatic work with NZB feeds as well (yay!)
+
 2009-10-29 v0.4.2
             Added: Prowl notification support
             Fixed: URLs with semicolons were wrongly parsed

@@ -222,7 +222,7 @@ char* get_temp_folder(void) {
 */
 
 char* strstrip( char * str ) {
-  if( str != NULL )
+  if( str && *str )
   {
     size_t pos;
     size_t len = strlen( str );
