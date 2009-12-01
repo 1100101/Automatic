@@ -14,7 +14,7 @@
 
 static const char *delim = "²";
 
-static char* shorten(const char *str) {
+static char* l_shorten(const char *str) {
 
     int tmp_pos;
     char c;

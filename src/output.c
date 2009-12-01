@@ -42,8 +42,8 @@
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
 
-uint8_t log_init(const char *logfile, int8_t msglevel) {
-  gMsglevel = msgLevel;
+unsigned char log_init(const char *logfile, char msglevel) {
+  gMsglevel = msglevel;
   if(logfile && *logfile) {
     if((gLogFP = fopen(logfile, "w")) != NULL) {
       dbg_printf(P_ERROR, "[log_init] Opening '%s' for logging failed", logfile);
@@ -53,7 +53,7 @@ uint8_t log_init(const char *logfile, int8_t msglevel) {
   return 1; //bad!
 }
 
-uint8_t log_close(void) {
+void log_close(void) {
   if(gLogFP) {
     fclose(gLogFP);
     gLogFP = NULL;

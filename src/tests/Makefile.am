@@ -42,6 +42,8 @@ prowl_test_SOURCES = $(GLOBAL_SOURCES) \
 
 parser_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/config_parser.c  \
+    $(top_srcdir)/src/list.c  \
+    $(top_srcdir)/src/rss_feed.c  \
     parser_test.c
 
 noinst_HEADERS = \
