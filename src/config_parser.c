@@ -64,7 +64,7 @@ typedef struct am_option am_option_t;
 
 static const char *delim = "²";
 
-static void set_path(char *src, char **dst) {
+static void set_path(const char *src, char **dst) {
   char *tmp;
 
   if(src && strlen(src) < MAXPATHLEN) {
@@ -122,10 +122,12 @@ static char* shorten(const char *str) {
       if (str[line_pos] == '"' || str[line_pos] == '\'') {
         c = str[line_pos];
         ++line_pos;  /* skip quote */
-        for (; str[line_pos] != c; /* NOTHING */) {
+        while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
             tmp[tmp_pos++] = str[line_pos++];
         }
-        line_pos++;	/* skip the closing " or ' */
+        if(str[line_pos] == c) {
+          line_pos++; /* skip the closing quote */
+        }
       } else {
         for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
           tmp[tmp_pos++] = str[line_pos++];
