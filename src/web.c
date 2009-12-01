@@ -1,32 +1,32 @@
 /* $Id$
- * $Name$
- * $ProjectName$
- */
+* $Name$
+* $ProjectName$
+*/
 
 /**
- * @file web.c
- *
- * Provides basic functionality for communicating with HTTP and FTP servers.
- */
+* @file web.c
+*
+* Provides basic functionality for communicating with HTTP and FTP servers.
+*/
 
 /*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
+* Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License as
+* published by the Free Software Foundation; either version 2 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+* 02111-1307, USA.
+*/
 
 #include <errno.h>
 #include <stdlib.h>
@@ -52,7 +52,7 @@ static char *gSessionID = NULL;
 
 /** Generic struct storing data and the size of the contained data */
 struct HTTPData {
-	/** \{ */
+  /** \{ */
  char *data; 	/**< Stored data */
  size_t size; /**< Size of the stored data */
  /** \{ */
@@ -60,14 +60,14 @@ struct HTTPData {
 
 /** Struct storing information about data downloaded from the web */
 struct WebData {
-	/** \{ */
-	char *url;                  /**< URL of the WebData object */
-	long responseCode;          /**< HTTP response code        */
-	size_t content_length;      /**< size of the received data determined through header field "Content-Length" */
-	char *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
-	struct HTTPData* header;    /**< complete header information in a HTTPData object */
-	struct HTTPData* response;  /**< HTTP response in a HTTPData object */
-	/** \} */
+  /** \{ */
+  char *url;                  /**< URL of the WebData object */
+  long responseCode;          /**< HTTP response code        */
+  size_t content_length;      /**< size of the received data determined through header field "Content-Length" */
+  char *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
+  struct HTTPData* header;    /**< complete header information in a HTTPData object */
+  struct HTTPData* response;  /**< HTTP response in a HTTPData object */
+  /** \} */
 };
 
 typedef struct HTTPData HTTPData;
@@ -81,13 +81,13 @@ void SessionID_free(void) {
 
 
 static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
-  size_t line_len = size * nmemb;
-  WebData *mem = data;
-  const char * line = ptr;
-  char *tmp = NULL;
-  char *filename = NULL;
-  const char * content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+)\"?$";
-  int content_length = 0;
+  size_t       line_len = size * nmemb;
+  WebData     *mem = data;
+  const char  *line = ptr;
+  char        *tmp = NULL;
+  char        *filename = NULL;
+  const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+)\"?$";
+  int          content_length = 0;
 
   /* parse header for Content-Length to allocate correct size for data->response->data */
   if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
@@ -123,7 +123,7 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
     mem->header->data = (char *)am_realloc(mem->header->data, mem->header->size + line_len + 1);
   }
 
-  if(mem->header->data) {
+  if (mem->header->data) {
     memcpy(&(mem->header->data[mem->header->size]), ptr, line_len);
     mem->header->size += line_len;
     mem->header->data[mem->header->size] = 0;
@@ -138,13 +138,13 @@ static size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb, void *data) {
-  size_t line_len = size * nmemb;
-  const char * line = ptr;
-  WebData *mem = data;
-  const char * session_key = "X-Transmission-Session-Id: ";
-  const size_t key_len = strlen( session_key );
-  char *tmp = NULL;
-  int content_length = 0;
+  size_t        line_len = size * nmemb;
+  const char   *line = ptr;
+  WebData      *mem = data;
+  const char   *session_key = "X-Transmission-Session-Id: ";
+  const size_t  key_len = strlen( session_key );
+  char         *tmp = NULL;
+  int           content_length = 0;
 
 
   if( (line_len >= key_len) && !memcmp(line, session_key, key_len) ) {
@@ -193,7 +193,7 @@ static size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *da
     mem->response->data = (char *)am_realloc(mem->response->data, mem->response->size + line_len + 1);
   }
 
-  if(mem->response->data) {
+  if (mem->response->data) {
     memcpy(&(mem->response->data[mem->response->size]), ptr, line_len);
     mem->response->size += line_len;
     mem->response->data[mem->response->size] = 0;
@@ -232,9 +232,9 @@ static void HTTPData_free(HTTPData* data) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /** \brief Free a WebData object and all memory associated with it
- *
- * \param[in] data Pointer to a WebData object
- */
+*
+* \param[in] data Pointer to a WebData object
+*/
 static void WebData_free(struct WebData *data) {
 
   if(data) {
@@ -251,11 +251,11 @@ static void WebData_free(struct WebData *data) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /** \brief Create a new WebData object
- *
- * \param[in] url URL for a WebData object
- *
- * The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
- */
+*
+* \param[in] url URL for a WebData object
+*
+* The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
+*/
 static struct WebData* WebData_new(const char *url) {
   WebData *data = NULL;
 
@@ -358,7 +358,7 @@ static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, -1L );
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L );
 
-  if(auth) {
+  if(auth && *auth) {
     dbg_printf(P_INFO2, "auth: %s", auth);
     curl_easy_setopt(curl, CURLOPT_USERPWD, auth);
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY );
@@ -371,18 +371,18 @@ static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /** \brief Download data from a given URL
- *
- * \param[in] url URL of the object to download
- * \return a WebData object containing the complete response as well as header information
- *
- * getHTTPData() attempts to download the file pointed to by \a url and stores the content in a WebData object.
- * The function returns \c NULL if the download failed.
- */
+*
+* \param[in] url URL of the object to download
+* \return a WebData object containing the complete response as well as header information
+*
+* getHTTPData() attempts to download the file pointed to by \a url and stores the content in a WebData object.
+* The function returns \c NULL if the download failed.
+*/
 
 HTTPResponse* getHTTPData(const char *url) {
   CURLcode      res;
   CURL         *curl_handle = NULL;
-  WebData      *data = NULL;
+  WebData* data = NULL;
   HTTPResponse *resp = NULL;
 
   if(!url) {
@@ -431,13 +431,13 @@ HTTPResponse* getHTTPData(const char *url) {
 #define MAXLEN 200
 
 /** \brief Upload data to a specified URL.
- *
- * \param url Path to where data shall be uploaded
- * \param auth (Optional) authentication information in the form of "user:password"
- * \param data Data that shall be uploaded
- * \param data_size size of the data
- * \return Web server response
- */
+*
+* \param url Path to where data shall be uploaded
+* \param auth (Optional) authentication information in the form of "user:password"
+* \param data Data that shall be uploaded
+* \param data_size size of the data
+* \return Web server response
+*/
 HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
   CURL *curl_handle = NULL;
   CURLcode res;
@@ -501,7 +501,6 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
       } else {
         resp = HTTPResponse_new();
         curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
-        dbg_printf(P_INFO2, "response code: %ld", resp->responseCode);
 
         //copy data if present
         if(response_data->response->data) {
