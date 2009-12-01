@@ -50,7 +50,7 @@
 
 /** \cond */
 #define MAX_OPT_LEN	50
-#define MAX_PARAM_LEN	2000
+#define MAX_PARAM_LEN	20000
 
 struct am_option {
   const char *name;
@@ -65,103 +65,110 @@ typedef struct am_option am_option_t;
 static const char *delim = "|";
 
 static void set_path(char *src, char **dst) {
-	char *tmp;
+  char *tmp;
 
-	if(src && strlen(src) < MAXPATHLEN) {
-		tmp = resolve_path(src);
-		if(tmp) {
+  if(src && strlen(src) < MAXPATHLEN) {
+    tmp = resolve_path(src);
+    if(tmp) {
       if ( *dst != NULL ) {
-			am_free(*dst);
+      am_free(*dst);
       }
-			*dst = am_strdup(tmp);
-			am_free(tmp);
-		}
-	}
+      *dst = am_strdup(tmp);
+      am_free(tmp);
+    }
+  }
 }
 
 static int parseUInt(const char *str) {
-	int is_num = 1;
-	uint32_t i;
+  int is_num = 1;
+  uint32_t i;
 
-	for(i = 0; i < strlen(str); i++) {
-		if(isdigit(str[i]) == 0)
-			is_num--;
-	}
-	if(is_num == 1 && atoi(str) > 0) {
-		return atoi(str);
-	}
-	return -1;
+  for(i = 0; i < strlen(str); i++) {
+    if(isdigit(str[i]) == 0)
+      is_num--;
+  }
+  if(is_num == 1 && atoi(str) > 0) {
+    return atoi(str);
+  }
+  return -1;
 }
 
 static char* shorten(const char *str) {
-		char tmp[MAX_PARAM_LEN + 1];
-		int tmp_pos;
-		char c;
-		uint32_t line_pos = 0, i;
-		uint32_t len = strlen(str);
 
-		for(i = 0; i < sizeof(tmp); ++i) {
-			tmp[i] = '\0';
-		}
+    int tmp_pos;
+    char c;
+    char *retStr;
+    char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
+    uint32_t line_pos = 0, i;
+    uint32_t len = strlen(str);
 
-		while (isspace(str[line_pos])) {
-			++line_pos;
-		}
-		tmp_pos = 0;
-		while(line_pos < len) {
-			/* case 1: quoted strings */
-			if(tmp_pos != 0) {
-				for(i = 0; i < strlen(delim); ++i)
-					tmp[tmp_pos++] = delim[i];
-			}
-			if (str[line_pos] == '"' || str[line_pos] == '\'') {
-				c = str[line_pos];
-				++line_pos;  /* skip quote */
-				for (; str[line_pos] != c; /* NOTHING */) {
-						tmp[tmp_pos++] = str[line_pos++];
-				}
-				line_pos++;	/* skip the closing " or ' */
-			} else {
-				for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
-					tmp[tmp_pos++] = str[line_pos++];
-				}
-			}
-			while (isspace(str[line_pos])) {
-				++line_pos;
-			}
-		}
-		tmp[tmp_pos] = '\0';
-		assert(strlen(tmp) < MAX_PARAM_LEN);
-		return am_strdup(tmp);
+    if(!tmp) {
+      dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+      return NULL;
+    }
+
+    memset(tmp, 0, MAX_PARAM_LEN+1);
+
+    while (isspace(str[line_pos])) {
+      ++line_pos;
+    }
+    tmp_pos = 0;
+    while(line_pos < len) {
+      /* case 1: quoted strings */
+      if(tmp_pos != 0) {
+        for(i = 0; i < strlen(delim); ++i)
+          tmp[tmp_pos++] = delim[i];
+      }
+      if (str[line_pos] == '"' || str[line_pos] == '\'') {
+        c = str[line_pos];
+        ++line_pos;  /* skip quote */
+        for (; str[line_pos] != c; /* NOTHING */) {
+            tmp[tmp_pos++] = str[line_pos++];
+        }
+        line_pos++;	/* skip the closing " or ' */
+      } else {
+        for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
+          tmp[tmp_pos++] = str[line_pos++];
+        }
+      }
+      while (isspace(str[line_pos])) {
+        ++line_pos;
+      }
+    }
+    tmp[tmp_pos] = '\0';
+    assert(strlen(tmp) < MAX_PARAM_LEN);
+    retStr = am_strdup(tmp);
+    am_free(tmp);
+    return retStr;
 }
 
 static int addToList(NODE **head, const char* strlist) {
-	char *p = NULL;
-	char *str = NULL;
+  char *p = NULL;
+  char *str = NULL;
 
-	assert(*head == NULL);
-	str = shorten(strlist);
-	p = strtok(str, delim);
-	while (p) {
-		addItem(am_strdup(p), head);
-		p = strtok(NULL, delim);
-	}
-	am_free(str);
-	return 0;
+  assert(*head == NULL);
+  str = shorten(strlist);
+  p = strtok(str, delim);
+  while (p) {
+    addItem(am_strdup(p), head);
+    p = strtok(NULL, delim);
+  }
+  am_free(str);
+  return 0;
 }
 
 static int getFeeds(NODE **head, const char* strlist) {
-	char *p = NULL;
-	char *str;
-	str = shorten(strlist);
-	assert(*head == NULL);
-	p = strtok(str, delim);
-	while (p) {
-		feed_add(p, head);
-		p = strtok(NULL, delim);
-	}
-	am_free(str);
-	return 0;
+  char *p = NULL;
+  char *str;
+  str = shorten(strlist);
+  assert(*head == NULL);
+  p = strtok(str, delim);
+  while (p) {
+    feed_add(p, head);
+    p = strtok(NULL, delim);
+  }
+  am_free(str);
+  return 0;
 }
 
 /** \brief parse option from configuration file.
@@ -173,86 +180,86 @@ static int getFeeds(NODE **head, const char* strlist) {
  * \return 0 if parsing was successful, -1 if an error occured.  currently
  * always returns 0
  */
-static int set_option(auto_handle *as, const char *opt, char *param, option_type type) {
-	int32_t numval;
-	dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
+static int set_option(auto_handle *as, const char *opt, const char *param, option_type type) {
+  int32_t numval;
+  dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
 
-	assert(as != NULL);
-	if(!strcmp(opt, "url")) {
-		getFeeds(&as->feeds, param);
-	} else if(!strcmp(opt, "transmission-home")) {
-		set_path(param, &as->transmission_path);
-	} else if(!strcmp(opt, "prowl-apikey")) {
-		as->prowl_key = am_strdup(param);
-	} else if(!strcmp(opt, "transmission-version")) {
+  assert(as != NULL);
+  if(!strcmp(opt, "url")) {
+    getFeeds(&as->feeds, param);
+  } else if(!strcmp(opt, "transmission-home")) {
+    set_path(param, &as->transmission_path);
+  } else if(!strcmp(opt, "prowl-apikey")) {
+    as->prowl_key = am_strdup(param);
+  } else if(!strcmp(opt, "transmission-version")) {
     if (!strcmp(param, "external")) {
       /* we should probably only set this when transmission-external is set */
       as->transmission_version = AM_TRANSMISSION_EXTERNAL;
     } else if(param[0] == '1' && param[1] == '.' && param[2] == '2') {
-				as->transmission_version = AM_TRANSMISSION_1_2;
-			} else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
-				as->transmission_version = AM_TRANSMISSION_1_3;
-			} else {
-				dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-			}
+        as->transmission_version = AM_TRANSMISSION_1_2;
+      } else if(param[0] == '1' && param[1] == '.' && param[2] == '3') {
+        as->transmission_version = AM_TRANSMISSION_1_3;
+      } else {
+        dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+      }
   } else if (!strcmp(opt, "transmission-external")) {
     set_path(param, &as->transmission_external);
     as->transmission_version = AM_TRANSMISSION_EXTERNAL;
-	} else if(!strcmp(opt, "torrent-folder")) {
-		set_path(param, &as->torrent_folder);
-	} else if(!strcmp(opt, "statefile")) {
-		set_path(param, &as->statefile);
-	} else if(!strcmp(opt, "rpc-host")) {
-		as->host = am_strdup(param);
-	} else if(!strcmp(opt, "rpc-auth")) {
-		as->auth = am_strdup(param);
-	} else if(!strcmp(opt, "upload-limit")) {
-		numval = parseUInt(param);
-		if(numval > 0) {
-			as->upspeed = (uint16_t)numval;
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "rpc-port")) {
-		numval = parseUInt(param);
-		if (numval > 1024 && numval < 65535) {
-			as->rpc_port = numval;
-		} else if(numval != -1) {
-			dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "interval")) {
-		numval = parseUInt(param);
-		if(numval > 0) {
-			as->check_interval = numval;
-		} else if(numval != -1) {
-			dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "use-transmission")) {
-		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
-			as->use_transmission = 0;
-		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
-			as->use_transmission = 1;
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
-		}
-	} else if(!strcmp(opt, "start-torrents")) {
-		if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
-			as->start_torrent = 0;
-		} else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
-			as->start_torrent = 1;
-		} else {
-			dbg_printf(P_ERROR, "Unknown parameter for option '%s': '%s'", opt, param);
-		}
-	} else if(!strcmp(opt, "patterns")) {
-		addToList(&as->filters, param);
-	} else {
-		dbg_printf(P_ERROR, "Unknown option: %s", opt);
-	}
-	return 0;
+  } else if(!strcmp(opt, "torrent-folder")) {
+    set_path(param, &as->torrent_folder);
+  } else if(!strcmp(opt, "statefile")) {
+    set_path(param, &as->statefile);
+  } else if(!strcmp(opt, "rpc-host")) {
+    as->host = am_strdup(param);
+  } else if(!strcmp(opt, "rpc-auth")) {
+    as->auth = am_strdup(param);
+  } else if(!strcmp(opt, "upload-limit")) {
+    numval = parseUInt(param);
+    if(numval > 0) {
+      as->upspeed = (uint16_t)numval;
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+    }
+  } else if(!strcmp(opt, "rpc-port")) {
+    numval = parseUInt(param);
+    if (numval > 1024 && numval < 65535) {
+      as->rpc_port = numval;
+    } else if(numval != -1) {
+      dbg_printf(P_ERROR, "RPC port must be an integer between 1025 and 65535, reverting to default (%d)\n\t%s=%s", AM_DEFAULT_RPCPORT, opt, param);
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+    }
+  } else if(!strcmp(opt, "interval")) {
+    numval = parseUInt(param);
+    if(numval > 0) {
+      as->check_interval = numval;
+    } else if(numval != -1) {
+      dbg_printf(P_ERROR, "Interval must be 1 minute or more, reverting to default (%dmin)\n\t%s=%s", AM_DEFAULT_INTERVAL, opt, param);
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+    }
+  } else if(!strcmp(opt, "use-transmission")) {
+    if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
+      as->use_transmission = 0;
+    } else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
+      as->use_transmission = 1;
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter: %s=%s", opt, param);
+    }
+  } else if(!strcmp(opt, "start-torrents")) {
+    if(!strncmp(param, "0", 1) || !strncmp(param, "no", 2)) {
+      as->start_torrent = 0;
+    } else if(!strncmp(param, "1", 1) || !strncmp(param, "yes", 3)) {
+      as->start_torrent = 1;
+    } else {
+      dbg_printf(P_ERROR, "Unknown parameter for option '%s': '%s'", opt, param);
+    }
+  } else if(!strcmp(opt, "patterns")) {
+    addToList(&as->filters, param);
+  } else {
+    dbg_printf(P_ERROR, "Unknown option: %s", opt);
+  }
+  return 0;
 }
 
 
@@ -263,197 +270,199 @@ static int set_option(auto_handle *as, const char *opt, char *param, option_type
  * \return 0 if parsing was successful, -1 if an error occured.
  */
 int parse_config_file(struct auto_handle *as, const char *filename) {
-	FILE *fp;
-	char *line;
-	char opt[MAX_OPT_LEN + 1];
-	char param[MAX_PARAM_LEN + 1];
-	char erbuf[100];
-	char c;		/* for the "" and '' check */
-	int line_num = 0;
-	int line_pos;	/* line pos */
-	int opt_pos;	/* opt pos */
-	int param_pos;	/* param pos */
-	int parse_error = 0;
-	int opt_good = 0;
-	int param_good = 0;
-	struct stat fs;
-	option_type type;
+  FILE *fp = NULL;
+  char *line = NULL;
+  char opt[MAX_OPT_LEN + 1];
+  char *param = NULL;
+  char erbuf[100];
+  char c;		/* for the "" and '' check */
+  int line_num = 0;
+  int line_pos;	/* line pos */
+  int opt_pos;	/* opt pos */
+  int param_pos;	/* param pos */
+  int parse_error = 0;
+  int opt_good = 0;
+  int param_good = 0;
+  struct stat fs;
+  option_type type;
 
-	if(stat(filename, &fs) == -1)  {
-		return -1;
-	}
-	dbg_printf(P_INFO2, "Configuration file size: %d", fs.st_size);
+  if(stat(filename, &fs) == -1)  {
+    return -1;
+  }
+  dbg_printf(P_INFO2, "Configuration file size: %d", fs.st_size);
 
-	if ((line = am_malloc(fs.st_size + 1)) == NULL) {
-		dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)", strerror(errno), fs.st_size + 1);
-		return -1;
-	}
+  if ((fp = fopen(filename, "rb")) == NULL) {
+    perror("fopen");
+    return -1;
+  }
 
-	if ((fp = fopen(filename, "rb")) == NULL) {
-		perror("fopen");
-		am_free(line);
-		return -1;
-	}
+  if ((line = am_malloc(fs.st_size + 1)) == NULL) {
+    dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)", strerror(errno), fs.st_size + 1);
+    return -1;
+  }
 
-	if(fread(line, fs.st_size, 1, fp) != 1) {
-		perror("fread");
-		fclose(fp);
-		am_free(line);
-		return -1;
-	}
-	if(fp)
-		fclose(fp);
-	line_pos = 0;
+  if(fread(line, fs.st_size, 1, fp) != 1) {
+    perror("fread");
+    fclose(fp);
+    am_free(line);
+    return -1;
+  }
+  if(fp) {
+    fclose(fp);
+  }
+  line_pos = 0;
 
+  param = (char*)am_malloc(MAX_PARAM_LEN + 1);
+  if(param) {
+    dbg_printf(P_ERROR, "Can't allocate memory for 'param': %s (%ldb)", strerror(errno), MAX_PARAM_LEN + 1);
+    am_free(line);
+    return -1;
+  }
 
-	while(line_pos != fs.st_size) {
-		/* skip whitespaces */
-		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n') {
-				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
-				line_num++;
-			}
-			++line_pos;
-		}
+  while(line_pos != fs.st_size) {
+    /* skip whitespaces */
+    while (isspace(line[line_pos])) {
+      if(line[line_pos] == '\n') {
+        dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
+        line_num++;
+      }
+      ++line_pos;
+    }
 
-		/* comment */
-		if (line[line_pos] == '#') {
-			dbg_printf(P_INFO2, "skipping comment (line %d)", line_num);
-			while (line[line_pos] != '\n') {
-				++line_pos;
-			}
-			++line_num;
-			++line_pos;  /* skip the newline as well */
-			continue;
-		}
+    /* comment */
+    if (line[line_pos] == '#') {
+      dbg_printf(P_INFO2, "skipping comment (line %d)", line_num);
+      while (line[line_pos] != '\n') {
+        ++line_pos;
+      }
+      ++line_num;
+      ++line_pos;  /* skip the newline as well */
+      continue;
+    }
 
-		/* read option */
-		for (opt_pos = 0; isprint(line[line_pos]) && line[line_pos] != ' ' &&
-				line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
-			opt[opt_pos++] = line[line_pos++];
-			if (opt_pos >= MAX_OPT_LEN) {
-				dbg_printf(P_ERROR, "too long option at line %d", line_num);
-				parse_error = 1;
-				opt_good = 0;
-			}
-		}
-		if (opt_pos == 0 || parse_error == 1) {
-			dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
-			parse_error = 1;
-			break;
-		} else {
-			opt[opt_pos] = '\0';
-			opt_good = 1;
-		}
-		/* skip whitespaces */
-		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n') {
-				line_num++;
-				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
-			}
-			++line_pos;
-		}
+    /* read option */
+    for (opt_pos = 0; isprint(line[line_pos]) && line[line_pos] != ' ' &&
+        line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
+      opt[opt_pos++] = line[line_pos++];
+      if (opt_pos >= MAX_OPT_LEN) {
+        dbg_printf(P_ERROR, "too long option at line %d", line_num);
+        parse_error = 1;
+        opt_good = 0;
+      }
+    }
+    if (opt_pos == 0 || parse_error == 1) {
+      dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
+      parse_error = 1;
+      break;
+    } else {
+      opt[opt_pos] = '\0';
+      opt_good = 1;
+    }
+    /* skip whitespaces */
+    while (isspace(line[line_pos])) {
+      if(line[line_pos] == '\n') {
+        line_num++;
+        dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
+      }
+      ++line_pos;
+    }
 
-		/* check for '=' */
-		if (line[line_pos++] != '=') {
-			snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)", opt, line_num);
-			parse_error = 1;
-			break;
-		}
+    /* check for '=' */
+    if (line[line_pos++] != '=') {
+      snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)", opt, line_num);
+      parse_error = 1;
+      break;
+    }
 
-		/* skip whitespaces */
-		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n') {
-				line_num++;
-				dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
-			}
-			++line_pos;
-		}
+    /* skip whitespaces */
+    while (isspace(line[line_pos])) {
+      if(line[line_pos] == '\n') {
+        line_num++;
+        dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
+      }
+      ++line_pos;
+    }
 
-		/* read the parameter */
+    /* read the parameter */
 
-		/* case 1: single string, no linebreaks allowed */
-		if (line[line_pos] == '"' || line[line_pos] == '\'') {
-			c = line[line_pos];
-			++line_pos;  /* skip quote */
-			parse_error = 0;
-			for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
-				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN && line[line_pos] != '\n') {
-					param[param_pos++] = line[line_pos++];
-				} else {
-					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n",opt, line_num);
-					parse_error = 1;
-					break;
-				}
-			}
-			if(parse_error == 0) {
-				line_pos++;	/* skip the closing " or ' */
-				type = CONF_TYPE_STRING;
-			} else {
-				break;
-			}
-		/* case 2: multiple items, linebreaks allowed */
-		} else if (line[line_pos] == '{') {
-			dbg_printf(P_INFO2, "reading multiline param", line_num);
-			++line_pos;
-			parse_error = 0;
-			for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
-				if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
-					param[param_pos++] = line[line_pos++];
-					if(line[line_pos] == '\n')
-						line_num++;
-				} else {
-					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
-					parse_error = 1;
-					break;
-				}
-			}
-			dbg_printf(P_INFO2, "multiline param: param_good=%d", param_good);
-			if(parse_error == 0) {
-				line_pos++;	/* skip the closing '}' */
-				type = CONF_TYPE_STRINGLIST;
-			} else {
-				break;
-			}
-		/* Case 3: integers */
-		} else {
-			parse_error = 0;
-			for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos])
-					&& line[line_pos] != '#'; /* NOTHING */) {
-				param[param_pos++] = line[line_pos++];
-				if (param_pos >= MAX_PARAM_LEN) {
-					snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
-					parse_error = 1;
-					break;
-				}
-			}
-			if(parse_error == 0) {
-				type = CONF_TYPE_INT;
-			} else {
-				break;
-			}
+    /* case 1: single string, no linebreaks allowed */
+    if (line[line_pos] == '"' || line[line_pos] == '\'') {
+      c = line[line_pos]; /* single or double quote */
+      ++line_pos;  /* skip quote */
+      parse_error = 0;
+      for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
+        if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN && line[line_pos] != '\n') {
+          param[param_pos++] = line[line_pos++];
+        } else {
+          snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n",opt, line_num);
+          parse_error = 1;
+          break;
+        }
+      }
+      if(parse_error == 0) {
+        line_pos++;	/* skip the closing " or ' */
+        type = CONF_TYPE_STRING;
+      } else {
+        break;
+      }
+    /* case 2: multiple items, linebreaks allowed */
+    } else if (line[line_pos] == '{') {
+      dbg_printf(P_INFO2, "reading multiline param", line_num);
+      ++line_pos;
+      parse_error = 0;
+      for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
+        if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
+          param[param_pos++] = line[line_pos++];
+          if(line[line_pos] == '\n')
+            line_num++;
+        } else {
+          snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
+          parse_error = 1;
+          break;
+        }
+      }
+      dbg_printf(P_INFO2, "multiline param: param_good=%d", param_good);
+      if(parse_error == 0) {
+        line_pos++;	/* skip the closing '}' */
+        type = CONF_TYPE_STRINGLIST;
+      } else {
+        break;
+      }
+    /* Case 3: integers */
+    } else {
+      parse_error = 0;
+      for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos])
+          && line[line_pos] != '#'; /* NOTHING */) {
+        param[param_pos++] = line[line_pos++];
+        if (param_pos >= MAX_PARAM_LEN) {
+          snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
+          parse_error = 1;
+          break;
+        }
+      }
+      if(parse_error == 0) {
+        type = CONF_TYPE_INT;
+      } else {
+        break;
+      }
+    }
+    param[param_pos] = '\0';
+    dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
+    dbg_printf(P_INFO2, "[parse_config_file] param: %s (%d byte)", param, strlen(param));
+    dbg_printf(P_INFO2, "[parse_config_file] -----------------");
+    set_option(as, opt, param, type);
 
-		}
-		param[param_pos] = '\0';
-		dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
-		dbg_printf(P_INFO2, "[parse_config_file] param: %s (%d byte)", param, strlen(param));
-		dbg_printf(P_INFO2, "[parse_config_file] -----------------");
-		set_option(as, opt, param, type);
+    /* skip whitespaces */
+    while (isspace(line[line_pos])) {
+      if(line[line_pos] == '\n')
+        line_num++;
+      ++line_pos;
+    }
+  }
 
-		/* skip whitespaces */
-		while (isspace(line[line_pos])) {
-			if(line[line_pos] == '\n')
-				line_num++;
-			++line_pos;
-		}
-	}
+  am_free(line);
+  am_free(param);
 
-	am_free(line);
-
-	if(parse_error == 1) {
-		return -1;
-	} else {
-		return 0;
-	}
+  return (parse_error == 1) ? -1 : 0;
 }
 
