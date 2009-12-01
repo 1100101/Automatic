@@ -64,6 +64,6 @@ struct auto_handle {
 
 typedef struct auto_handle auto_handle;
 
-uint8_t am_get_verbose(void);
+/* uint8_t am_get_verbose(void); */
 
 #endif
