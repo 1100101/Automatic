@@ -59,7 +59,6 @@ static char AutoConfigFile[MAXPATHLEN + 1];
 static void session_free(auto_handle *as);
 
 uint8_t closing = 0;
-uint8_t verbose = AM_DEFAULT_VERBOSE;
 uint8_t nofork  = AM_DEFAULT_NOFORK;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,6 +74,7 @@ static void usage(void) {
     "  -v --verbose <level>      Set output level to <level> (default=1)\n"
     "  -c --configfile <path>    Path to configuration file\n"
     "  -o --once                 Quit Automatic after first check of RSS feeds"
+    "  -l --logfile <file>       Log messages to <file>"
     "\n", LONG_VERSION_STRING );
   exit(0);
 }
@@ -82,15 +82,16 @@ static void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
+static void readargs(int argc, char ** argv, char **c_file, char** logfile, uint8_t * nofork,
     uint8_t * verbose, uint8_t *once) {
-  char optstr[] = "fhv:c:o";
+  char optstr[] = "fhv:c:l:o";
   struct option longopts[] = {
     { "verbose",    required_argument, NULL, 'v' },
     { "nodaemon",   no_argument,       NULL, 'f' },
     { "help",       no_argument,       NULL, 'h' },
     { "configfile", required_argument, NULL, 'c' },
     { "once",       no_argument,       NULL, 'o' },
+    { "logfile",    required_argument, NULL, 'l' },
     { NULL, 0, NULL, 0 } };
   int opt;
 
@@ -104,6 +105,9 @@ static void readargs(int argc, char ** argv, char **c_file, uint8_t * nofork,
         break;
       case 'c':
         *c_file = optarg;
+        break;
+      case 'k':
+        *logfile = optarg;
         break;
       case 'o':
         *once = 1;
@@ -126,6 +130,7 @@ static void shutdown_daemon(auto_handle *as) {
   }
   session_free(as);
   SessionID_free();
+  log_close();
   exit(EXIT_SUCCESS);
 }
 
@@ -149,6 +154,8 @@ static int daemonize(void) {
     default:
       _exit(0);
   }
+
+  umask(0); /* change the file mode mask */
 
   if (setsid() < 0) {
     fprintf(stderr, "Error daemonizing (setsid)! %d - %s", errno, strerror(
@@ -439,6 +446,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 int main(int argc, char **argv) {
   auto_handle *session = NULL;
   char *config_file = NULL;
+  char *logfile = NULL;
 #if FROM_XML_FILE
   char *xmldata = NULL;
   int fileLen = 0;
@@ -451,8 +459,9 @@ int main(int argc, char **argv) {
   int status = 1;
   uint8_t first_run = 1;
   uint8_t once = 0;
+  uint8_t verbose = AM_DEFAULT_VERBOSE;
 
-  readargs(argc, argv, &config_file, &nofork, &verbose, &once);
+  readargs(argc, argv, &config_file, &logfile, &nofork, &verbose, &once);
 
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
@@ -481,6 +490,7 @@ int main(int argc, char **argv) {
       shutdown_daemon(session);
     }
     daemonized = 1;
+    log_init(logfile, verbose);
     getlogtime_str(time_str);
     dbg_printf( P_MSG, "%s: Daemon started", time_str);
   }
@@ -524,7 +534,7 @@ int main(int argc, char **argv) {
     startFolderWatch(session->watch_folder);
   } else { /* RSS feed watching process */
     /* determine RPC version */
-  if(session->use_transmission && 
+  if(session->use_transmission &&
      session->transmission_version == AM_TRANSMISSION_1_3) {
       session->rpc_version = getRPCVersion(
             (session->host != NULL) ? session->host : AM_DEFAULT_HOST,

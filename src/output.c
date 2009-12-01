@@ -39,6 +39,26 @@
 
 #include "output.h"
 
+static FILE   *gLogFP = NULL;
+static int8_t  gMsglevel;
+
+uint8_t log_init(const char *logfile, int8_t msglevel) {
+  gMsglevel = msgLevel;
+  if(logfile && *logfile) {
+    if((gLogFP = fopen(logfile, "w")) != NULL) {
+      dbg_printf(P_ERROR, "[log_init] Opening '%s' for logging failed", logfile);
+      return 0; //all good
+    }
+  }
+  return 1; //bad!
+}
+
+uint8_t log_close(void) {
+  if(gLogFP) {
+    fclose(gLogFP);
+    gLogFP = NULL;
+  }
+}
 
 /** \brief Print log information to stdout.
  *
@@ -48,29 +68,26 @@
  *
  * dbg_printf() prints logging and debug information to stdout. The relevance of each
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
- * on the command-line) which dictates what kind of messages are printed and what not.
+ * on the command-line) which dictates which kind of messages are printed and which not.
  */
 
 
 void am_printf( const char * file, int line, debug_type type, const char * format, ... ) {
   va_list va;
   char tmp[MSGSIZE_MAX];
-  FILE *fp = stderr;
+  char timeStr[25];
+  FILE *fp = NULL;
 
-  extern	int8_t verbose;
-
-  if(verbose >= type) {
+  if(gMsglevel >= type) {
     va_start(va, format);
     vsnprintf(tmp, MSGSIZE_MAX, format, va);
     va_end(va);
     tmp[MSGSIZE_MAX-1] = '\0';
 
-    if(fp == NULL) {
-      fp = stderr;
-    }
+    fp = gLogFP ? gLogFP : stderr;
 
     if(type >= P_INFO2) {
-      fprintf(fp,"%s, %d: %s\n", file, line, tmp);
+      fprintf(fp, "[%s] %s, %d: %s\n", getlogtime_str(timeStr), file, line, tmp);
     } else {
       fprintf(fp,"%s\n", tmp);
     }
