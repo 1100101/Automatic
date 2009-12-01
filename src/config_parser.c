@@ -64,7 +64,7 @@ typedef struct am_option am_option_t;
 
 static const char *delim = "²";
 
-static void set_path(char *src, char **dst) {
+static void set_path(const char *src, char **dst) {
   char *tmp;
 
   if(src && strlen(src) < MAXPATHLEN) {
