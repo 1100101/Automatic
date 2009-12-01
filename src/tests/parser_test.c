@@ -41,12 +41,18 @@ static char* l_shorten(const char *str) {
           tmp[tmp_pos++] = delim[i];
       }
       if (str[line_pos] == '"' || str[line_pos] == '\'') {
-        c = str[line_pos];
+        c = str[line_pos]; //remember the quoting type
         ++line_pos;  /* skip quote */
         for (; str[line_pos] != c; /* NOTHING */) {
+          if(line_pos < len && line[line_pos] != '\n' && line[line_pos] != '\0') {
             tmp[tmp_pos++] = str[line_pos++];
+          } else {
+            break;
+          }
         }
-        line_pos++;	/* skip the closing " or ' */
+        if(line[line_pos] == c) {
+          line_pos++; /* skip the closing " or ' */
+        }
       } else {
         for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
           tmp[tmp_pos++] = str[line_pos++];
@@ -67,7 +73,7 @@ int main(void) {
   const char *str = "        \"test1\"\n"
                     "        \"test2\"\n"
                     "        \"test3239823982\"\n"
-                    "        \"test4489278sdjhsd8923\"";
+                    "        \"test4489278sdjhsd8923";
 
   char *x = l_shorten(str);
 
