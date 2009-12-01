@@ -14,7 +14,7 @@
 
 static const char *delim = "²";
 
-static char* l_shorten(const char *str) {
+static char* shorten(const char *str) {
 
     int tmp_pos;
     char c;
@@ -41,17 +41,13 @@ static char* l_shorten(const char *str) {
           tmp[tmp_pos++] = delim[i];
       }
       if (str[line_pos] == '"' || str[line_pos] == '\'') {
-        c = str[line_pos]; //remember the quoting type
+        c = str[line_pos];
         ++line_pos;  /* skip quote */
-        for (; str[line_pos] != c; /* NOTHING */) {
-          if(line_pos < len && line[line_pos] != '\n' && line[line_pos] != '\0') {
-            tmp[tmp_pos++] = str[line_pos++];
-          } else {
-            break;
-          }
+        while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+          tmp[tmp_pos++] = str[line_pos++];
         }
-        if(line[line_pos] == c) {
-          line_pos++; /* skip the closing " or ' */
+        if(str[line_pos] == c) {
+          line_pos++; /* skip the closing quote */
         }
       } else {
         for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
