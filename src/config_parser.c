@@ -62,7 +62,7 @@ typedef struct am_option am_option_t;
 
 /** \endcond */
 
-static const char *delim = "|";
+static const char *delim = "²";
 
 static void set_path(char *src, char **dst) {
   char *tmp;
