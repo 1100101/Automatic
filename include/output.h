@@ -17,13 +17,7 @@
  * 02111-1307, USA.
  */
 
-#define MSGSIZE_MAX 1500
-
-#define TIME_STR_SIZE 30
-
 #define dbg_printf( n, ... ) am_printf( __FILE__, __LINE__, n, __VA_ARGS__ )
-
-
 
 enum debug_type {
 	P_NONE = -1,
@@ -38,6 +32,6 @@ enum debug_type {
 typedef enum debug_type debug_type;
 
 unsigned char log_init(const char *logfile, char msglevel);
-void log_close(void);
+void  log_close(void);
 char* getlogtime_str(char *buf);
-void am_printf( const char * file, int line, debug_type type, const char * format, ... );
+void  am_printf( const char * file, int line, debug_type type, const char * format, ... );

@@ -39,6 +39,9 @@
 
 #include "output.h"
 
+#define MSGSIZE_MAX     5000
+#define TIME_STR_SIZE     25
+
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
 
@@ -70,12 +73,10 @@ void log_close(void) {
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
  * on the command-line) which dictates which kind of messages are printed and which not.
  */
-
-
 void am_printf( const char * file, int line, debug_type type, const char * format, ... ) {
   va_list va;
   char tmp[MSGSIZE_MAX];
-  char timeStr[25];
+  char timeStr[TIME_STR_SIZE];
   FILE *fp = NULL;
 
   if(gMsglevel >= type) {

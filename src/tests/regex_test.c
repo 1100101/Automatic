@@ -24,6 +24,7 @@ void testIsMatch(void) {
 	assert(isRegExMatch("(?!.*abc)def.*", "def ghi") == 1);
 	assert(isRegExMatch("(?!.*abc)def.*", "def ghi") == 1);
 	assert(isRegExMatch("(?!.*abc)def.*", "def ghi") == 1);
+	assert(isRegExMatch("(?!.*720p)Heroes", "Heroes S04E08 720p HDTV x264-CTU [eztv]") == 0);
 	assert(isRegExMatch("def.*ghi", "def xyz (ghi - rst)") == 1);
 	assert(isRegExMatch("def.*ghi", "def xyz (abc - ghi - rst)") == 1);
 	assert(isRegExMatch("def.*abc", "def xyz (ghi - rst)") == 0);
