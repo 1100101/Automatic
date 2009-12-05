@@ -32,7 +32,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 check_PROGRAMS = list_test$(EXEEXT) base64_test$(EXEEXT) \
 	regex_test$(EXEEXT) http_test$(EXEEXT) json_test$(EXEEXT) \
-	prowl_test$(EXEEXT)
+	prowl_test$(EXEEXT) parser_test$(EXEEXT)
 subdir = src/tests
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -68,6 +68,10 @@ am_list_test_OBJECTS = $(am__objects_1) list.$(OBJEXT) \
 	list_test.$(OBJEXT)
 list_test_OBJECTS = $(am_list_test_OBJECTS)
 list_test_LDADD = $(LDADD)
+am_parser_test_OBJECTS = $(am__objects_1) config_parser.$(OBJEXT) \
+	list.$(OBJEXT) rss_feed.$(OBJEXT) parser_test.$(OBJEXT)
+parser_test_OBJECTS = $(am_parser_test_OBJECTS)
+parser_test_LDADD = $(LDADD)
 am__objects_4 = prowl_test-output.$(OBJEXT) prowl_test-utils.$(OBJEXT)
 am_prowl_test_OBJECTS = $(am__objects_4) prowl_test-prowl.$(OBJEXT) \
 	prowl_test-regex.$(OBJEXT) prowl_test-web.$(OBJEXT) \
@@ -93,10 +97,12 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(base64_test_SOURCES) $(http_test_SOURCES) \
 	$(json_test_SOURCES) $(list_test_SOURCES) \
-	$(prowl_test_SOURCES) $(regex_test_SOURCES)
+	$(parser_test_SOURCES) $(prowl_test_SOURCES) \
+	$(regex_test_SOURCES)
 DIST_SOURCES = $(base64_test_SOURCES) $(http_test_SOURCES) \
 	$(json_test_SOURCES) $(list_test_SOURCES) \
-	$(prowl_test_SOURCES) $(regex_test_SOURCES)
+	$(parser_test_SOURCES) $(prowl_test_SOURCES) \
+	$(regex_test_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -236,9 +242,16 @@ prowl_test_SOURCES = $(GLOBAL_SOURCES) \
     $(top_srcdir)/src/web.c            \
     prowl_test.c
 
+parser_test_SOURCES = $(GLOBAL_SOURCES) \
+    $(top_srcdir)/src/config_parser.c  \
+    $(top_srcdir)/src/list.c  \
+    $(top_srcdir)/src/rss_feed.c  \
+    parser_test.c
+
 noinst_HEADERS = \
    $(top_srcdir)/include/output.h   \
    $(top_srcdir)/include/base64.h   \
+   $(top_srcdir)/include/config_parser.h     \
    $(top_srcdir)/include/list.h     \
    $(top_srcdir)/include/utils.h    \
    $(top_srcdir)/include/prowl.h    \
@@ -303,6 +316,9 @@ json_test$(EXEEXT): $(json_test_OBJECTS) $(json_test_DEPENDENCIES)
 list_test$(EXEEXT): $(list_test_OBJECTS) $(list_test_DEPENDENCIES) 
 	@rm -f list_test$(EXEEXT)
 	$(LINK) $(list_test_OBJECTS) $(list_test_LDADD) $(LIBS)
+parser_test$(EXEEXT): $(parser_test_OBJECTS) $(parser_test_DEPENDENCIES) 
+	@rm -f parser_test$(EXEEXT)
+	$(LINK) $(parser_test_OBJECTS) $(parser_test_LDADD) $(LIBS)
 prowl_test$(EXEEXT): $(prowl_test_OBJECTS) $(prowl_test_DEPENDENCIES) 
 	@rm -f prowl_test$(EXEEXT)
 	$(prowl_test_LINK) $(prowl_test_OBJECTS) $(prowl_test_LDADD) $(LIBS)
@@ -318,6 +334,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-http_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_test-output.Po@am__quote@
@@ -333,6 +350,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-prowl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prowl_test-prowl_test.Po@am__quote@
@@ -343,6 +361,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-regex_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_test-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rss_feed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 
 .c.o:
@@ -582,6 +601,34 @@ list.obj: $(top_srcdir)/src/list.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/list.c' object='list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o list.obj `if test -f '$(top_srcdir)/src/list.c'; then $(CYGPATH_W) '$(top_srcdir)/src/list.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/list.c'; fi`
+
+config_parser.o: $(top_srcdir)/src/config_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT config_parser.o -MD -MP -MF $(DEPDIR)/config_parser.Tpo -c -o config_parser.o `test -f '$(top_srcdir)/src/config_parser.c' || echo '$(srcdir)/'`$(top_srcdir)/src/config_parser.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/config_parser.Tpo $(DEPDIR)/config_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/config_parser.c' object='config_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o config_parser.o `test -f '$(top_srcdir)/src/config_parser.c' || echo '$(srcdir)/'`$(top_srcdir)/src/config_parser.c
+
+config_parser.obj: $(top_srcdir)/src/config_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT config_parser.obj -MD -MP -MF $(DEPDIR)/config_parser.Tpo -c -o config_parser.obj `if test -f '$(top_srcdir)/src/config_parser.c'; then $(CYGPATH_W) '$(top_srcdir)/src/config_parser.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/config_parser.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/config_parser.Tpo $(DEPDIR)/config_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/config_parser.c' object='config_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o config_parser.obj `if test -f '$(top_srcdir)/src/config_parser.c'; then $(CYGPATH_W) '$(top_srcdir)/src/config_parser.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/config_parser.c'; fi`
+
+rss_feed.o: $(top_srcdir)/src/rss_feed.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rss_feed.o -MD -MP -MF $(DEPDIR)/rss_feed.Tpo -c -o rss_feed.o `test -f '$(top_srcdir)/src/rss_feed.c' || echo '$(srcdir)/'`$(top_srcdir)/src/rss_feed.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/rss_feed.Tpo $(DEPDIR)/rss_feed.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/rss_feed.c' object='rss_feed.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rss_feed.o `test -f '$(top_srcdir)/src/rss_feed.c' || echo '$(srcdir)/'`$(top_srcdir)/src/rss_feed.c
+
+rss_feed.obj: $(top_srcdir)/src/rss_feed.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rss_feed.obj -MD -MP -MF $(DEPDIR)/rss_feed.Tpo -c -o rss_feed.obj `if test -f '$(top_srcdir)/src/rss_feed.c'; then $(CYGPATH_W) '$(top_srcdir)/src/rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/rss_feed.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/rss_feed.Tpo $(DEPDIR)/rss_feed.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/rss_feed.c' object='rss_feed.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rss_feed.obj `if test -f '$(top_srcdir)/src/rss_feed.c'; then $(CYGPATH_W) '$(top_srcdir)/src/rss_feed.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/rss_feed.c'; fi`
 
 prowl_test-output.o: $(top_srcdir)/src/output.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prowl_test_CFLAGS) $(CFLAGS) -MT prowl_test-output.o -MD -MP -MF $(DEPDIR)/prowl_test-output.Tpo -c -o prowl_test-output.o `test -f '$(top_srcdir)/src/output.c' || echo '$(srcdir)/'`$(top_srcdir)/src/output.c
