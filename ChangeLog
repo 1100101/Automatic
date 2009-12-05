@@ -1,3 +1,9 @@
+2009-12-05 v0.4.4
+      Fixed: Segfault when a regular expression within the "patterns" option was missing the closing
+            double-quote
+      Fixed: Raised the maximum size for a parameter (necessary if you have many (long) patterns)
+
+
 2009-11-23 v0.4.3
 			Fixed: Properly strip HTTP header lines
 			Fixed: Only acquire Transmission RPC version if Transmission is to be used
@@ -10,6 +16,7 @@
           Changed: Reconfigured libcurl a little to deal with infinite timeouts
             Added: External script support. You can now specify an external script that
                    gets fired whenever Automatic finds a match in the RSS feeds
+                   (Contributed by Oolan Zimmer, thank you very much!)
 
 2009-06-10 v0.4.1
             Fixed: New torrents weren't added to the history anymore since Transmission 1.71

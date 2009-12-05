@@ -317,7 +317,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
   line_pos = 0;
 
   param = (char*)am_malloc(MAX_PARAM_LEN + 1);
-  if(param) {
+  if(!param) {
     dbg_printf(P_ERROR, "Can't allocate memory for 'param': %s (%ldb)", strerror(errno), MAX_PARAM_LEN + 1);
     am_free(line);
     return -1;
@@ -449,7 +449,6 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       } else {
         break;
       }
-
     }
     param[param_pos] = '\0';
     dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
