@@ -17,6 +17,8 @@
  * 02111-1307, USA.
  */
 
+#define TIME_STR_SIZE     25
+
 #define dbg_printf( n, ... ) am_printf( __FILE__, __LINE__, n, __VA_ARGS__ )
 
 enum debug_type {

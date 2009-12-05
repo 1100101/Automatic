@@ -209,8 +209,6 @@ static int set_option(auto_handle *as, const char *opt, const char *param, optio
     as->transmission_version = AM_TRANSMISSION_EXTERNAL;
   } else if(!strcmp(opt, "torrent-folder")) {
     set_path(param, &as->torrent_folder);
-  } else if(!strcmp(opt, "watch-folder")) {
-    set_path(param, &as->watch_folder);
   } else if(!strcmp(opt, "statefile")) {
     set_path(param, &as->statefile);
   } else if(!strcmp(opt, "rpc-host")) {

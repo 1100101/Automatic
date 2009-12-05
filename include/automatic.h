@@ -41,7 +41,6 @@ struct auto_handle {
 	char *transmission_path;
 	char *statefile;
 	char *torrent_folder;
-	char *watch_folder;
 	char *auth;
 	char *host;
   char *prowl_key;

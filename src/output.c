@@ -40,7 +40,6 @@
 #include "output.h"
 
 #define MSGSIZE_MAX     5000
-#define TIME_STR_SIZE     25
 
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
