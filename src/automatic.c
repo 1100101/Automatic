@@ -67,7 +67,7 @@ uint8_t nofork  = AM_DEFAULT_NOFORK;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void usage(void) {
-  printf("usage: automatic [-fh] [-v level] [-c file]\n"
+  printf("usage: automatic [-fh] [-v level] [-l logfile] [-c file]\n"
     "\n"
     "Automatic %s\n"
     "\n"
@@ -75,7 +75,7 @@ static void usage(void) {
     "  -h --help                 Display this message\n"
     "  -v --verbose <level>      Set output level to <level> (default=1)\n"
     "  -c --configfile <path>    Path to configuration file\n"
-    "  -o --once                 Quit Automatic after first check of RSS feeds"
+    "  -o --once                 Quit Automatic after first check of RSS feeds\n"
     "  -l --logfile <file>       Log messages to <file>"
     "\n", LONG_VERSION_STRING );
   exit(0);
@@ -108,7 +108,7 @@ static void readargs(int argc, char ** argv, char **c_file, char** logfile, uint
       case 'c':
         *c_file = optarg;
         break;
-      case 'k':
+      case 'l':
         *logfile = optarg;
         break;
       case 'o':
@@ -125,8 +125,7 @@ static void readargs(int argc, char ** argv, char **c_file, char** logfile, uint
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void shutdown_daemon(auto_handle *as) {
-  char time_str[TIME_STR_SIZE];
-  dbg_printf(P_MSG, "%s: Shutting down daemon", getlogtime_str(time_str));
+  dbg_printft(P_MSG, "Shutting down daemon");
   if (as && as->bucket_changed) {
     save_state(as->statefile, as->downloads);
   }
@@ -375,7 +374,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
     if (!has_been_downloaded(session->downloads, item->url) &&
         (isMatch(session->filters, item->name)
         /*|| isMatch(session->filters, item->category)*/) ) {
-      dbg_printf(P_MSG, "Found new download: %s (%s)", item->name, item->url);
+      dbg_printft(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(item->url);
       if(torrent) {
         if(torrent->responseCode == 200) {
@@ -390,8 +389,6 @@ static void processRSSList(auto_handle *session, const simple_list items) {
             if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
               session->bucket_changed = 1;
               save_state(session->statefile, session->downloads);
-            } else {
-              dbg_printf(P_ERROR, "Error: Unable to add matched download to bucket list: %s", item->url);
             }
           } else {  //an error occurred
             if(session->prowl_key_valid) {
@@ -411,7 +408,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-  static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
+static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
   HTTPResponse *response = NULL;
   uint32_t item_count = 0;
   response = getHTTPData(feed->url);
@@ -445,14 +442,22 @@ int main(int argc, char **argv) {
 #endif
   int daemonized = 0;
   char erbuf[100];
-  char time_str[TIME_STR_SIZE];
   NODE *current = NULL;
   uint32_t count = 0;
   uint8_t first_run = 1;
   uint8_t once = 0;
   uint8_t verbose = AM_DEFAULT_VERBOSE;
 
+  /* this sets the log level to the default before anything else is done.
+  ** This way, if any outputting happens in readargs(), it'll be printed
+  ** to stderr.
+  */
+  log_init(NULL, verbose);
+
   readargs(argc, argv, &config_file, &logfile, &nofork, &verbose, &once);
+
+  /* reinitialize the logging with the values from the command line */
+  log_init(logfile, verbose);
 
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
@@ -481,9 +486,7 @@ int main(int argc, char **argv) {
       shutdown_daemon(session);
     }
     daemonized = 1;
-    log_init(logfile, verbose);
-    getlogtime_str(time_str);
-    dbg_printf( P_MSG, "%s: Daemon started", time_str);
+    dbg_printft( P_MSG, "Daemon started");
   }
 
   dbg_printf(P_INFO, "verbose level: %d", verbose);
@@ -532,8 +535,7 @@ int main(int argc, char **argv) {
 
   load_state(session->statefile, &session->downloads);
   while(!closing) {
-    getlogtime_str(time_str);
-    dbg_printf( P_INFO2, "------ %s: Checking for new episodes ------", time_str);
+    dbg_printft( P_INFO, "------ Checking for new episodes ------");
 #if FROM_XML_FILE
     xmldata = readFile("feed.xml", &fileLen);
     if(xmldata != NULL) {

@@ -47,12 +47,19 @@ static int8_t  gMsglevel;
 unsigned char log_init(const char *logfile, char msglevel) {
   gMsglevel = msglevel;
   if(logfile && *logfile) {
-    if((gLogFP = fopen(logfile, "w")) != NULL) {
+    /* Just in case someone decides to call this function twice, make sure the previous log is closed. */
+    if(gLogFP) {
+      log_close();
+    }
+    if((gLogFP = fopen(logfile, "w")) == NULL) {
+      /* this should work just fine: the message level has been set above, and if gLogFP is NULL,
+      ** logging goes to stderr.
+      */
       dbg_printf(P_ERROR, "[log_init] Opening '%s' for logging failed", logfile);
-      return 0; //all good
+      return 1; //bad (well, not really)
     }
   }
-  return 1; //bad!
+  return 1; //all good
 }
 
 void log_close(void) {
@@ -72,7 +79,7 @@ void log_close(void) {
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
  * on the command-line) which dictates which kind of messages are printed and which not.
  */
-void am_printf( const char * file, int line, debug_type type, const char * format, ... ) {
+void am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... ) {
   va_list va;
   char tmp[MSGSIZE_MAX];
   char timeStr[TIME_STR_SIZE];
@@ -84,9 +91,9 @@ void am_printf( const char * file, int line, debug_type type, const char * forma
     va_end(va);
     tmp[MSGSIZE_MAX-1] = '\0';
 
-    fp = gLogFP ? gLogFP : stderr;
+    fp = gLogFP ? gLogFP : stderr; /* log to stderr in case no logfile has been specified */
 
-    if(type >= P_INFO2) {
+    if(P_INFO2 <= type || P_ERROR == type || withTime) {
       fprintf(fp, "[%s] %s, %d: %s\n", getlogtime_str(timeStr), file, line, tmp);
     } else {
       fprintf(fp,"%s\n", tmp);

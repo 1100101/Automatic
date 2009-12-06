@@ -129,12 +129,12 @@ int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
 		if(response) {
 			if(!strncmp(response, "success", 7)) {
 				result = parseRPCVersion(res->data);
+        dbg_printf(P_DBG, "[getRPCVersion] RPC version: %d", result);
 			}
 			am_free((void*)response);
 		}
 		HTTPResponse_free(res);
 	}
-	dbg_printf(P_DBG, "[getRPCVersion] RPC version: %d", result);
 	return result;
 }
 
