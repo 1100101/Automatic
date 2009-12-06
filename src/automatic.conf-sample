@@ -11,7 +11,7 @@ transmission-version = "1.3"
 # For best results, use an absolute path to the executable
 # Executable is passed a single parameter, the name of the .torrent
 # file that was downloaded.  The .torrent file passed to this external
-# program may be removed after the program returns. 
+# program may be removed after the program returns.
 # The program should return exit code 0 for success and non-0 for failure
 # Automatic won't respond to ctrl-C while waiting for this to return
 #
@@ -60,7 +60,7 @@ torrent-folder = "/tmp"
 # path to the file which stores information about already downloaded torrents (so they don't get readded to Transmission)
 statefile = "~/.config/automatic.state"
 
-# Prowl API key. See http://prowl.weks.net for more information
+# Prowl API key. You can use this to send push notifications to an iPhone. See http://prowl.weks.net for more information
 #prowl-apikey = ""
 
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
@@ -68,5 +68,6 @@ statefile = "~/.config/automatic.state"
 # letter-casing does not matter
 
 patterns =  { "Name.of.Something.I.Want.to.Download.Automatically.*HDTV"
-              "Something.else.to.download.*HDTV"
+              "Something.else.to.download.*720p"
+              "(?!.*720p)Some.Video.But.Not.The.HD.Version"
             }
