@@ -300,8 +300,8 @@ static void session_free(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static HTTPResponse* downloadTorrent(const char* url) {
-  return getHTTPData(url);
+static HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
+  return getHTTPData(url, curl_session);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -362,12 +362,17 @@ static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void processRSSList(auto_handle *session, const simple_list items) {
+static void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items) {
 
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
   int8_t result;
+
+  if(!curl_session || !session) {
+    printf("curl_session == NULL || session == NULL\n");
+    abort();
+  }
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
@@ -375,7 +380,7 @@ static void processRSSList(auto_handle *session, const simple_list items) {
         (isMatch(session->filters, item->name)
         /*|| isMatch(session->filters, item->category)*/) ) {
       dbg_printft(P_MSG, "Found new download: %s (%s)", item->name, item->url);
-      torrent = downloadTorrent(item->url);
+      torrent = downloadTorrent(curl_session, item->url);
       if(torrent) {
         if(torrent->responseCode == 200) {
           get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
@@ -410,8 +415,14 @@ static void processRSSList(auto_handle *session, const simple_list items) {
 
 static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
   HTTPResponse *response = NULL;
+  CURL         *curl_session = NULL;
   uint32_t item_count = 0;
-  response = getHTTPData(feed->url);
+  response = getHTTPData(feed->url, curl_session);
+
+  if(!curl_session && response != NULL) {
+    dbg_printf(P_ERROR, "curl_session == NULL but response != NULL");
+    abort();
+  }
 
   if (response) {
     if(response->responseCode == 200 && response->data) {
@@ -420,10 +431,11 @@ static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t f
         session->max_bucket_items += item_count;
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
       }
-      processRSSList(session, items);
+      processRSSList(session, curl_session, items);
       freeList(&items, freeFeedItem);
     }
     HTTPResponse_free(response);
+    closeCURLSession(curl_session);
   }
 
   return item_count;

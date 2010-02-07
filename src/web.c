@@ -379,10 +379,10 @@ static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
 * The function returns \c NULL if the download failed.
 */
 
-HTTPResponse* getHTTPData(const char *url) {
+HTTPResponse* getHTTPData(const char *url, CURL * curl_session) {
   CURLcode      res;
   CURL         *curl_handle = NULL;
-  WebData* data = NULL;
+  WebData      *data = NULL;
   HTTPResponse *resp = NULL;
 
   if(!url) {
@@ -395,14 +395,22 @@ HTTPResponse* getHTTPData(const char *url) {
     return NULL;
   }
 
-  curl_global_init(CURL_GLOBAL_ALL);
-  if( ( curl_handle = am_curl_init(data, NULL, 0) ) ) {
+  if(curl_session == NULL) {
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_session = am_curl_init(data, NULL, 0);
+    dbg_printf(P_MSG, "[getHTTPData] Creating new curl session for '%s' (%p)", url, (void*)curl_session);
+  }
+  curl_handle = curl_session;
+  if(curl_handle) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     res = curl_easy_perform(curl_handle);
-    curl_easy_cleanup(curl_handle);
+    /* curl_easy_cleanup(curl_handle); */
     if(res != 0) {
         dbg_printf(P_ERROR, "[getHTTPData] '%s': %s", url, curl_easy_strerror(res));
     } else {
+      /* Only the very first connection attempt (where curl_session == NULL) should store the session,
+      ** and only the last one should close the session.
+      */
       resp = HTTPResponse_new();
       curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
       dbg_printf(P_INFO2, "[getHTTPData] response code: %ld", resp->responseCode);
@@ -418,7 +426,7 @@ HTTPResponse* getHTTPData(const char *url) {
       }
     }
   } else {
-    dbg_printf(P_ERROR, "am_curl_init() failed");
+    dbg_printf(P_ERROR, "curl_handle is uninitialized!");
     resp = NULL;
   }
   WebData_free(data);
@@ -494,7 +502,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
         } else {
           dbg_printf(P_INFO2, "Error code 409, no session ID");
         }
-        curl_easy_cleanup( curl_handle );
+        closeCURLSession( curl_handle );
         curl_slist_free_all( headers );
         headers = NULL;
         curl_handle = NULL;
@@ -517,9 +525,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
   } while(tries > 0);
 
   /* cleanup */
-  if(curl_handle) {
-    curl_easy_cleanup(curl_handle);
-  }
+  closeCURLSession(curl_handle);
 
   if(headers) {
     curl_slist_free_all(headers);
@@ -530,3 +536,10 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
   return resp;
 }
 
+void closeCURLSession(CURL* curl_handle) {
+  if(curl_handle) {
+    dbg_printf(P_MSG, "[getHTTPData] Closing curl session %p", (void*)curl_handle);
+    curl_easy_cleanup(curl_handle);
+    curl_handle = NULL;
+  }
+}

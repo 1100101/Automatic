@@ -21,22 +21,24 @@
  */
 
 #include <unistd.h>
+#include <curl/curl.h>
 
 #define MAX_URL_LEN 1024
 
 
 struct HTTPResponse {
  char    *data;
- char    *content_filename;     /**< name of the downloaded file determined through header field "Content-Length" */
- size_t   size;      /**< size of the received data determined through header field  "Content-Length" */
+ char    *content_filename; /**< name of the downloaded file determined through header field "Content-Length" */
+ size_t   size;             /**< size of the received data determined through header field  "Content-Length" */
  uint16_t responseCode;
 };
 
 typedef struct HTTPResponse HTTPResponse;
 
-HTTPResponse* getHTTPData(const char *url);
+HTTPResponse* getHTTPData(const char *url, CURL *curl_handle);
 HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
 void     HTTPResponse_free(struct HTTPResponse *response);
 void     SessionID_free(void);
+void     closeCURLSession(CURL* curl_handle);
 
 #endif /* WEB_H_ */

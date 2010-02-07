@@ -19,7 +19,9 @@
 
 #define TIME_STR_SIZE     25
 
-#define dbg_printf( n, ... ) am_printf( __FILE__, __LINE__, n, __VA_ARGS__ )
+#define dbg_printf( n, ... ) am_printf( __FILE__, __LINE__, n, 0, __VA_ARGS__ )
+/* with time */
+#define dbg_printft( n, ... ) am_printf( __FILE__, __LINE__, n, 1, __VA_ARGS__ )
 
 enum debug_type {
 	P_NONE = -1,
@@ -36,4 +38,4 @@ typedef enum debug_type debug_type;
 unsigned char log_init(const char *logfile, char msglevel);
 void  log_close(void);
 char* getlogtime_str(char *buf);
-void  am_printf( const char * file, int line, debug_type type, const char * format, ... );
+void  am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... );

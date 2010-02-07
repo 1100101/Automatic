@@ -94,6 +94,7 @@ static char* createProwlMessage(const char* apikey, const char* event, const cha
   }
   return msg;
 }
+
 int16_t sendProwlNotification(const char* apikey, const char* event, const char* desc) {
   int16_t        result = -1;
   int32_t       data_size;
@@ -127,10 +128,11 @@ int16_t verifyProwlAPIKey(const char* apikey) {
   int16_t result = -1;
   char url[128];
   HTTPResponse *response = NULL;
+  CURL *curl_session = NULL;
 
   if(apikey) {
     snprintf(url, 128, "%s%s?apikey=%s", PROWL_URL, PROWL_VERIFY, apikey);
-    response = getHTTPData(url);
+    response = getHTTPData(url, curl_session);
     if(response) {
       if(response->responseCode == 200) {
         dbg_printf(P_INFO, "Prowl API key '%s' is valid", apikey);
@@ -141,6 +143,7 @@ int16_t verifyProwlAPIKey(const char* apikey) {
       }
       HTTPResponse_free(response);
     }
+    closeCURLSession(curl_session);
   }
   return result;
 }

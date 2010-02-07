@@ -3814,8 +3814,8 @@ fi
 
 
 if test "x$GCC" = "xyes" ; then
-    CFLAGS="-g -Wall -W -Wdeclaration-after-statement -O3 -funroll-loops"
-    CXXFLAGS="-g -Wall -W -O3 -funroll-loops"
+    CFLAGS="-g -Wall -W -Wdeclaration-after-statement -O0 -funroll-loops"
+    CXXFLAGS="-g -Wall -W -O0 -funroll-loops"
 fi
 
 # Find a good install program.  We prefer a C program (faster),
