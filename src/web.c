@@ -337,15 +337,15 @@ void HTTPResponse_free(struct HTTPResponse *response) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
+static CURL* am_curl_init(const char* auth, uint8_t isPost) {
   CURL * curl = curl_easy_init();
 
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L );
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_callback);
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, data);
-  curl_easy_setopt(curl, CURLOPT_WRITEHEADER, data);
+  //~ curl_easy_setopt(curl, CURLOPT_WRITEDATA, data);
+  //~ curl_easy_setopt(curl, CURLOPT_WRITEHEADER, data);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, getenv( "AM_CURL_VERBOSE" ) != NULL);
   curl_easy_setopt(curl, CURLOPT_POST, isPost ? 1 : 0);
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L );
@@ -399,14 +399,17 @@ HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
   dbg_printf(P_MSG, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
   if(session == NULL) {
     curl_global_init(CURL_GLOBAL_ALL);
-    session = am_curl_init(data, NULL, 0);
+    session = am_curl_init(NULL, FALSE);
     dbg_printf(P_MSG, "[getHTTPData] Creating new curl session %p", (void*)session);
     *curl_session = session;
   }
 
   curl_handle = session;
+
   if(curl_handle) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, data);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
     res = curl_easy_perform(curl_handle);
     /* curl_easy_cleanup(curl_handle); */
     if(res != 0) {
@@ -471,7 +474,9 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
     WebData_clear(response_data);
 
     if( curl_handle == NULL) {
-      if( ( curl_handle = am_curl_init(response_data, auth, 1) ) ) {
+      if( ( curl_handle = am_curl_init(auth, TRUE) ) ) {
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, response_data);
         //Transmission-specific options for HTTP POST
         if(strstr(response_data->url, "transmission") != NULL) {
           curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parse_Transmission_response );
