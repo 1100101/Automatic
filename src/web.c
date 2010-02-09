@@ -475,6 +475,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
 
     if( curl_handle == NULL) {
       if( ( curl_handle = am_curl_init(auth, TRUE) ) ) {
+        dbg_printf(P_MSG, "[sendHTTPData] curl_handle=%p", (void*)curl_handle);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, response_data);
         //Transmission-specific options for HTTP POST
@@ -547,7 +548,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
 
 void closeCURLSession(CURL* curl_handle) {
   if(curl_handle) {
-    dbg_printf(P_MSG, "[getHTTPData] Closing curl session %p", (void*)curl_handle);
+    dbg_printf(P_MSG, "[closeCURLSession] Closing curl session %p", (void*)curl_handle);
     curl_easy_cleanup(curl_handle);
     curl_handle = NULL;
   }
