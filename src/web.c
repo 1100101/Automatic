@@ -50,6 +50,8 @@
 
 static char *gSessionID = NULL;
 
+static uint8_t gbGlobalInitDone = FALSE;
+
 /** Generic struct storing data and the size of the contained data */
 struct HTTPData {
   /** \{ */
@@ -398,7 +400,10 @@ HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
 
   dbg_printf(P_MSG, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
   if(session == NULL) {
-    curl_global_init(CURL_GLOBAL_ALL);
+    if(gbGlobalInitDone == FALSE) {
+      curl_global_init(CURL_GLOBAL_ALL);
+      gbGlobalInitDone = TRUE;
+    }
     session = am_curl_init(NULL, FALSE);
     dbg_printf(P_MSG, "[getHTTPData] Creating new curl session %p", (void*)session);
     *curl_session = session;
@@ -474,6 +479,10 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
     WebData_clear(response_data);
 
     if( curl_handle == NULL) {
+      if(gbGlobalInitDone == FALSE) {
+        curl_global_init(CURL_GLOBAL_ALL);
+        gbGlobalInitDone = TRUE;
+      }
       if( ( curl_handle = am_curl_init(auth, TRUE) ) ) {
         dbg_printf(P_MSG, "[sendHTTPData] curl_handle=%p", (void*)curl_handle);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
