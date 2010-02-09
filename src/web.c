@@ -379,9 +379,10 @@ static CURL* am_curl_init(void * data, const char* auth, uint8_t isPost) {
 * The function returns \c NULL if the download failed.
 */
 
-HTTPResponse* getHTTPData(const char *url, CURL * curl_session) {
+HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
   CURLcode      res;
   CURL         *curl_handle = NULL;
+  CURL         *session = *curl_session;
   WebData      *data = NULL;
   HTTPResponse *resp = NULL;
 
@@ -395,12 +396,15 @@ HTTPResponse* getHTTPData(const char *url, CURL * curl_session) {
     return NULL;
   }
 
-  if(curl_session == NULL) {
+  dbg_printf(P_MSG, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
+  if(session == NULL) {
     curl_global_init(CURL_GLOBAL_ALL);
-    curl_session = am_curl_init(data, NULL, 0);
-    dbg_printf(P_MSG, "[getHTTPData] Creating new curl session for '%s' (%p)", url, (void*)curl_session);
+    session = am_curl_init(data, NULL, 0);
+    dbg_printf(P_MSG, "[getHTTPData] Creating new curl session %p", (void*)session);
+    *curl_session = session;
   }
-  curl_handle = curl_session;
+
+  curl_handle = session;
   if(curl_handle) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     res = curl_easy_perform(curl_handle);

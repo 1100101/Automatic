@@ -132,7 +132,7 @@ int16_t verifyProwlAPIKey(const char* apikey) {
 
   if(apikey) {
     snprintf(url, 128, "%s%s?apikey=%s", PROWL_URL, PROWL_VERIFY, apikey);
-    response = getHTTPData(url, curl_session);
+    response = getHTTPData(url, &curl_session);
     if(response) {
       if(response->responseCode == 200) {
         dbg_printf(P_INFO, "Prowl API key '%s' is valid", apikey);
