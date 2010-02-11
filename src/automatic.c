@@ -311,7 +311,7 @@ static HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
 static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname) {
   int8_t success = -1;
-  int8_t result;
+  torrent_id_t tid;
   char url[MAX_URL_LEN];
 
   if (!ah->use_transmission) {
@@ -345,13 +345,13 @@ static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
             (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
-    result = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent);
-    if(result > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+    tid = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent);
+    if(tid > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
       success = 1;
       if(ah->upspeed > 0) {
-        changeUploadSpeed(url, ah->auth, result, ah->upspeed, ah->rpc_version);
+        changeUploadSpeed(url, ah->auth, tid, ah->upspeed, ah->rpc_version);
       }
-    } else if(result == 0) {  /* duplicate torrent */
+    } else if(tid == 0) {  /* duplicate torrent */
       success = 0;
     } else {      /* torrent was not added */
       success = -1;

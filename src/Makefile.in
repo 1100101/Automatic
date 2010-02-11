@@ -32,7 +32,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = automatic$(EXEEXT) automatic-mw$(EXEEXT)
+bin_PROGRAMS = automatic$(EXEEXT)
+noinst_PROGRAMS = automatic-mw$(EXEEXT)
 subdir = src
 DIST_COMMON = $(automatic_mw_HEADERS) $(dist_sysconf_DATA) \
 	$(noinst_HEADERS) $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -45,7 +46,7 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sysconfdir)" \
 	"$(DESTDIR)$(automatic_mwdir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(bin_PROGRAMS)
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_automatic_OBJECTS = automatic.$(OBJEXT) base64.$(OBJEXT) \
 	config_parser.$(OBJEXT) downloads.$(OBJEXT) \
 	feed_item.$(OBJEXT) file.$(OBJEXT) json.$(OBJEXT) \
@@ -331,6 +332,9 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 automatic$(EXEEXT): $(automatic_OBJECTS) $(automatic_DEPENDENCIES) 
 	@rm -f automatic$(EXEEXT)
 	$(LINK) $(automatic_OBJECTS) $(automatic_LDADD) $(LIBS)
@@ -1158,7 +1162,8 @@ maintainer-clean-generic:
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic clean-local mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-local \
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -1219,18 +1224,19 @@ uninstall-am: uninstall-automatic_mwHEADERS uninstall-binPROGRAMS \
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-local ctags ctags-recursive distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-automatic_mwHEADERS install-binPROGRAMS install-data \
-	install-data-am install-dist_sysconfDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am tags tags-recursive uninstall uninstall-am \
+	clean-generic clean-local clean-noinstPROGRAMS ctags \
+	ctags-recursive distclean distclean-compile distclean-generic \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-automatic_mwHEADERS \
+	install-binPROGRAMS install-data install-data-am \
+	install-dist_sysconfDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
 	uninstall-automatic_mwHEADERS uninstall-binPROGRAMS \
 	uninstall-dist_sysconfDATA
 

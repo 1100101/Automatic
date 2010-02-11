@@ -21,6 +21,7 @@
 #include "output.h"
 #include "regex.h"
 #include "utils.h"
+#include "json.h"
 
 /** \brief Create a Transmission-specific JSON packet in order to add a new download
  * to Transmission.
@@ -74,7 +75,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
 	return NULL;
 }
 
-char* makeChangeUpSpeedJSON(uint8_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {
+char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {
 
   char *buf = NULL;
   int buf_size, json_size = 0;
@@ -150,17 +151,17 @@ char* parseResponse(const char* response) {
 }
 
 
-int8_t parseTorrentID(const char* response) {
+torrent_id_t parseTorrentID(const char* response) {
   const char* result_regex = "\"id\":\\s*(\\d+)";
   char *result_str = NULL;
-  int8_t result = -1;
+  torrent_id_t id = -1;
   result_str = getRegExMatch(result_regex, response, 1);
   if(result_str) {
-   result = atoi(result_str);
+   id = atoi(result_str);
    am_free(result_str);
   }
 
-  return result;
+  return id;
 }
 
 

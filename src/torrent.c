@@ -25,14 +25,6 @@
 #include "web.h"
 #include "file.h"
 
-static int is_torrent(const char *str) {
-  if(strstr(str, ".torrent"))
-  return 1;
-  else
-  return 0;
-}
-
-
 /** \brief Determine the filename of a downloaded torrent and create its save path.
  *
  * \param path Full path where the torrent will be saved
@@ -73,7 +65,7 @@ void get_filename(char *path, const char *content_filename, const char* url, con
 }
 
 int8_t changeUploadSpeed(const char* url, const char* auth,
-                         int8_t torrentID, uint16_t upspeed, uint8_t rpcVersion) {
+                         torrent_id_t id, uint16_t upspeed, uint8_t rpcVersion) {
 
   uint32_t packet_size;
   char *packet = NULL;
@@ -81,18 +73,18 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
   const char *response = NULL;
   uint8_t result = 0;
 
-  if(torrentID > -1) {
-    packet = makeChangeUpSpeedJSON(torrentID, upspeed, rpcVersion, &packet_size);
+  if(id > 0) {
+    packet = makeChangeUpSpeedJSON(id, upspeed, rpcVersion, &packet_size);
     if(packet && packet_size > 0) {
       res = sendHTTPData(url, auth, packet, packet_size);
       if(res != NULL && res->responseCode == 200) {
         response = parseResponse(res->data);
         if(response) {
           if(!strncmp(response, "success", 7)) {
-            dbg_printf(P_MSG, "%d: upload limit successfully changed to %dkB/s!", torrentID, upspeed);
+            dbg_printf(P_MSG, "%d: upload limit successfully changed to %dkB/s!", id, upspeed);
             result = 1;
           } else {
-            dbg_printf(P_ERROR, "Error changing upload speed for torrent #%d: %s", torrentID, res);
+            dbg_printf(P_ERROR, "Error changing upload speed for torrent #%d: %s", id, res);
           }
           am_free((void*)response);
         }
@@ -104,12 +96,13 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
   return result;
 }
 
-int8_t uploadTorrent(const void *t_data, int t_size,
+torrent_id_t uploadTorrent(const void *t_data, int t_size,
                      const char *url, const char* auth, uint8_t start) {
   char         *packet = NULL;
   HTTPResponse *res = NULL;
   const char   *response = NULL;
-  uint32_t      packet_size = 0, ret = -1;
+  uint32_t      packet_size = 0;
+  torrent_id_t  ret = -1;
 
   /* packet torrent data in a JSON package */
   packet = makeJSON(t_data, t_size, start, &packet_size);

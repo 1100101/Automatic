@@ -3,9 +3,8 @@ INCLUDES = -I$(top_srcdir)/include/
 
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
-bin_PROGRAMS =   \
-  automatic      \
-	automatic-mw
+bin_PROGRAMS = automatic
+noinst_PROGRAMS = automatic-mw
 
 automatic_SOURCES = \
    $(top_srcdir)/src/automatic.c      \
