@@ -11,7 +11,7 @@
 
 int8_t verbose = P_MSG;
 
-const char* correct_key = "828f3ab6310f1126ca0a4c998abdc9b0b481304c";
+const char* correct_key = "";
 const char* wrong_key = "132ieosdsd";
 
 void testSendNotification(void) {
