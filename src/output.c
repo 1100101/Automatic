@@ -77,7 +77,7 @@ void log_close(void) {
  *
  * dbg_printf() prints logging and debug information to stdout. The relevance of each
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
- * on the command-line) which dictates which kind of messages are printed and which not.
+ * on the command-line) which dictates what kind of messages are printed and which not.
  */
 void am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... ) {
   va_list va;
@@ -92,9 +92,12 @@ void am_printf( const char * file, int line, debug_type type, int withTime, cons
     tmp[MSGSIZE_MAX-1] = '\0';
 
     fp = gLogFP ? gLogFP : stderr; /* log to stderr in case no logfile has been specified */
+    if(withTime) {
+      fprintf(fp, "[%s] ", getlogtime_str(timeStr));
+    }
 
-    if(P_INFO2 <= type || P_ERROR == type || withTime) {
-      fprintf(fp, "[%s] %s, %d: %s\n", getlogtime_str(timeStr), file, line, tmp);
+    if(P_INFO2 >= type || P_ERROR == type) {
+      fprintf(fp, "%s, %d: %s\n", file, line, tmp);
     } else {
       fprintf(fp,"%s\n", tmp);
     }

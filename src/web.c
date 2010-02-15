@@ -398,14 +398,14 @@ HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
     return NULL;
   }
 
-  dbg_printf(P_MSG, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
+  dbg_printf(P_INFO2, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
   if(session == NULL) {
     if(gbGlobalInitDone == FALSE) {
       curl_global_init(CURL_GLOBAL_ALL);
       gbGlobalInitDone = TRUE;
     }
     session = am_curl_init(NULL, FALSE);
-    dbg_printf(P_MSG, "[getHTTPData] Creating new curl session %p", (void*)session);
+    dbg_printf(P_INFO2, "[getHTTPData] Creating new curl session %p", (void*)session);
     *curl_session = session;
   }
 
@@ -484,7 +484,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
         gbGlobalInitDone = TRUE;
       }
       if( ( curl_handle = am_curl_init(auth, TRUE) ) ) {
-        dbg_printf(P_MSG, "[sendHTTPData] curl_handle=%p", (void*)curl_handle);
+        dbg_printf(P_INFO2, "[sendHTTPData] curl_handle=%p", (void*)curl_handle);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, response_data);
         //Transmission-specific options for HTTP POST
@@ -557,7 +557,7 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
 
 void closeCURLSession(CURL* curl_handle) {
   if(curl_handle) {
-    dbg_printf(P_MSG, "[closeCURLSession] Closing curl session %p", (void*)curl_handle);
+    dbg_printf(P_INFO2, "[closeCURLSession] Closing curl session %p", (void*)curl_handle);
     curl_easy_cleanup(curl_handle);
     curl_handle = NULL;
   }
