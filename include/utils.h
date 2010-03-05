@@ -32,6 +32,14 @@
  #endif
 #endif
 
+#ifndef PRIVATE
+ #define PRIVATE static
+#endif
+
+#ifndef PUBLIC
+ #define PUBLIC
+#endif
+
 #include <stdlib.h>
 
 void* am_malloc(size_t size);
