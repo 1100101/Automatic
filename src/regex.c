@@ -107,7 +107,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
       } else {
         int i;
         for (i = 0; i < count; i++) {
-          dbg_printf(P_DBG, "%2d: %.*s", i, stringlist[i]);
+          dbg_printf(P_DBG, "%2d: %s", i, stringlist[i]);
         }
         result_str = am_strdup(stringlist[which_result]);
         pcre_free_substring_list(stringlist);
