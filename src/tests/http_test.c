@@ -21,7 +21,7 @@ void testGetHTTP(void) {
 
 
 	//test invalid URL
-	response = getHTTPData(NULL, curl_session);
+	response = getHTTPData(NULL, &curl_session);
 	assert(response == NULL);
 
 	//test invalid URL 2
