@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
+ * Copyright (C) 2010 Frank Aurich (1100101+automatic@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "rss_feed.h"
+#include "filters.h"
 #include "list.h"
 #include "utils.h"
 #include "output.h"
@@ -44,18 +44,15 @@
 	#include "memwatch.h"
 #endif
 
-
-/* private functions */
-
 /** \brief Create a new RSS feed node
  *
  * \return Pointer to the new feed node
  */
-PUBLIC rss_feed feed_new(void) {
-	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
+PUBLIC am_filter filter_new(void) {
+	am_filter i = (am_filter)am_malloc(sizeof(struct am_filter));
 	if(i != NULL) {
-		i->url = NULL;
-		i->ttl = -1;
+		i->pattern = NULL;
+		i->folder = NULL;
 	}
 	return i;
 }
@@ -67,21 +64,22 @@ PUBLIC rss_feed feed_new(void) {
  *
  * \param list Pointer to a feed list
  */
-void feed_printList(simple_list list) {
+PUBLIC void filter_printList(simple_list list) {
 #ifdef DEBUG
 	NODE *cur = list;
-	rss_feed x;
+	am_filter x;
 
-	dbg_printf(P_INFO2, "------- start -------------\n");
+	dbg_printf(P_INFO2, "\n------- filter list -------------");
 	while(cur != NULL && cur->data != NULL) {
-		dbg_printf(P_INFO2, "data: (%p)\n", (void*)cur->data);
-		x = (rss_feed)cur->data;
-		if(x->url != NULL) {
-			dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
+		dbg_printf(P_INFO2, "data: (%p)", (void*)cur->data);
+		x = (am_filter)cur->data;
+		if(x->pattern != NULL) {
+			dbg_printf(P_INFO2, "  pattern: %s (%p)", x->pattern, (void*)x->pattern);
 		}
-		dbg_printf(P_INFO2, "  ttl: %d\n", x->ttl);
-		/*dbg_printf(P_INFO2, "  count: %d\n", x->count);*/
-		dbg_printf(P_INFO2, "  next: (%p)\n", (void*)cur->next);
+		if(x->folder != NULL) {
+			dbg_printf(P_INFO2, "  folder: %s (%p)", x->folder, (void*)x->folder);
+		}
+		dbg_printf(P_INFO2, "  next: (%p)", (void*)cur->next);
 		cur = cur->next;
 	}
 	dbg_printf(P_INFO2, "------- end  -------------\n");
@@ -93,7 +91,7 @@ void feed_printList(simple_list list) {
  * \param url URL of the new feed
  * \param head Pointer to a list
  */
-PUBLIC void feed_add(rss_feed p, NODE **head) {
+PUBLIC void filter_add(am_filter p, NODE **head) {
   assert(p);
 	addItem(p, head);
 }
@@ -106,14 +104,14 @@ PUBLIC void feed_add(rss_feed p, NODE **head) {
  * This function is to be used in the generic list functions freeList(), removeFirst() and
  * removeLast() as the 2nd parameter to ensure proper memory deallocation.
  */
-void feed_free(void* listItem) {
-	rss_feed x = (rss_feed)listItem;
+PUBLIC void filter_free(void* listItem) {
+	am_filter x = (am_filter)listItem;
 
 	if(x != NULL) {
-		if(x->url != NULL) {
-			am_free(x->url);
-			x->url = NULL;
-		}
+	  am_free(x->pattern);
+		x->pattern = NULL;
+	  am_free(x->folder);
+		x->folder = NULL;
 		am_free(x);
 		x = NULL;
 	}

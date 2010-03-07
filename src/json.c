@@ -34,19 +34,21 @@
  * The function Base64-encodes the given torrent content and encapsulates it in a JSON packet.
  * The packet can then be sent to Transmission via HTTP POST.
  */
-char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_size) {
+char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* folder, uint32_t *setme_size) {
 
 	char *encoded = NULL;
 
 	char *buf = NULL;
-	int buf_size, json_size;
+  char *folder_str = NULL;
+	int buf_size, json_size, folderstr_size;
 	uint32_t enc_size;
 	const char *JSONstr =
 		"{\n"
 		"\"method\": \"torrent-add\",\n"
 		"\"arguments\": {\n"
 		"\"metainfo\": \"%s\",\n"
-    "\"paused\": %d\n"
+    "%s"
+    "\"paused\": %d,\n"
 		"}\n"
 		"}";
 
@@ -55,10 +57,17 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
   encoded = base64_encode(data, tsize, &enc_size);
 
   if(encoded && enc_size > 0) {
+    if(folder && *folder) {
+      folderstr_size = strlen(folder) + 20;
+      folder_str = (char*)am_malloc(folderstr_size);
+      assert(folder_str && "am_malloc(folder_str) failed!");
+      snprintf(folder_str, folderstr_size, "\"download-dir\": \"%s\",\n", folder);
+    }
+
     buf_size = enc_size + strlen(JSONstr) + 10;
     buf = am_malloc(buf_size);
     memset(buf, 0, buf_size);
-    json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 0 : 1);
+    json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 0 : 1, folder_str ? folder_str : "");
     if(json_size < 0 || json_size >= buf_size) {
       dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
       am_free(encoded);
@@ -69,6 +78,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, uint32_t *setme_
     if(setme_size) {
       *setme_size = json_size;
     }
+    am_free(folder_str);
     am_free(encoded);
     return buf;
   }

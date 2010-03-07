@@ -97,7 +97,8 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
 }
 
 torrent_id_t uploadTorrent(const void *t_data, int t_size,
-                     const char *url, const char* auth, uint8_t start) {
+                     const char *url, const char* auth, uint8_t start,
+                     const char* folder) {
   char         *packet = NULL;
   HTTPResponse *res = NULL;
   const char   *response = NULL;
@@ -105,7 +106,7 @@ torrent_id_t uploadTorrent(const void *t_data, int t_size,
   torrent_id_t  ret = -1;
 
   /* packet torrent data in a JSON package */
-  packet = makeJSON(t_data, t_size, start, &packet_size);
+  packet = makeJSON(t_data, t_size, start, folder, &packet_size);
   if(packet && packet_size > 0) {
     /* send JSON package to Transmission via HTTP POST */
     res = sendHTTPData(url, auth, packet, packet_size);

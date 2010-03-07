@@ -25,6 +25,7 @@
 #endif
 
 #include "list.h"
+#include "utils.h"
 
 typedef struct rss_feed* rss_feed;
 typedef struct NODE* rss_feeds;
@@ -39,8 +40,9 @@ struct rss_feed {
 	/** \{ */
 };
 
-void feed_free(void* listItem);
-void feed_printList(simple_list list);
-void feed_add(char *url, NODE **head);
+PUBLIC rss_feed feed_new(void);
+PUBLIC void feed_free(void* listItem);
+PUBLIC void feed_printList(simple_list list);
+PUBLIC void feed_add(rss_feed p, NODE **head);
 
 #endif

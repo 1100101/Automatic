@@ -35,6 +35,7 @@
 
 #include "feed_item.h"
 #include "rss_feed.h"
+#include "filters.h"
 
 /** \cond */
 struct auto_handle {
@@ -46,8 +47,8 @@ struct auto_handle {
   char *prowl_key;
  	char *transmission_external;
 	rss_feeds 	feeds;
+	am_filters  filters;
 	simple_list downloads;
-	simple_list filters;
 	int8_t      rpc_version;
 	uint16_t 		max_bucket_items;
 	uint8_t 		bucket_changed;

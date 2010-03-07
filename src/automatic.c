@@ -57,8 +57,8 @@
 #include "torrent.h"
 #include "prowl.h"
 
-static char AutoConfigFile[MAXPATHLEN + 1];
-static void session_free(auto_handle *as);
+PRIVATE char AutoConfigFile[MAXPATHLEN + 1];
+PRIVATE void session_free(auto_handle *as);
 
 uint8_t closing = 0;
 uint8_t nofork  = AM_DEFAULT_NOFORK;
@@ -66,7 +66,7 @@ uint8_t nofork  = AM_DEFAULT_NOFORK;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void usage(void) {
+PRIVATE void usage(void) {
   printf("usage: automatic [-fh] [-v level] [-l logfile] [-c file]\n"
     "\n"
     "Automatic %s\n"
@@ -84,7 +84,7 @@ static void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void readargs(int argc, char ** argv, char **c_file, char** logfile, uint8_t * nofork,
+PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uint8_t * nofork,
     uint8_t * verbose, uint8_t *once) {
   char optstr[] = "fhv:c:l:o";
   struct option longopts[] = {
@@ -124,7 +124,7 @@ static void readargs(int argc, char ** argv, char **c_file, char** logfile, uint
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void shutdown_daemon(auto_handle *as) {
+PRIVATE void shutdown_daemon(auto_handle *as) {
   dbg_printft(P_MSG, "Shutting down daemon");
   if (as && as->bucket_changed) {
     save_state(as->statefile, as->downloads);
@@ -138,7 +138,7 @@ static void shutdown_daemon(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static int daemonize(void) {
+PRIVATE int daemonize(void) {
   int fd;
 
   if (getppid() == 1) {
@@ -198,7 +198,7 @@ static int daemonize(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void signal_handler(int sig) {
+PRIVATE void signal_handler(int sig) {
   switch (sig) {
     case SIGINT:
     case SIGTERM: {
@@ -212,7 +212,7 @@ static void signal_handler(int sig) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void setup_signals(void) {
+PRIVATE void setup_signals(void) {
   signal(SIGCHLD, SIG_IGN);       /* ignore child       */
   signal(SIGTSTP, SIG_IGN);       /* ignore tty signals */
   signal(SIGTTOU, SIG_IGN);
@@ -262,7 +262,7 @@ auto_handle* session_init(void) {
   ses->transmission_external = NULL;
 
   /* lists */
-  ses->filters               = NULL;
+  ses->filters              = NULL;
   ses->feeds                 = NULL;
   ses->downloads             = NULL;
   ses->upspeed               = -1;
@@ -273,7 +273,7 @@ auto_handle* session_init(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void session_free(auto_handle *as) {
+PRIVATE void session_free(auto_handle *as) {
   if (as) {
     am_free(as->transmission_path);
     as->transmission_path = NULL;
@@ -291,7 +291,7 @@ static void session_free(auto_handle *as) {
     as->transmission_external = NULL;
     freeList(&as->feeds, feed_free);
     freeList(&as->downloads, NULL);
-    freeList(&as->filters, NULL);
+    freeList(&as->filters, filter_free);
     am_free(as);
     as = NULL;
   }
@@ -300,7 +300,7 @@ static void session_free(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
+PRIVATE HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
   dbg_printf(P_INFO2, "[downloadTorrent] url=%s, curl_session=%p", url, (void*)curl_session);
   return getHTTPData(url, &curl_session);
 }
@@ -308,8 +308,8 @@ static HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
-                           uint32_t t_size, const char *fname) {
+PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
+                           uint32_t t_size, const char *fname, const char *folder) {
   int8_t success = -1;
   torrent_id_t tid;
   char url[MAX_URL_LEN];
@@ -345,7 +345,7 @@ static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
   } else if (ah->transmission_version == AM_TRANSMISSION_1_3) {
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
             (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
-    tid = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent);
+    tid = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent, folder);
     if(tid > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
       success = 1;
       if(ah->upspeed > 0) {
@@ -363,11 +363,12 @@ static int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items) {
+PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items) {
 
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
+  char *download_folder = NULL;
   int8_t result;
 
   if(!curl_session || !session) {
@@ -378,7 +379,7 @@ static void processRSSList(auto_handle *session, CURL *curl_session, const simpl
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if (!has_been_downloaded(session->downloads, item->url) &&
-        (isMatch(session->filters, item->name)
+        (isMatch(session->filters, item->name, &download_folder)
         /*|| isMatch(session->filters, item->category)*/) ) {
       dbg_printft(P_MSG, "Found new download: %s (%s)", item->name, item->url);
       torrent = downloadTorrent(curl_session, item->url);
@@ -386,7 +387,7 @@ static void processRSSList(auto_handle *session, CURL *curl_session, const simpl
         if(torrent->responseCode == 200) {
           get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
           /* add torrent to Transmission */
-          result = addTorrentToTM(session, torrent->data, torrent->size, fname);
+          result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
           if( result >= 0) {  //result == 0 -> duplicate torrent
             if(result > 0 && session->prowl_key_valid) {  //torrent was added
               prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
@@ -414,7 +415,7 @@ static void processRSSList(auto_handle *session, CURL *curl_session, const simpl
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
+PRIVATE uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
   HTTPResponse *response = NULL;
   CURL         *curl_session = NULL;
   uint32_t item_count = 0;
@@ -503,6 +504,8 @@ int main(int argc, char **argv) {
     dbg_printft( P_MSG, "Daemon started");
   }
 
+  filter_printList(session->filters);
+
   dbg_printf(P_INFO, "verbose level: %d", verbose);
   dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
   dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);
@@ -520,7 +523,7 @@ int main(int argc, char **argv) {
     dbg_printf(P_INFO, "Prowl API key: %s", session->prowl_key);
   }
   dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
-  dbg_printf(P_MSG,  "Read %d patterns from config file", listCount(session->filters));
+  dbg_printf(P_MSG,  "Read %d filters from config file", listCount(session->filters));
 
 
   if(listCount(session->feeds) == 0) {
@@ -529,7 +532,7 @@ int main(int argc, char **argv) {
   }
 
   if(listCount(session->filters) == 0) {
-    fprintf(stderr, "No patterns specified in automatic.conf!\n");
+    fprintf(stderr, "No filters specified in automatic.conf!\n");
     shutdown_daemon(session);
   }
 

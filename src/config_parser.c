@@ -1,33 +1,33 @@
 /* $Id$
- * $Name$
- * $ProjectName$
- */
+* $Name$
+* $ProjectName$
+*/
 
 /**
- * @file config_parser.c
- *
- * Parse configuration file.
- */
+* @file config_parser.c
+*
+* Parse configuration file.
+*/
 
 
 /*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
+* Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License as
+* published by the Free Software Foundation; either version 2 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but
+* WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+* 02111-1307, USA.
+*/
 
 
 #include <stdlib.h>
@@ -46,6 +46,7 @@
 #include "output.h"
 #include "list.h"
 #include "rss_feed.h"
+#include "filters.h"
 
 
 /** \cond */
@@ -54,7 +55,7 @@
 
 struct am_option {
   const char *name;
-  void *data;
+  void       *data;
   option_type type;
 };
 
@@ -62,24 +63,26 @@ typedef struct am_option am_option_t;
 
 /** \endcond */
 
-static const char *delim = "²";
+PRIVATE const char *delim = "²";
 
-static void set_path(const char *src, char **dst) {
+PRIVATE void set_path(const char *src, char **dst) {
   char *tmp;
 
   if(src && strlen(src) < MAXPATHLEN) {
     tmp = resolve_path(src);
     if(tmp) {
-                  if ( *dst != NULL ) {
-                            am_free(*dst);
-                        }
+      if ( *dst != NULL ) {
+        am_free(*dst);
+      }
       *dst = am_strdup(tmp);
       am_free(tmp);
     }
   }
 }
 
-static int parseUInt(const char *str) {
+
+
+PRIVATE int parseUInt(const char *str) {
   int is_num = 1;
   uint32_t i;
 
@@ -93,80 +96,182 @@ static int parseUInt(const char *str) {
   return -1;
 }
 
-static char* shorten(const char *str) {
+PRIVATE char* shorten(const char *str) {
 
-    int tmp_pos;
-    char c;
-    char *retStr;
-    char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-    uint32_t line_pos = 0, i;
-    uint32_t len = strlen(str);
+  int tmp_pos;
+  char c;
+  char *retStr;
+  char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
+  uint32_t line_pos = 0, i;
+  uint32_t len = strlen(str);
 
-    if(!tmp) {
-      dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
-      return NULL;
+  if(!tmp) {
+    dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+    return NULL;
+  }
+
+  memset(tmp, 0, MAX_PARAM_LEN+1);
+
+  while (isspace(str[line_pos])) {
+    ++line_pos;
+  }
+  tmp_pos = 0;
+  while(line_pos < len) {
+    /* case 1: quoted strings */
+    if(tmp_pos != 0) {
+      for(i = 0; i < strlen(delim); ++i)
+        tmp[tmp_pos++] = delim[i];
     }
-
-    memset(tmp, 0, MAX_PARAM_LEN+1);
-
+    if (str[line_pos] == '"' || str[line_pos] == '\'') {
+      c = str[line_pos];
+      ++line_pos;  /* skip quote */
+      while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+      if(str[line_pos] == c) {
+        line_pos++; /* skip the closing quote */
+      }
+    } else {
+      for(; isprint(str[line_pos]) && /*!isspace(str[line_pos])*/ str[line_pos] != '\n'; /* NOTHING */) {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+    }
     while (isspace(str[line_pos])) {
       ++line_pos;
     }
-    tmp_pos = 0;
-    while(line_pos < len) {
-      /* case 1: quoted strings */
-      if(tmp_pos != 0) {
-        for(i = 0; i < strlen(delim); ++i)
-          tmp[tmp_pos++] = delim[i];
-      }
-      if (str[line_pos] == '"' || str[line_pos] == '\'') {
-        c = str[line_pos];
-        ++line_pos;  /* skip quote */
-        while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
-          tmp[tmp_pos++] = str[line_pos++];
-        }
-        if(str[line_pos] == c) {
-          line_pos++; /* skip the closing quote */
-        }
-      } else {
-        for(; isprint(str[line_pos]) && !isspace(str[line_pos]); /* NOTHING */) {
-          tmp[tmp_pos++] = str[line_pos++];
-        }
-      }
-      while (isspace(str[line_pos])) {
-        ++line_pos;
-      }
-    }
-    tmp[tmp_pos] = '\0';
-    assert(strlen(tmp) < MAX_PARAM_LEN);
-    retStr = am_strdup(tmp);
-    am_free(tmp);
-    return retStr;
+  }
+  tmp[tmp_pos] = '\0';
+  assert(strlen(tmp) < MAX_PARAM_LEN);
+  retStr = am_strdup(tmp);
+  am_free(tmp);
+  return retStr;
 }
 
-static int addToList(NODE **head, const char* strlist) {
+PRIVATE int parseSubOption(char* line, char **option, char **param) {
+  const char *option_delim = "=>";
+  char *saveptr;
+
+  *option = NULL;
+  *param  = NULL;
+
+  assert(line);
+
+  *option = strtok_r(line, option_delim, &saveptr);
+  if(*option) {
+    *param = strtok_r(NULL, option_delim, &saveptr);
+  }
+  if(*option && *param)
+    return 0;
+  else
+    return -1;
+}
+
+PRIVATE int parseFilter(am_filters *patlist, const char* match) {
+  char *line = NULL, *option = NULL, *param = NULL;
+  char *saveptr;
+  char *str = NULL;
+  am_filter filter = NULL;
+  int result = SUCCESS; /* be optimistic */
+  
+  str = shorten(match);
+
+  line = strtok_r(str, delim, &saveptr);
+  while (line) {
+    if(!filter) {
+      filter = filter_new();
+      assert(filter && "filter_new() failed!");
+    }
+    if(parseSubOption(line, &option, &param) == 0) {
+      if(!strncmp(option, "pattern", 7)) {
+        filter->pattern = shorten(param);
+      } else if(!strncmp(option, "folder", 6)) {
+        filter->folder = shorten(param);
+      } else {
+        dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
+      }
+    } else {
+      dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
+    }
+    line = strtok_r(NULL, delim, &saveptr);
+  }
+
+  if(filter && filter->pattern) {
+    filter_add(filter, patlist);
+  } else {
+    dbg_printf(P_ERROR, "Invalid filter: '%s'", str);
+    result = FAILURE;
+  }
+
+  am_free(str);
+  return result;
+}
+
+PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
+  char *line = NULL, *option = NULL, *param = NULL;
+  char *saveptr;
+  char *str = NULL;
+  rss_feed feed = NULL;
+  int result = SUCCESS; /* be optimistic */
+  
+  str = shorten(feedstr);
+
+  line = strtok_r(str, delim, &saveptr);
+  while (line) {
+    if(!feed) {
+      feed = feed_new();
+      assert(feed && "feed_new() failed!");
+    }
+    if(parseSubOption(line, &option, &param) == 0) {
+      if(!strncmp(option, "url", 3)) {
+        feed->url = shorten(param);
+      } else {
+        dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
+      }
+    } else {
+      dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
+    }
+    line = strtok_r(NULL, delim, &saveptr);
+  }
+
+  if(feed && feed->url) {
+    feed_add(feed, feeds);
+  } else {
+    dbg_printf(P_ERROR, "Invalid feed: '%s'", str);
+    result = FAILURE;
+  }
+
+  am_free(str);
+  return result;
+}
+
+PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
   char *p = NULL;
   char *str = NULL;
-
-  assert(*head == NULL);
+  assert(patlist != NULL);
   str = shorten(strlist);
   p = strtok(str, delim);
   while (p) {
-    addItem(am_strdup(p), head);
+    am_filter pat = filter_new();
+    assert(pat != NULL);    
+    pat->pattern = strdup(p);
+    filter_add(pat, patlist);
     p = strtok(NULL, delim);
   }
   am_free(str);
-  return 0;
+  return SUCCESS;
 }
 
-static int getFeeds(NODE **head, const char* strlist) {
+PRIVATE int getFeeds(NODE **head, const char* strlist) {
   char *p = NULL;
   char *str;
   str = shorten(strlist);
-  assert(*head == NULL);
+  assert(head != NULL);
   p = strtok(str, delim);
   while (p) {
-    feed_add(p, head);
+    rss_feed feed = feed_new();
+    assert(feed && "feed_new failed!");
+    feed->url = strdup(p);
+    feed_add(feed, head);
     p = strtok(NULL, delim);
   }
   am_free(str);
@@ -174,21 +279,23 @@ static int getFeeds(NODE **head, const char* strlist) {
 }
 
 /** \brief parse option from configuration file.
- *
- * \param[in,out] as Pointer to session handle
- * \param[in] opt name of option to set (left of =)
- * \param[in] param name of value for option (right of =)
- * \param type type for param, currently unused
- * \return 0 if parsing was successful, -1 if an error occured.  currently
- * always returns 0
- */
-static int set_option(auto_handle *as, const char *opt, const char *param, option_type type) {
+*
+* \param[in,out] as Pointer to session handle
+* \param[in] opt name of option to set (left of =)
+* \param[in] param name of value for option (right of =)
+* \param type type for param, currently unused
+* \return 0 if parsing was successful, -1 if an error occured.  currently
+* always returns 0
+*/
+PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, option_type type) {
   int32_t numval;
   dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
 
   assert(as != NULL);
   if(!strcmp(opt, "url")) {
     getFeeds(&as->feeds, param);
+  } else if(!strcmp(opt, "feed")) {
+    parseFeed(&as->feeds, param);
   } else if(!strcmp(opt, "transmission-home")) {
     set_path(param, &as->transmission_path);
   } else if(!strcmp(opt, "prowl-apikey")) {
@@ -257,7 +364,9 @@ static int set_option(auto_handle *as, const char *opt, const char *param, optio
       dbg_printf(P_ERROR, "Unknown parameter for option '%s': '%s'", opt, param);
     }
   } else if(!strcmp(opt, "patterns")) {
-    addToList(&as->filters, param);
+    addPatterns_old(&as->filters, param);
+  } else if(!strcmp(opt, "filter")) {
+    parseFilter(&as->filters, param);
   } else {
     dbg_printf(P_ERROR, "Unknown option: %s", opt);
   }
@@ -266,11 +375,11 @@ static int set_option(auto_handle *as, const char *opt, const char *param, optio
 
 
 /** \brief parse configuration file.
- *
- * \param[in,out] as Pointer to session handle
- * \param[in] filename Path to the configuration file
- * \return 0 if parsing was successful, -1 if an error occured.
- */
+*
+* \param[in,out] as Pointer to session handle
+* \param[in] filename Path to the configuration file
+* \return 0 if parsing was successful, -1 if an error occured.
+*/
 int parse_config_file(struct auto_handle *as, const char *filename) {
   FILE *fp = NULL;
   char *line = NULL;
@@ -344,13 +453,13 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 
     /* read option */
     for (opt_pos = 0; isprint(line[line_pos]) && line[line_pos] != ' ' &&
-        line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
-      opt[opt_pos++] = line[line_pos++];
-      if (opt_pos >= MAX_OPT_LEN) {
-        dbg_printf(P_ERROR, "too long option at line %d", line_num);
-        parse_error = 1;
-        opt_good = 0;
-      }
+      line[line_pos] != '#' && line[line_pos] != '='; /* NOTHING */) {
+        opt[opt_pos++] = line[line_pos++];
+        if (opt_pos >= MAX_OPT_LEN) {
+          dbg_printf(P_ERROR, "too long option at line %d", line_num);
+          parse_error = 1;
+          opt_good = 0;
+        }
     }
     if (opt_pos == 0 || parse_error == 1) {
       dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
@@ -407,7 +516,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       } else {
         break;
       }
-    /* case 2: multiple items, linebreaks allowed */
+      /* case 2: multiple items, linebreaks allowed */
     } else if (line[line_pos] == '{') {
       dbg_printf(P_INFO2, "reading multiline param", line_num);
       ++line_pos;
@@ -430,17 +539,17 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       } else {
         break;
       }
-    /* Case 3: integers */
+      /* Case 3: integers */
     } else {
       parse_error = 0;
       for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos])
-          && line[line_pos] != '#'; /* NOTHING */) {
-        param[param_pos++] = line[line_pos++];
-        if (param_pos >= MAX_PARAM_LEN) {
-          snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
-          parse_error = 1;
-          break;
-        }
+        && line[line_pos] != '#'; /* NOTHING */) {
+          param[param_pos++] = line[line_pos++];
+          if (param_pos >= MAX_PARAM_LEN) {
+            snprintf(erbuf, sizeof(erbuf), "Option %s has a too long parameter (line %d)\n", opt, line_num);
+            parse_error = 1;
+            break;
+          }
       }
       if(parse_error == 0) {
         type = CONF_TYPE_INT;

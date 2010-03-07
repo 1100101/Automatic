@@ -1,8 +1,8 @@
-#ifndef UTILS_H__
-#define UTILS_H__
+#ifndef FILTERS_H__
+#define FILTERS_H__
 
 /*
- * Copyright (C) 2008 Frank Aurich (1100101+automatic@gmail.com)
+ * Copyright (C) 2010 Frank Aurich (1100101+automatic@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,37 +24,21 @@
 	#include "memwatch.h"
 #endif
 
-#ifndef UNUSED
- #ifdef __GNUC__
-  #define UNUSED __attribute__ ( ( unused ) )
- #else
-  #define UNUSED
- #endif
-#endif
+#include "list.h"
+#include "utils.h"
 
-#ifndef PRIVATE
- #define PRIVATE static
-#endif
+typedef struct am_filter* am_filter;
+typedef struct NODE* am_filters;
 
-#ifndef PUBLIC
- #define PUBLIC
-#endif
+/** struct representing an RSS feed */
+struct am_filter {
+	char    *pattern;  /**< Feed URL */
+  char    *folder;
+};
 
-#define SUCCESS 0
-#define FAILURE -1
+PUBLIC am_filter filter_new(void);
+PUBLIC void filter_free(void* listItem);
+PUBLIC void filter_printList(simple_list list);
+PUBLIC void filter_add(am_filter p, NODE **head);
 
-#include <stdlib.h>
-
-void* am_malloc(size_t size);
-void* am_realloc(void *p, size_t size);
-void am_free(void *p);
-char* am_strdup(const char *str);
-char* am_strndup(const char *str, int len);
-
-char* resolve_path(const char *path);
-char* get_home_folder(void);
-char* get_temp_folder(void);
-char* get_tr_folder(void);
-
-char* strstrip( char * str );
-#endif
+#endif  /* FILTERS_H__ */
