@@ -380,7 +380,7 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
 * The function returns \c NULL if the download failed.
 */
 
-PUBLIC HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
+PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookie, CURL ** curl_session) {
   CURLcode      res;
   CURL         *curl_handle = NULL;
   CURL         *session = *curl_session;
@@ -413,6 +413,9 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, CURL ** curl_session) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, data);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
+    if(cookie && *cookie) {
+      curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookie);
+    }      
     res = curl_easy_perform(curl_handle);
     /* curl_easy_cleanup(curl_handle); */
     if(res != 0) {

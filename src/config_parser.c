@@ -206,6 +206,23 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   return result;
 }
 
+PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
+  char *p = NULL;
+  char *str = NULL;
+  assert(patlist != NULL);
+  str = shorten(strlist);
+  p = strtok(str, delim);
+  while (p) {
+    am_filter pat = filter_new();
+    assert(pat != NULL);    
+    pat->pattern = strdup(p);
+    filter_add(pat, patlist);
+    p = strtok(NULL, delim);
+  }
+  am_free(str);
+  return SUCCESS;
+}
+
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   char *line = NULL, *option = NULL, *param = NULL;
   char *saveptr;
@@ -224,6 +241,8 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     if(parseSubOption(line, &option, &param) == 0) {
       if(!strncmp(option, "url", 3)) {
         feed->url = shorten(param);
+      } else if(!strncmp(option, "cookie", 6)) {
+        feed->cookie = shorten(param);
       } else {
         dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
       }
@@ -244,23 +263,6 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   return result;
 }
 
-PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
-  char *p = NULL;
-  char *str = NULL;
-  assert(patlist != NULL);
-  str = shorten(strlist);
-  p = strtok(str, delim);
-  while (p) {
-    am_filter pat = filter_new();
-    assert(pat != NULL);    
-    pat->pattern = strdup(p);
-    filter_add(pat, patlist);
-    p = strtok(NULL, delim);
-  }
-  am_free(str);
-  return SUCCESS;
-}
-
 PRIVATE int getFeeds(NODE **head, const char* strlist) {
   char *p = NULL;
   char *str;
@@ -269,7 +271,7 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
   p = strtok(str, delim);
   while (p) {
     rss_feed feed = feed_new();
-    assert(feed && "feed_new failed!");
+    assert(feed && "feed_new() failed!");
     feed->url = strdup(p);
     feed_add(feed, head);
     p = strtok(NULL, delim);

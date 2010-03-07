@@ -302,7 +302,7 @@ PRIVATE void session_free(auto_handle *as) {
 
 PRIVATE HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
   dbg_printf(P_INFO2, "[downloadTorrent] url=%s, curl_session=%p", url, (void*)curl_session);
-  return getHTTPData(url, &curl_session);
+  return getHTTPData(url, NULL, &curl_session);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +412,10 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   }
 }
 
+PRIVATE HTTPResponse *getRSSFeed(rss_feed feed, CURL **session) {  
+  return getHTTPData(feed->url, feed->cookie, session);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -419,7 +423,8 @@ PRIVATE uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t 
   HTTPResponse *response = NULL;
   CURL         *curl_session = NULL;
   uint32_t item_count = 0;
-  response = getHTTPData(feed->url, &curl_session);
+  //response = getHTTPData(feed->url, &curl_session);
+  response = getRSSFeed(feed, &curl_session);
   dbg_printf(P_INFO2, "[processFeed] curl_session=%p", (void*)curl_session);
 
   if(!curl_session && response != NULL) {

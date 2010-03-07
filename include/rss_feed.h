@@ -35,6 +35,7 @@ typedef struct NODE* rss_feeds;
 struct rss_feed {
 	/** \{ */
 	char    *url;  /**< Feed URL */
+  char    *cookie;
 	uint32_t ttl;	 /**< Time-To-Live for the specific feed */
 	/* int32_t count;*/ /**< Item count? (UNUSED) */
 	/** \{ */

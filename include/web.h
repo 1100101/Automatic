@@ -43,7 +43,7 @@ struct HTTPResponse {
 
 typedef struct HTTPResponse HTTPResponse;
 
-HTTPResponse* getHTTPData(const char *url, CURL **curl_handle);
+HTTPResponse* getHTTPData(const char *url, const char *cookie, CURL **curl_handle);
 HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, unsigned int data_size);
 void     HTTPResponse_free(struct HTTPResponse *response);
 void     SessionID_free(void);
