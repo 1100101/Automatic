@@ -346,7 +346,7 @@ PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
     snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc",
             (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
     tid = uploadTorrent(t_data, t_size, url, ah->auth, ah->start_torrent, folder);
-    if(tid > 0) {  /* result > 0: torrent ID --> torrent was added to TM */
+    if(tid > 0) {  /* tid > 0: torrent ID --> torrent was added to TM */
       success = 1;
       if(ah->upspeed > 0) {
         changeUploadSpeed(url, ah->auth, tid, ah->upspeed, ah->rpc_version);
@@ -412,8 +412,8 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   }
 }
 
-PRIVATE HTTPResponse *getRSSFeed(rss_feed feed, CURL **session) {  
-  return getHTTPData(feed->url, feed->cookie, session);
+PRIVATE HTTPResponse *getRSSFeed(rss_feed feed, CURL **session) {
+  return getHTTPData(feed->url, feed->cookies, session);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

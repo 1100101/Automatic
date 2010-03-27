@@ -148,18 +148,24 @@ PRIVATE char* shorten(const char *str) {
 }
 
 PRIVATE int parseSubOption(char* line, char **option, char **param) {
-  const char *option_delim = "=>";
-  char *saveptr;
+  const char *subopt_delim = "=>";
+  uint32_t i = 0;
 
   *option = NULL;
   *param  = NULL;
 
-  assert(line);
+  assert(line && *line);
 
-  *option = strtok_r(line, option_delim, &saveptr);
-  if(*option) {
-    *param = strtok_r(NULL, option_delim, &saveptr);
+  while(line[i] != '\0') {
+    if(line[i]   == subopt_delim[0] &&
+       line[i+1] == subopt_delim[1]) {
+      *option = am_strndup(line, i-1);
+      *param  = am_strdup(line + i + strlen(subopt_delim));
+      break;
+    }
+    i++;
   }
+
   if(*option && *param)
     return 0;
   else
@@ -189,6 +195,8 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
       } else {
         dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
       }
+      am_free(option);
+      am_free(param);
     } else {
       dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
     }
@@ -241,11 +249,13 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     if(parseSubOption(line, &option, &param) == 0) {
       if(!strncmp(option, "url", 3)) {
         feed->url = shorten(param);
-      } else if(!strncmp(option, "cookie", 6)) {
-        feed->cookie = shorten(param);
+      } else if(!strncmp(option, "cookies", 6)) {
+        feed->cookies = shorten(param);
       } else {
         dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
       }
+      am_free(option);
+      am_free(param);
     } else {
       dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
     }

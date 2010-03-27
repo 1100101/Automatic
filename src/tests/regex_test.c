@@ -38,7 +38,7 @@ static int test = 0;
     }
 #endif
 
-void testIsMatch(void) {
+void testIsRegexMatch(void) {
   check(isRegExMatch(NULL, NULL) == 0);
   check(isRegExMatch(NULL, "test") == 0);
   check(isRegExMatch("test", NULL) == 0);
@@ -107,7 +107,7 @@ void testGetMatch(void) {
 }
 
 int main(void) {
-  testIsMatch();
+  testIsRegexMatch();
   testGetMatch();
   return 0;
 }

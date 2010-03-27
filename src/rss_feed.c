@@ -55,7 +55,7 @@ PUBLIC rss_feed feed_new(void) {
 	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
 	if(i != NULL) {
 		i->url  = NULL;
-    i->cookie = NULL;
+    i->cookies = NULL;
 		i->ttl = -1;
 	}
 	return i;
@@ -112,7 +112,7 @@ void feed_free(void* listItem) {
 
 	if(x != NULL) {
 		am_free(x->url);
-		am_free(x->cookie);
+		am_free(x->cookies);
 		am_free(x);
 	}
 }

@@ -40,7 +40,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
 
 	char *buf = NULL;
   char *folder_str = NULL;
-	int buf_size, json_size, folderstr_size;
+	int buf_size, json_size, folderstr_size = 0;
 	uint32_t enc_size;
 	const char *JSONstr =
 		"{\n"
@@ -48,13 +48,13 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
 		"\"arguments\": {\n"
 		"\"metainfo\": \"%s\",\n"
     "%s"
-    "\"paused\": %d,\n"
+    "\"paused\": %d\n"
 		"}\n"
 		"}";
 
   *setme_size = 0;
 
-  encoded = base64_encode(data, tsize, &enc_size);
+  encoded = base64_encode((const char*)data, tsize, &enc_size);
 
   if(encoded && enc_size > 0) {
     if(folder && *folder) {
@@ -62,12 +62,13 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
       folder_str = (char*)am_malloc(folderstr_size);
       assert(folder_str && "am_malloc(folder_str) failed!");
       snprintf(folder_str, folderstr_size, "\"download-dir\": \"%s\",\n", folder);
+      dbg_printf(P_INFO, "folder_str: %s", folder_str);
     }
 
-    buf_size = enc_size + strlen(JSONstr) + 10;
-    buf = am_malloc(buf_size);
+    buf_size = enc_size + strlen(JSONstr) + folderstr_size + 10;
+    buf = (char*)am_malloc(buf_size);
     memset(buf, 0, buf_size);
-    json_size = snprintf(buf, buf_size, JSONstr, encoded, start ? 0 : 1, folder_str ? folder_str : "");
+    json_size = snprintf(buf, buf_size, JSONstr, encoded, folder_str ? folder_str : "", start ? 0 : 1);
     if(json_size < 0 || json_size >= buf_size) {
       dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
       am_free(encoded);
@@ -75,6 +76,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
       return NULL;
     }
     buf[json_size] = '\0';
+    dbg_printf(P_INFO, "JSON: %s", buf);
     if(setme_size) {
       *setme_size = json_size;
     }
@@ -82,7 +84,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
     am_free(encoded);
     return buf;
   }
-	return NULL;
+  return NULL;
 }
 
 char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {

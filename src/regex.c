@@ -44,21 +44,21 @@ uint8_t isRegExMatch(const char* pattern, const char* str) {
   uint8_t result = 0;
 
   if(!str || (str && strlen(str) == 0)) {
-    dbg_printf(P_ERROR, "[isMatch] Empty string!");
+    dbg_printf(P_ERROR, "[isRegExMatch] Empty string!");
     return 0;
   }
 
   preg = init_regex(pattern);
 
   if(preg) {
-    dbg_printf(P_DBG, "[isMatch] Text to match against: %s", str);
+    dbg_printf(P_DBG, "[isRegExMatch] Text to match against: %s", str);
     err = pcre_exec(preg, NULL, str, strlen(str), 0, 0, NULL, 0);
-    dbg_printf(P_DBG, "[getMatch] err=%d", err);
+    dbg_printf(P_DBG, "[isRegExMatch] err=%d", err);
     if (!err) { /* regex matches */
       result = 1;
     } else {
       if(err != PCRE_ERROR_NOMATCH) {
-        dbg_printf(P_ERROR, "[isMatch] PCRE error: %d", err);
+        dbg_printf(P_ERROR, "[isRegExMatch] PCRE error: %d", err);
       }
       result = 0;
     }
@@ -86,13 +86,13 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
   int offsets[OVECCOUNT];
 
   if(!str || (str && strlen(str) == 0)) {
-    dbg_printf(P_ERROR, "[getMatch] Empty string!");
+    dbg_printf(P_ERROR, "[getRegExMatch] Empty string!");
     return NULL;
   }
 
   result_preg = init_regex(pattern);
   if(result_preg) {
-    dbg_printf(P_INFO2, "[isMatch] Text to match against: %s (%d byte)", str, strlen(str));
+    dbg_printf(P_INFO2, "[getRegExMatch] Text to match against: %s (%d byte)", str, strlen(str));
     count = pcre_exec(result_preg, NULL, str, strlen(str), 0, 0, offsets, OVECCOUNT);
     if(count > which_result) { /* regex matches */
       //~ int i;
@@ -103,7 +103,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
       //~ result_str = am_strndup(str + offsets[2 * which_result], len);
       //~ dbg_printf(P_DBG, "[getMatch] result: '%s' (%d -> %d)", result_str, offsets[2 * which_result], offsets[2 * which_result + 1]);
       if(pcre_get_substring_list(str, offsets, count, &stringlist) < 0) {
-        dbg_printf(P_ERROR, "[getMatch] Unable to obtain captured strings in regular expression.");
+        dbg_printf(P_ERROR, "[getRegExMatch] Unable to obtain captured strings in regular expression.");
       } else {
       int i;
         for (i = 0; i < count; i++) {
@@ -114,9 +114,9 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
       }
     } else if(count < 0) {
       if(count == PCRE_ERROR_NOMATCH) {
-        dbg_printf(P_DBG, "[getMatch] No match");
+        dbg_printf(P_DBG, "[getRegExMatch] No match");
       } else {
-        dbg_printf(P_ERROR, "[getMatch] regexec error: %d", count);
+        dbg_printf(P_ERROR, "[getRegExMatch] regexec error: %d", count);
       }
     }
     pcre_free(result_preg);

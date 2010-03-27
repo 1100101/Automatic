@@ -67,7 +67,7 @@ typedef struct WebData {
   long       responseCode;     /**< HTTP response code        */
   size_t     content_length;   /**< size of the received data determined through header field "Content-Length" */
   char      *content_filename; /**< name of the downloaded file determined through header field "Content-Length" */
-  HTTPData  *header;           /**< complete header information in a HTTPData object */
+  //HTTPData  *header;           /**< complete header information in a HTTPData object */
   HTTPData  *response;         /**< HTTP response in a HTTPData object */
   /** \} */
 } WebData;
@@ -78,12 +78,11 @@ PUBLIC void SessionID_free(void) {
    gSessionID = NULL;
 }
 
-
 PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
   size_t       line_len = size * nmemb;
-  WebData     *mem = data;
-  const char  *line = ptr;
-  char        *tmp = NULL;
+  WebData     *mem  = (WebData*)data;
+  const char  *line = (const char*)ptr;
+  char        *tmp  = NULL;
   char        *filename = NULL;
   const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+)\"?$";
   int          content_length = 0;
@@ -239,7 +238,7 @@ PRIVATE void WebData_free(struct WebData *data) {
   if(data) {
     am_free(data->url);
     am_free(data->content_filename);
-    HTTPData_free(data->header);
+    //HTTPData_free(data->header);
     HTTPData_free(data->response);
     am_free(data);
     data = NULL;
@@ -265,18 +264,18 @@ PRIVATE struct WebData* WebData_new(const char *url) {
   data->url = NULL;
   data->content_filename = NULL;
   data->content_length = -1;
-  data->header = NULL;
+  //data->header = NULL;
   data->response = NULL;
 
   if(url) {
     data->url = am_strdup((char*)url);
   }
 
-  data->header = HTTPData_new();
-  if(!data->header) {
-    WebData_free(data);
-    return NULL;
-  }
+  //data->header = HTTPData_new();
+  //if(!data->header) {
+  //  WebData_free(data);
+  //  return NULL;
+  //}
 
   data->response = HTTPData_new();
   if(!data->response) {
@@ -294,11 +293,11 @@ PRIVATE void WebData_clear(struct WebData *data) {
   if(data) {
     am_free(data->content_filename);
     data->content_filename = NULL;
-    if(data->header) {
-      am_free(data->header->data);
-      data->header->data = NULL;
-      data->header->size = 0;
-    }
+    //if(data->header) {
+    //  am_free(data->header->data);
+    //  data->header->data = NULL;
+    //  data->header->size = 0;
+    //}
 
     if(data->response) {
       am_free(data->response->data);
@@ -380,7 +379,7 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
 * The function returns \c NULL if the download failed.
 */
 
-PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookie, CURL ** curl_session) {
+PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** curl_session) {
   CURLcode      res;
   CURL         *curl_handle = NULL;
   CURL         *session = *curl_session;
@@ -413,9 +412,11 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookie, CURL ** cu
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, data);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
-    if(cookie && *cookie) {
-      curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookie);
-    }      
+
+    if(cookies && *cookies) {
+      curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookies);
+    }
+
     res = curl_easy_perform(curl_handle);
     /* curl_easy_cleanup(curl_handle); */
     if(res != 0) {

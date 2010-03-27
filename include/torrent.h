@@ -8,7 +8,7 @@
 #ifndef TORRENT_H_
 #define TORRENT_H_
 
-typedef uint32_t torrent_id_t;
+typedef int32_t torrent_id_t;
 
 void get_filename(char *filename, const char *content_filename, const char *url, const char *tm_path);
 torrent_id_t uploadTorrent(const void *t_data, int t_size,

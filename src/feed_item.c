@@ -58,7 +58,7 @@ uint8_t isMatch(const am_filters filters, const char* string, char **folder) {
 	am_filters current_regex = NULL;
   am_filter filter;
 
-  assert(*folder != NULL);
+  assert(folder != NULL);
 
 	current_regex = filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
