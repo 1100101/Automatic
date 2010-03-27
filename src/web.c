@@ -40,6 +40,7 @@
 #include "web.h"
 #include "output.h"
 #include "regex.h"
+#include "urlcode.h"
 #include "utils.h"
 
 
@@ -383,6 +384,7 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
   CURLcode      res;
   CURL         *curl_handle = NULL;
   CURL         *session = *curl_session;
+  char         *escaped_url = NULL;
   WebData      *data = NULL;
   HTTPResponse *resp = NULL;
 
@@ -409,7 +411,9 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
   curl_handle = session;
 
   if(curl_handle) {
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+    escaped_url = url_encode_whitespace(url);
+    assert(escaped_url);
+    curl_easy_setopt(curl_handle, CURLOPT_URL, escaped_url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, data);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
 
@@ -439,6 +443,7 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
         resp->content_filename = am_strdup(data->content_filename);
       }
     }
+    am_free(escaped_url);
   } else {
     dbg_printf(P_ERROR, "curl_handle is uninitialized!");
     resp = NULL;

@@ -23,6 +23,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/state.c          \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
+   $(top_srcdir)/src/urlcode.c        \
    $(top_srcdir)/src/utils.c          \
    $(top_srcdir)/src/web.c            \
    $(top_srcdir)/src/xml_parser.c
@@ -44,6 +45,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/state.h          \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
+   $(top_srcdir)/include/urlcode.h        \
    $(top_srcdir)/include/utils.h          \
    $(top_srcdir)/include/web.h            \
    $(top_srcdir)/include/xml_parser.h
