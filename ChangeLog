@@ -1,3 +1,7 @@
+2010-03-07 v0.5.1
+      Fixed: The regular expression for extracting a torrent's filename from the HTTP response header
+             returned a string 1 character longer than the actual filename.
+
 2010-02-11 v.0.5
       Fixed:   Don't stop working when Transmission torrend IDs are larger than 128
       Changed: New commandline parameter -l/--log to log to a file (while in daemon mode)
@@ -6,7 +10,6 @@
       Fixed: Segfault when a regular expression within the "patterns" option was missing the closing
             double-quote
       Fixed: Raised the maximum size for a parameter (necessary if you have many (long) patterns)
-
 
 2009-11-23 v0.4.3
 			Fixed: Properly strip HTTP header lines

@@ -109,26 +109,30 @@ torrent_id_t uploadTorrent(const void *t_data, int t_size,
   if(packet && packet_size > 0) {
     /* send JSON package to Transmission via HTTP POST */
     res = sendHTTPData(url, auth, packet, packet_size);
-    if(res != NULL && res->responseCode == 200) {
-      response = parseResponse(res->data);
-      if(response != NULL) {
-        if(!strncmp(response, "success", 7)) {
-          dbg_printf(P_MSG, "Torrent upload successful!");
-          ret = parseTorrentID(res->data);
-        } else if(!strncmp(response, "duplicate torrent", 17)) {
-          dbg_printf(P_MSG, "Torrent has already been added to Transmission");
-          ret = 0;
+    if(res != NULL) {
+      if(res->responseCode == 200) {
+        response = parseResponse(res->data);
+        if(response != NULL) {
+          if(!strncmp(response, "success", 7)) {
+            dbg_printf(P_MSG, "Torrent upload successful!");
+            ret = parseTorrentID(res->data);
+          } else if(!strncmp(response, "duplicate torrent", 17)) {
+            dbg_printf(P_MSG, "Torrent has already been added to Transmission");
+            ret = 0;
+          } else {
+            dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
+            ret = -1;
+          }
+          am_free((void*)response);
         } else {
-          dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
-          ret = -1;
+          dbg_printf(P_ERROR, "parseResponse() failed!");
         }
-        am_free((void*)response);
+        HTTPResponse_free(res);
       } else {
-        dbg_printf(P_ERROR, "parseResponse() failed!");
+        dbg_printf(P_ERROR, "sendHTTPData() failed! (Response Code: %d)", res->responseCode);
       }
-      HTTPResponse_free(res);
     } else {
-      dbg_printf(P_ERROR, "sendHTTPData() failed!");
+      dbg_printf(P_ERROR, "sendHTTPData() failed! (resp == NULL)");
     }
     am_free(packet);
   }
