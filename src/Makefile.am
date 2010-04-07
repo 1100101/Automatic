@@ -4,7 +4,10 @@ INCLUDES = -I$(top_srcdir)/include/
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
 bin_PROGRAMS = automatic
-noinst_PROGRAMS = automatic-mw
+
+if DBG_BUILD
+  noinst_PROGRAMS = automatic-mw
+endif
 
 automatic_SOURCES = \
    $(top_srcdir)/src/automatic.c      \
@@ -54,14 +57,15 @@ automatic_mw_SOURCES =  \
    $(automatic_SOURCES) \
 	 $(top_srcdir)/src/memwatch.c
 
-automatic_mw_HEADERS =  \
-   $(noinst_HEADERS)    \
-   $(top_srcdir)/include/memwatch.h
+if DBG_BUILD
+  automatic_mw_HEADERS =  \
+     $(noinst_HEADERS)    \
+     $(top_srcdir)/include/memwatch.h
 
+  automatic_mwdir = .
 
-automatic_mwdir = .
-
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -g
+  automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
+endif
 
 dist_sysconf_DATA = automatic.conf-sample
 

@@ -55,7 +55,7 @@ PUBLIC rss_feed feed_new(void) {
 	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
 	if(i != NULL) {
 		i->url  = NULL;
-    i->cookies = NULL;
+        i->cookies = NULL;
 		i->ttl = -1;
 	}
 	return i;
@@ -95,8 +95,8 @@ void feed_printList(simple_list list) {
  * \param head Pointer to a list
  */
 PUBLIC void feed_add(rss_feed p, NODE **head) {
-  assert(p);
-	addItem(p, head);
+    assert(p);
+    addItem(p, head);
 }
 
 

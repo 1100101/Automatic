@@ -34,9 +34,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = automatic$(EXEEXT)
-noinst_PROGRAMS = automatic-mw$(EXEEXT)
+@DBG_BUILD_TRUE@noinst_PROGRAMS = automatic-mw$(EXEEXT)
 subdir = src
-DIST_COMMON = $(automatic_mw_HEADERS) $(dist_sysconf_DATA) \
+DIST_COMMON = $(am__automatic_mw_HEADERS_DIST) $(dist_sysconf_DATA) \
 	$(noinst_HEADERS) $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -106,6 +106,20 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 dist_sysconfDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(dist_sysconf_DATA)
+am__automatic_mw_HEADERS_DIST = $(top_srcdir)/include/automatic.h \
+	$(top_srcdir)/include/base64.h \
+	$(top_srcdir)/include/config_parser.h \
+	$(top_srcdir)/include/downloads.h \
+	$(top_srcdir)/include/feed_item.h $(top_srcdir)/include/file.h \
+	$(top_srcdir)/include/json.h $(top_srcdir)/include/list.h \
+	$(top_srcdir)/include/output.h $(top_srcdir)/include/filters.h \
+	$(top_srcdir)/include/prowl.h $(top_srcdir)/include/regex.h \
+	$(top_srcdir)/include/rss_feed.h $(top_srcdir)/include/state.h \
+	$(top_srcdir)/include/torrent.h \
+	$(top_srcdir)/include/transmission.h \
+	$(top_srcdir)/include/urlcode.h $(top_srcdir)/include/utils.h \
+	$(top_srcdir)/include/web.h $(top_srcdir)/include/xml_parser.h \
+	$(top_srcdir)/include/memwatch.h
 automatic_mwHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(automatic_mw_HEADERS) $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -264,12 +278,12 @@ automatic_mw_SOURCES = \
    $(automatic_SOURCES) \
 	 $(top_srcdir)/src/memwatch.c
 
-automatic_mw_HEADERS = \
-   $(noinst_HEADERS)    \
-   $(top_srcdir)/include/memwatch.h
+@DBG_BUILD_TRUE@automatic_mw_HEADERS = \
+@DBG_BUILD_TRUE@     $(noinst_HEADERS)    \
+@DBG_BUILD_TRUE@     $(top_srcdir)/include/memwatch.h
 
-automatic_mwdir = .
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -g
+@DBG_BUILD_TRUE@automatic_mwdir = .
+@DBG_BUILD_TRUE@automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
 dist_sysconf_DATA = automatic.conf-sample
 LDADD = \
     $(LIBCURL_LIBS) \

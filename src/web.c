@@ -418,7 +418,11 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
     curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
 
     if(cookies && *cookies) {
+      /* if there's an explicit cookie string, use it */
       curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookies);
+    } else {
+      /* otherwise, enable cookie-handling since there might be cookies defined within the URL */
+      curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
     }
 
     res = curl_easy_perform(curl_handle);
