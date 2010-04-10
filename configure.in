@@ -12,10 +12,23 @@ AM_INIT_AUTOMAKE([1.10 foreign])
 # Checks for c compiler.
 AC_PROG_CC
 AC_PROG_CXX
-if test "x$GCC" = "xyes" ; then
+
+PKG_PROG_PKG_CONFIG()
+if test m4_substr(version_number,3,1) != "x"; then
+  supported_build=yes
+  if test "x$GCC" = "xyes" ; then
+      CFLAGS="-Wdeclaration-after-statement -O3 -funroll-loops"
+      CXXFLAGS="-O3 -funroll-loops"
+  fi
+  CPPFLAGS="$CPPFLAGS -DNDEBUG"
+else
+  supported_build=no
+  if test "x$GCC" = "xyes" ; then
     CFLAGS="-g -Wall -W -Wdeclaration-after-statement -O0 -funroll-loops"
     CXXFLAGS="-g -Wall -W -O0 -funroll-loops"
+  fi
 fi
+AM_CONDITIONAL(DBG_BUILD, test "x$supported_build" = "xno")
 
 AC_PROG_INSTALL
 AC_CHECK_TOOL(STRIP, strip)

@@ -34,9 +34,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = automatic$(EXEEXT)
-noinst_PROGRAMS = automatic-mw$(EXEEXT)
+@DBG_BUILD_TRUE@noinst_PROGRAMS = automatic-mw$(EXEEXT)
 subdir = src
-DIST_COMMON = $(automatic_mw_HEADERS) $(dist_sysconf_DATA) \
+DIST_COMMON = $(am__automatic_mw_HEADERS_DIST) $(dist_sysconf_DATA) \
 	$(noinst_HEADERS) $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -54,7 +54,8 @@ am_automatic_OBJECTS = automatic.$(OBJEXT) base64.$(OBJEXT) \
 	list.$(OBJEXT) output.$(OBJEXT) filters.$(OBJEXT) \
 	prowl.$(OBJEXT) regex.$(OBJEXT) rss_feed.$(OBJEXT) \
 	state.$(OBJEXT) torrent.$(OBJEXT) transmission.$(OBJEXT) \
-	utils.$(OBJEXT) web.$(OBJEXT) xml_parser.$(OBJEXT)
+	urlcode.$(OBJEXT) utils.$(OBJEXT) web.$(OBJEXT) \
+	xml_parser.$(OBJEXT)
 automatic_OBJECTS = $(am_automatic_OBJECTS)
 automatic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -71,8 +72,8 @@ am__objects_1 = automatic_mw-automatic.$(OBJEXT) \
 	automatic_mw-rss_feed.$(OBJEXT) automatic_mw-state.$(OBJEXT) \
 	automatic_mw-torrent.$(OBJEXT) \
 	automatic_mw-transmission.$(OBJEXT) \
-	automatic_mw-utils.$(OBJEXT) automatic_mw-web.$(OBJEXT) \
-	automatic_mw-xml_parser.$(OBJEXT)
+	automatic_mw-urlcode.$(OBJEXT) automatic_mw-utils.$(OBJEXT) \
+	automatic_mw-web.$(OBJEXT) automatic_mw-xml_parser.$(OBJEXT)
 am_automatic_mw_OBJECTS = $(am__objects_1) \
 	automatic_mw-memwatch.$(OBJEXT)
 automatic_mw_OBJECTS = $(am_automatic_mw_OBJECTS)
@@ -105,6 +106,20 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 dist_sysconfDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(dist_sysconf_DATA)
+am__automatic_mw_HEADERS_DIST = $(top_srcdir)/include/automatic.h \
+	$(top_srcdir)/include/base64.h \
+	$(top_srcdir)/include/config_parser.h \
+	$(top_srcdir)/include/downloads.h \
+	$(top_srcdir)/include/feed_item.h $(top_srcdir)/include/file.h \
+	$(top_srcdir)/include/json.h $(top_srcdir)/include/list.h \
+	$(top_srcdir)/include/output.h $(top_srcdir)/include/filters.h \
+	$(top_srcdir)/include/prowl.h $(top_srcdir)/include/regex.h \
+	$(top_srcdir)/include/rss_feed.h $(top_srcdir)/include/state.h \
+	$(top_srcdir)/include/torrent.h \
+	$(top_srcdir)/include/transmission.h \
+	$(top_srcdir)/include/urlcode.h $(top_srcdir)/include/utils.h \
+	$(top_srcdir)/include/web.h $(top_srcdir)/include/xml_parser.h \
+	$(top_srcdir)/include/memwatch.h
 automatic_mwHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(automatic_mw_HEADERS) $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -232,6 +247,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/state.c          \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
+   $(top_srcdir)/src/urlcode.c        \
    $(top_srcdir)/src/utils.c          \
    $(top_srcdir)/src/web.c            \
    $(top_srcdir)/src/xml_parser.c
@@ -253,6 +269,7 @@ noinst_HEADERS = \
    $(top_srcdir)/include/state.h          \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
+   $(top_srcdir)/include/urlcode.h        \
    $(top_srcdir)/include/utils.h          \
    $(top_srcdir)/include/web.h            \
    $(top_srcdir)/include/xml_parser.h
@@ -261,12 +278,12 @@ automatic_mw_SOURCES = \
    $(automatic_SOURCES) \
 	 $(top_srcdir)/src/memwatch.c
 
-automatic_mw_HEADERS = \
-   $(noinst_HEADERS)    \
-   $(top_srcdir)/include/memwatch.h
+@DBG_BUILD_TRUE@automatic_mw_HEADERS = \
+@DBG_BUILD_TRUE@     $(noinst_HEADERS)    \
+@DBG_BUILD_TRUE@     $(top_srcdir)/include/memwatch.h
 
-automatic_mwdir = .
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -g
+@DBG_BUILD_TRUE@automatic_mwdir = .
+@DBG_BUILD_TRUE@automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
 dist_sysconf_DATA = automatic.conf-sample
 LDADD = \
     $(LIBCURL_LIBS) \
@@ -370,6 +387,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-state.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-torrent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-transmission.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-urlcode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-web.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/automatic_mw-xml_parser.Po@am__quote@
@@ -388,6 +406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torrent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transmission.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/urlcode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/web.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml_parser.Po@am__quote@
@@ -629,6 +648,20 @@ transmission.obj: $(top_srcdir)/src/transmission.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/transmission.c' object='transmission.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transmission.obj `if test -f '$(top_srcdir)/src/transmission.c'; then $(CYGPATH_W) '$(top_srcdir)/src/transmission.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/transmission.c'; fi`
+
+urlcode.o: $(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT urlcode.o -MD -MP -MF $(DEPDIR)/urlcode.Tpo -c -o urlcode.o `test -f '$(top_srcdir)/src/urlcode.c' || echo '$(srcdir)/'`$(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/urlcode.Tpo $(DEPDIR)/urlcode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/urlcode.c' object='urlcode.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o urlcode.o `test -f '$(top_srcdir)/src/urlcode.c' || echo '$(srcdir)/'`$(top_srcdir)/src/urlcode.c
+
+urlcode.obj: $(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT urlcode.obj -MD -MP -MF $(DEPDIR)/urlcode.Tpo -c -o urlcode.obj `if test -f '$(top_srcdir)/src/urlcode.c'; then $(CYGPATH_W) '$(top_srcdir)/src/urlcode.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/urlcode.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/urlcode.Tpo $(DEPDIR)/urlcode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/urlcode.c' object='urlcode.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o urlcode.obj `if test -f '$(top_srcdir)/src/urlcode.c'; then $(CYGPATH_W) '$(top_srcdir)/src/urlcode.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/urlcode.c'; fi`
 
 utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT utils.o -MD -MP -MF $(DEPDIR)/utils.Tpo -c -o utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c
@@ -895,6 +928,20 @@ automatic_mw-transmission.obj: $(top_srcdir)/src/transmission.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/transmission.c' object='automatic_mw-transmission.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-transmission.obj `if test -f '$(top_srcdir)/src/transmission.c'; then $(CYGPATH_W) '$(top_srcdir)/src/transmission.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/transmission.c'; fi`
+
+automatic_mw-urlcode.o: $(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-urlcode.o -MD -MP -MF $(DEPDIR)/automatic_mw-urlcode.Tpo -c -o automatic_mw-urlcode.o `test -f '$(top_srcdir)/src/urlcode.c' || echo '$(srcdir)/'`$(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-urlcode.Tpo $(DEPDIR)/automatic_mw-urlcode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/urlcode.c' object='automatic_mw-urlcode.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-urlcode.o `test -f '$(top_srcdir)/src/urlcode.c' || echo '$(srcdir)/'`$(top_srcdir)/src/urlcode.c
+
+automatic_mw-urlcode.obj: $(top_srcdir)/src/urlcode.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-urlcode.obj -MD -MP -MF $(DEPDIR)/automatic_mw-urlcode.Tpo -c -o automatic_mw-urlcode.obj `if test -f '$(top_srcdir)/src/urlcode.c'; then $(CYGPATH_W) '$(top_srcdir)/src/urlcode.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/urlcode.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/automatic_mw-urlcode.Tpo $(DEPDIR)/automatic_mw-urlcode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/urlcode.c' object='automatic_mw-urlcode.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o automatic_mw-urlcode.obj `if test -f '$(top_srcdir)/src/urlcode.c'; then $(CYGPATH_W) '$(top_srcdir)/src/urlcode.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/urlcode.c'; fi`
 
 automatic_mw-utils.o: $(top_srcdir)/src/utils.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(automatic_mw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT automatic_mw-utils.o -MD -MP -MF $(DEPDIR)/automatic_mw-utils.Tpo -c -o automatic_mw-utils.o `test -f '$(top_srcdir)/src/utils.c' || echo '$(srcdir)/'`$(top_srcdir)/src/utils.c

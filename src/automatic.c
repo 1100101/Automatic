@@ -43,19 +43,19 @@
 #include <sys/stat.h>
 #include <fcntl.h>     /* open */
 
-#include "version.h"
-#include "web.h"
-#include "output.h"
 #include "config_parser.h"
-#include "xml_parser.h"
-#include "state.h"
-#include "utils.h"
+#include "downloads.h"
 #include "feed_item.h"
 #include "file.h"
-#include "downloads.h"
-#include "transmission.h"
-#include "torrent.h"
+#include "output.h"
 #include "prowl.h"
+#include "state.h"
+#include "torrent.h"
+#include "transmission.h"
+#include "utils.h"
+#include "version.h"
+#include "web.h"
+#include "xml_parser.h"
 
 PRIVATE char AutoConfigFile[MAXPATHLEN + 1];
 PRIVATE void session_free(auto_handle *as);
@@ -532,12 +532,12 @@ int main(int argc, char **argv) {
 
 
   if(listCount(session->feeds) == 0) {
-    fprintf(stderr, "No feed URL specified in automatic.conf!\n");
+    dbg_printf(P_ERROR, "No feed URL specified in automatic.conf!\n");
     shutdown_daemon(session);
   }
 
   if(listCount(session->filters) == 0) {
-    fprintf(stderr, "No filters specified in automatic.conf!\n");
+    dbg_printf(P_ERROR, "No filters specified in automatic.conf!\n");
     shutdown_daemon(session);
   }
 

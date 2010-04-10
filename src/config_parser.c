@@ -41,12 +41,13 @@
 #include <sys/param.h>
 
 #include "automatic.h"
-#include "utils.h"
 #include "config_parser.h"
-#include "output.h"
-#include "list.h"
-#include "rss_feed.h"
 #include "filters.h"
+#include "list.h"
+#include "output.h"
+#include "regex.h"
+#include "rss_feed.h"
+#include "utils.h"
 
 
 /** \cond */
@@ -79,8 +80,6 @@ PRIVATE void set_path(const char *src, char **dst) {
     }
   }
 }
-
-
 
 PRIVATE int parseUInt(const char *str) {
   int is_num = 1;
@@ -178,7 +177,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *str = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
-  
+
   str = shorten(match);
 
   line = strtok_r(str, delim, &saveptr);
@@ -222,7 +221,7 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
   p = strtok(str, delim);
   while (p) {
     am_filter pat = filter_new();
-    assert(pat != NULL);    
+    assert(pat != NULL);
     pat->pattern = strdup(p);
     filter_add(pat, patlist);
     p = strtok(NULL, delim);
@@ -231,13 +230,21 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
   return SUCCESS;
 }
 
+PRIVATE void parseCookiesFromURL(rss_feed feed) {
+  const char* result_regex = "\\?:COOKIE:(.+)";
+
+  assert(feed && feed->url && *feed->url);
+
+  feed->cookies = getRegExMatch(result_regex, feed->url, 1);
+}
+
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   char *line = NULL, *option = NULL, *param = NULL;
   char *saveptr;
   char *str = NULL;
   rss_feed feed = NULL;
   int result = SUCCESS; /* be optimistic */
-  
+
   str = shorten(feedstr);
 
   line = strtok_r(str, delim, &saveptr);
@@ -262,7 +269,12 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     line = strtok_r(NULL, delim, &saveptr);
   }
 
+
   if(feed && feed->url) {
+    /* Maybe the cookies are encoded within the URL */
+    if(feed->cookies == NULL) {
+      parseCookiesFromURL(feed);
+    }
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", str);
@@ -283,6 +295,8 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
     rss_feed feed = feed_new();
     assert(feed && "feed_new() failed!");
     feed->url = strdup(p);
+    /* Maybe the cookies are encoded within the URL */
+    parseCookiesFromURL(feed);
     feed_add(feed, head);
     p = strtok(NULL, delim);
   }

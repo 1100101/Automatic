@@ -4,7 +4,10 @@ INCLUDES = -I$(top_srcdir)/include/
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
 bin_PROGRAMS = automatic
-noinst_PROGRAMS = automatic-mw
+
+if DBG_BUILD
+  noinst_PROGRAMS = automatic-mw
+endif
 
 automatic_SOURCES = \
    $(top_srcdir)/src/automatic.c      \
@@ -23,6 +26,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/state.c          \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
+   $(top_srcdir)/src/urlcode.c        \
    $(top_srcdir)/src/utils.c          \
    $(top_srcdir)/src/web.c            \
    $(top_srcdir)/src/xml_parser.c
@@ -44,6 +48,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/state.h          \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
+   $(top_srcdir)/include/urlcode.h        \
    $(top_srcdir)/include/utils.h          \
    $(top_srcdir)/include/web.h            \
    $(top_srcdir)/include/xml_parser.h
@@ -52,14 +57,15 @@ automatic_mw_SOURCES =  \
    $(automatic_SOURCES) \
 	 $(top_srcdir)/src/memwatch.c
 
-automatic_mw_HEADERS =  \
-   $(noinst_HEADERS)    \
-   $(top_srcdir)/include/memwatch.h
+if DBG_BUILD
+  automatic_mw_HEADERS =  \
+     $(noinst_HEADERS)    \
+     $(top_srcdir)/include/memwatch.h
 
+  automatic_mwdir = .
 
-automatic_mwdir = .
-
-automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -g
+  automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
+endif
 
 dist_sysconf_DATA = automatic.conf-sample
 
