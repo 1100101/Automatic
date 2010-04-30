@@ -231,7 +231,7 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
 }
 
 PRIVATE void parseCookiesFromURL(rss_feed feed) {
-  const char* result_regex = "\\?:COOKIE:(.+)";
+  const char* result_regex = ":COOKIE:(.+)";
 
   assert(feed && feed->url && *feed->url);
 
