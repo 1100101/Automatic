@@ -466,6 +466,10 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       ++line_pos;
     }
 
+    if(line_pos >= fs.st_size) {
+      break;
+    }
+
     /* comment */
     if (line[line_pos] == '#') {
       dbg_printf(P_INFO2, "skipping comment (line %d)", line_num);
@@ -504,6 +508,10 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       ++line_pos;
     }
 
+    if(line_pos >= fs.st_size) {
+      break;
+    }
+
     /* check for '=' */
     if (line[line_pos++] != '=') {
       snprintf(erbuf, sizeof(erbuf), "Option '%s' needs a parameter (line %d)", opt, line_num);
@@ -518,6 +526,10 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
         dbg_printf(P_INFO2, "skipping newline (line %d)", line_num);
       }
       ++line_pos;
+    }
+
+    if(line_pos >= fs.st_size) {
+      break;
     }
 
     /* read the parameter */
@@ -594,6 +606,9 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       if(line[line_pos] == '\n')
         line_num++;
       ++line_pos;
+    }
+    if(line_pos >= fs.st_size) {
+      break;
     }
   }
 

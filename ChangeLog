@@ -1,3 +1,6 @@
+2010-05-11 v0.6.2
+      Fixed:   The config parser choked on multiple newlines at the end of a config file
+
 2010-04-23 v0.6.1
       Fixed:   Parsing of the :COOKIE: identifier within a feed URL didn't always work
 
