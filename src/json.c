@@ -76,7 +76,7 @@ char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* fold
       return NULL;
     }
     buf[json_size] = '\0';
-    dbg_printf(P_INFO, "JSON: %s", buf);
+    dbg_printf(P_INFO2, "JSON: %s", buf);
     if(setme_size) {
       *setme_size = json_size;
     }

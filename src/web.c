@@ -85,7 +85,7 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   const char  *line = (const char*)ptr;
   char        *tmp  = NULL;
   char        *filename = NULL;
-  const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+)\"?$";
+  const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+?)\"?\\r?\\n?$";
   int          content_length = 0;
 
   /* parse header for Content-Length to allocate correct size for data->response->data */

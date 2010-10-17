@@ -35,7 +35,7 @@ enum debug_type {
 
 typedef enum debug_type debug_type;
 
-unsigned char log_init(const char *logfile, char msglevel);
+unsigned char log_init(const char *logfile, char msglevel, char append_log);
 void  log_close(void);
 char* getlogtime_str(char *buf);
 void  am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... );

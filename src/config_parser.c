@@ -230,7 +230,7 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
   return SUCCESS;
 }
 
-PRIVATE void parseCookiesFromURL(rss_feed feed) {
+PRIVATE void parseCookiesFromURL(rss_feed* feed) {
   const char* result_regex = ":COOKIE:(.+)";
 
   assert(feed && feed->url && *feed->url);
@@ -242,7 +242,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   char *line = NULL, *option = NULL, *param = NULL;
   char *saveptr;
   char *str = NULL;
-  rss_feed feed = NULL;
+  rss_feed* feed = NULL;
   int result = SUCCESS; /* be optimistic */
 
   str = shorten(feedstr);
@@ -275,6 +275,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     if(feed->cookies == NULL) {
       parseCookiesFromURL(feed);
     }
+    feed->id = listCount(*feeds);
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", str);
@@ -292,9 +293,10 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
   assert(head != NULL);
   p = strtok(str, delim);
   while (p) {
-    rss_feed feed = feed_new();
+    rss_feed* feed = feed_new();
     assert(feed && "feed_new() failed!");
     feed->url = strdup(p);
+    feed->id  = listCount(*head);
     /* Maybe the cookies are encoded within the URL */
     parseCookiesFromURL(feed);
     feed_add(feed, head);

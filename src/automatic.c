@@ -76,7 +76,8 @@ PRIVATE void usage(void) {
     "  -v --verbose <level>      Set output level to <level> (default=1)\n"
     "  -c --configfile <path>    Path to configuration file\n"
     "  -o --once                 Quit Automatic after first check of RSS feeds\n"
-    "  -l --logfile <file>       Log messages to <file>"
+    "  -l --logfile <file>       Log messages to <file>\n"
+    "  -a --append-log           Don't overwrite logfile from a previous session"
     "\n", LONG_VERSION_STRING );
   exit(0);
 }
@@ -85,8 +86,8 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uint8_t * nofork,
-    uint8_t * verbose, uint8_t *once) {
-  char optstr[] = "fhv:c:l:o";
+    uint8_t * verbose, uint8_t *once, uint8_t *append_log) {
+  char optstr[] = "afhv:c:l:o";
   struct option longopts[] = {
     { "verbose",    required_argument, NULL, 'v' },
     { "nodaemon",   no_argument,       NULL, 'f' },
@@ -94,11 +95,15 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uin
     { "configfile", required_argument, NULL, 'c' },
     { "once",       no_argument,       NULL, 'o' },
     { "logfile",    required_argument, NULL, 'l' },
+    { "append-log", no_argument,       NULL, 'a' },
     { NULL, 0, NULL, 0 } };
   int opt;
 
   while (0 <= (opt = getopt_long(argc, argv, optstr, longopts, NULL ))) {
     switch (opt) {
+      case 'a':
+        *append_log = 1;
+        break;
       case 'v':
         *verbose = atoi(optarg);
         break;
@@ -363,7 +368,7 @@ PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items) {
+PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, uint16_t feedID) {
 
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
@@ -381,7 +386,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
     if (!has_been_downloaded(session->downloads, item->url) &&
         (isMatch(session->filters, item->name, &download_folder)
         /*|| isMatch(session->filters, item->category)*/) ) {
-      dbg_printft(P_MSG, "Found new download: %s (%s)", item->name, item->url);
+      dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
       torrent = downloadTorrent(curl_session, item->url);
       if(torrent) {
         if(torrent->responseCode == 200) {
@@ -412,18 +417,17 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   }
 }
 
-PRIVATE HTTPResponse *getRSSFeed(rss_feed feed, CURL **session) {
+PRIVATE HTTPResponse* getRSSFeed(const rss_feed* feed, CURL **session) {
   return getHTTPData(feed->url, feed->cookies, session);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t firstrun) {
+PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t firstrun) {
   HTTPResponse *response = NULL;
   CURL         *curl_session = NULL;
   uint32_t item_count = 0;
-  //response = getHTTPData(feed->url, &curl_session);
   response = getRSSFeed(feed, &curl_session);
   dbg_printf(P_INFO2, "[processFeed] curl_session=%p", (void*)curl_session);
 
@@ -439,7 +443,7 @@ PRIVATE uint16_t processFeed(auto_handle *session, const rss_feed feed, uint8_t 
         session->max_bucket_items += item_count;
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
       }
-      processRSSList(session, curl_session, items);
+      processRSSList(session, curl_session, items, feed->id);
       freeList(&items, freeFeedItem);
     }
     HTTPResponse_free(response);
@@ -467,17 +471,18 @@ int main(int argc, char **argv) {
   uint8_t first_run = 1;
   uint8_t once = 0;
   uint8_t verbose = AM_DEFAULT_VERBOSE;
+  uint8_t append_log = 0;
 
   /* this sets the log level to the default before anything else is done.
   ** This way, if any outputting happens in readargs(), it'll be printed
   ** to stderr.
   */
-  log_init(NULL, verbose);
+  log_init(NULL, verbose, 0);
 
-  readargs(argc, argv, &config_file, &logfile, &nofork, &verbose, &once);
+  readargs(argc, argv, &config_file, &logfile, &nofork, &verbose, &once, &append_log);
 
   /* reinitialize the logging with the values from the command line */
-  log_init(logfile, verbose);
+  log_init(logfile, verbose, append_log);
 
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);

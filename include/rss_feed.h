@@ -27,23 +27,24 @@
 #include "list.h"
 #include "utils.h"
 
-typedef struct rss_feed* rss_feed;
-typedef struct NODE* rss_feeds;
+typedef struct rss_feed rss_feed;
+typedef struct NODE*    rss_feeds;
 
 
 /** struct representing an RSS feed */
 struct rss_feed {
 	/** \{ */
 	char    *url;  /**< Feed URL */
-    char    *cookies;
+  char    *cookies;
 	uint32_t ttl;	 /**< Time-To-Live for the specific feed */
+  uint16_t id;
 	/* int32_t count;*/ /**< Item count? (UNUSED) */
 	/** \{ */
 };
 
-PUBLIC rss_feed feed_new(void);
+PUBLIC rss_feed* feed_new(void);
 PUBLIC void feed_free(void* listItem);
 PUBLIC void feed_printList(simple_list list);
-PUBLIC void feed_add(rss_feed p, NODE **head);
+PUBLIC void feed_add(rss_feed* p, NODE **head);
 
 #endif
