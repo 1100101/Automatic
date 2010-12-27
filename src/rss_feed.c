@@ -51,8 +51,8 @@
  *
  * \return Pointer to the new feed node
  */
-PUBLIC rss_feed feed_new(void) {
-	rss_feed i = (rss_feed)am_malloc(sizeof(struct rss_feed));
+PUBLIC rss_feed* feed_new(void) {
+	rss_feed* i = (rss_feed*)am_malloc(sizeof(struct rss_feed));
 	if(i != NULL) {
 		i->url  = NULL;
         i->cookies = NULL;
@@ -71,12 +71,12 @@ PUBLIC rss_feed feed_new(void) {
 void feed_printList(simple_list list) {
 #ifdef DEBUG
 	NODE *cur = list;
-	rss_feed x;
+	rss_feed* x;
 
 	dbg_printf(P_INFO2, "------- start -------------\n");
 	while(cur != NULL && cur->data != NULL) {
 		dbg_printf(P_INFO2, "data: (%p)\n", (void*)cur->data);
-		x = (rss_feed)cur->data;
+		x = (rss_feed*)cur->data;
 		if(x->url != NULL) {
 			dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
 		}
@@ -94,7 +94,7 @@ void feed_printList(simple_list list) {
  * \param url URL of the new feed
  * \param head Pointer to a list
  */
-PUBLIC void feed_add(rss_feed p, NODE **head) {
+PUBLIC void feed_add(rss_feed* p, NODE **head) {
     assert(p);
     addItem(p, head);
 }
@@ -108,7 +108,7 @@ PUBLIC void feed_add(rss_feed p, NODE **head) {
  * removeLast() as the 2nd parameter to ensure proper memory deallocation.
  */
 void feed_free(void* listItem) {
-	rss_feed x = (rss_feed)listItem;
+	rss_feed* x = (rss_feed*)listItem;
 
 	if(x != NULL) {
 		am_free(x->url);

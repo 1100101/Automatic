@@ -44,14 +44,14 @@
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
 
-unsigned char log_init(const char *logfile, char msglevel) {
+unsigned char log_init(const char *logfile, char msglevel, char append_log) {
   gMsglevel = msglevel;
   if(logfile && *logfile) {
     /* Just in case someone decides to call this function twice, make sure the previous log is closed. */
     if(gLogFP) {
       log_close();
     }
-    if((gLogFP = fopen(logfile, "w")) == NULL) {
+    if((gLogFP = fopen(logfile, append_log ? "a" : "w")) == NULL) {
       /* this should work just fine: the message level has been set above, and if gLogFP is NULL,
       ** logging goes to stderr.
       */

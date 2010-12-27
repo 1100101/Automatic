@@ -95,5 +95,3 @@ statefile = "~/.config/automatic.state"
 #              "Something.else.to.download.*720p"
 #              "(?!.*720p)Some.Video.But.Not.The.HD.Version"
 #            }
-
-
