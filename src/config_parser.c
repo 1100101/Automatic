@@ -64,7 +64,7 @@ typedef struct am_option am_option_t;
 
 /** \endcond */
 
-PRIVATE const char *delim = "²";
+PRIVATE const char *AM_DELIMITER = "²";
 
 PRIVATE void set_path(const char *src, char **dst) {
   char *tmp;
@@ -118,8 +118,8 @@ PRIVATE char* shorten(const char *str) {
   while(line_pos < len) {
     /* case 1: quoted strings */
     if(tmp_pos != 0) {
-      for(i = 0; i < strlen(delim); ++i)
-        tmp[tmp_pos++] = delim[i];
+      for(i = 0; i < strlen(AM_DELIMITER); ++i)
+        tmp[tmp_pos++] = AM_DELIMITER[i];
     }
     if (str[line_pos] == '"' || str[line_pos] == '\'') {
       c = str[line_pos];
@@ -180,7 +180,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
 
   str = shorten(match);
 
-  line = strtok_r(str, delim, &saveptr);
+  line = strtok_r(str, AM_DELIMITER, &saveptr);
   while (line) {
     if(!filter) {
       filter = filter_new();
@@ -199,7 +199,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
     } else {
       dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
     }
-    line = strtok_r(NULL, delim, &saveptr);
+    line = strtok_r(NULL, AM_DELIMITER, &saveptr);
   }
 
   if(filter && filter->pattern) {
@@ -218,13 +218,13 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
   char *str = NULL;
   assert(patlist != NULL);
   str = shorten(strlist);
-  p = strtok(str, delim);
+  p = strtok(str, AM_DELIMITER);
   while (p) {
     am_filter pat = filter_new();
     assert(pat != NULL);
     pat->pattern = strdup(p);
     filter_add(pat, patlist);
-    p = strtok(NULL, delim);
+    p = strtok(NULL, AM_DELIMITER);
   }
   am_free(str);
   return SUCCESS;
@@ -247,7 +247,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
 
   str = shorten(feedstr);
 
-  line = strtok_r(str, delim, &saveptr);
+  line = strtok_r(str, AM_DELIMITER, &saveptr);
   while (line) {
     if(!feed) {
       feed = feed_new();
@@ -266,7 +266,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     } else {
       dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
     }
-    line = strtok_r(NULL, delim, &saveptr);
+    line = strtok_r(NULL, AM_DELIMITER, &saveptr);
   }
 
 
@@ -291,7 +291,7 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
   char *str;
   str = shorten(strlist);
   assert(head != NULL);
-  p = strtok(str, delim);
+  p = strtok(str, AM_DELIMITER);
   while (p) {
     rss_feed* feed = feed_new();
     assert(feed && "feed_new() failed!");
@@ -300,7 +300,7 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
     /* Maybe the cookies are encoded within the URL */
     parseCookiesFromURL(feed);
     feed_add(feed, head);
-    p = strtok(NULL, delim);
+    p = strtok(NULL, AM_DELIMITER);
   }
   am_free(str);
   return 0;
