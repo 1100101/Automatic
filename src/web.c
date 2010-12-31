@@ -85,7 +85,7 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   const char  *line = (const char*)ptr;
   char        *tmp  = NULL;
   char        *filename = NULL;
-  const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+?)\"?\\r?\\n?$";
+  const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+?)\"?;?\\r?\\n?$";
   int          content_length = 0;
 
   /* parse header for Content-Length to allocate correct size for data->response->data */
@@ -343,8 +343,6 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_callback);
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
-  //~ curl_easy_setopt(curl, CURLOPT_WRITEDATA, data);
-  //~ curl_easy_setopt(curl, CURLOPT_WRITEHEADER, data);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, getenv( "AM_CURL_VERBOSE" ) != NULL);
   curl_easy_setopt(curl, CURLOPT_POST, isPost ? 1 : 0);
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L );
@@ -353,8 +351,8 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_DNS_CACHE_TIMEOUT, 600L );
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L );
   curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1L );
-  curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L );
-  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, -1L );
+  //curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L );
+  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L );
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L );
 
   if(auth && *auth) {

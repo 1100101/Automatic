@@ -1,4 +1,6 @@
-#include <check.h>
+//#include <check.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "regex.h"
@@ -54,11 +56,12 @@ void testIsRegexMatch(void) {
   check(isRegExMatch("def.*ghi", "def xyz (abc - ghi - rst)") == 1);
   check(isRegExMatch("def.*abc", "def xyz (ghi - rst)") == 0);
   check(isRegExMatch("def.*abc", "def xyz (abc - ghi - rst)") == 1);
+  check(isRegExMatch("Ídy", "Ídy") == 1);
 }
 
 
 void testGetMatch(void) {
-  const char* pattern1 = "Content-Disposition:\\s(inline|attachment);\\sfilename=\"?(.+)\"?$";
+  const char* pattern1 = "Content-Disposition:\\s(inline|attachment);\\s*filename=\"?(.+?)\"?;?\\r?\\n?$";
   const char* pattern2 = "\"result\":\\s\"(.+)\"\n";
   const char* string1 = "Content-Disposition: inline; filename=\"this.is.a.test-file.torrent\"";
   const char* string2 = "Content-Disposition: inline; filename=this.is.a.test-file.torrent";

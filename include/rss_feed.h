@@ -28,16 +28,16 @@
 #include "utils.h"
 
 typedef struct rss_feed rss_feed;
-typedef struct NODE* rss_feeds;
+typedef struct NODE*    rss_feeds;
 
 
 /** struct representing an RSS feed */
 struct rss_feed {
 	/** \{ */
 	char    *url;  /**< Feed URL */
-    char    *cookies;
+  char    *cookies;
 	uint32_t ttl;	 /**< Time-To-Live for the specific feed */
-    uint16_t id;
+  uint16_t id;
 	/* int32_t count;*/ /**< Item count? (UNUSED) */
 	/** \{ */
 };
