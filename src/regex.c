@@ -23,7 +23,7 @@ static pcre* init_regex(const char* pattern) {
   }
 
   dbg_printf(P_DBG, "[init_regex] Regular expression: %s", pattern);
-  re = pcre_compile(pattern, PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
+  re = pcre_compile(pattern, PCRE_UTF8|PCRE_CASELESS|PCRE_EXTENDED, &errbuf, &err, NULL);
 
   if(re == NULL) {
     dbg_printf(P_ERROR, "[init_regex] PCRE compilation failed at offset %d: %s (pattern: %s)", err, errbuf, pattern);
