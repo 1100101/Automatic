@@ -131,7 +131,7 @@ PRIVATE char* shorten(const char *str) {
         line_pos++; /* skip the closing quote */
       }
     } else {
-      for(; isprint(str[line_pos]) && /*!isspace(str[line_pos])*/ str[line_pos] != '\n'; /* NOTHING */) {
+      while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
         tmp[tmp_pos++] = str[line_pos++];
       }
     }
