@@ -31,14 +31,14 @@
 
 #ifndef TRUE
   #define TRUE 1
-#endif    
+#endif
 
 
 struct HTTPResponse {
  char    *data;
  char    *content_filename; /**< name of the downloaded file determined through header field "Content-Length" */
  size_t   size;             /**< size of the received data determined through header field  "Content-Length" */
- uint16_t responseCode;
+ uint32_t responseCode;
 };
 
 typedef struct HTTPResponse HTTPResponse;
