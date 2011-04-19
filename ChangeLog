@@ -1,5 +1,7 @@
-2011-01-01 v0.6.5
+2011-04-19 v0.6.5
       Fixed:   Support UTF-8 regular expressions in config file
+      Fixed:   Problem with redirecting URLs from some RSS feeds
+      Fixed:   Updated Prowl API URL to prowlapp.com
 2010-10-17 v0.6.4
       Added:   New commandline option "--append-log|-a" to not overwrite the log from a previous session
       Fixed:   Wrong regular expression for "Content-Disposition" still included a stray double-quote sometimes
