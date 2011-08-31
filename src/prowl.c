@@ -123,9 +123,9 @@ int16_t sendProwlNotification(const char* apikey, const char* event, const char*
   return result;
 }
 
-int16_t verifyProwlAPIKey(const char* apikey) {
+int8_t verifyProwlAPIKey(const char* apikey) {
 
-  int16_t result = -1;
+  int8_t result = 0;
   char url[128];
   HTTPResponse *response = NULL;
   CURL *curl_session = NULL;
@@ -138,13 +138,14 @@ int16_t verifyProwlAPIKey(const char* apikey) {
         dbg_printf(P_INFO, "Prowl API key '%s' is valid", apikey);
         result = 1;
       } else {
-        dbg_printf(P_ERROR, "Error: Prowl API  key '%s' is invalid!", apikey);
-        result = -response->responseCode;
+        dbg_printf(P_ERROR, "Error: Prowl API  key '%s' is invalid (%d)!", apikey, response->responseCode);
+        result = 0;
       }
       HTTPResponse_free(response);
     }
     closeCURLSession(curl_session);
   }
+  
   return result;
 }
 
