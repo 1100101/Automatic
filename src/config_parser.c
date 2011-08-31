@@ -172,12 +172,22 @@ PRIVATE char* trim(const char *str) {
     return NULL;
   }
 
+  /* skip single or double quote */
+  if (*str == '"' || *str == '\'') {
+    str++;
+  }
+
   // Trim trailing space
   end = str + strlen(str) - 1;
   while(end > str && isspace(*end)) {
     end--;
   }
   
+  /* skip single or double quote */
+  if (*end == '"' || *end == '\'') {
+    end--;
+  }
+
   end++;
 
   // Return copy of trimmed string
