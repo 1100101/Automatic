@@ -155,7 +155,7 @@ PRIVATE simple_list shorten2(const char *str) {
   int tmp_pos;
   char c;
   char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-  uint32_t line_pos = 0, i;
+  uint32_t line_pos = 0;
   uint32_t len = strlen(str);
   simple_list options = NULL;
 
@@ -174,7 +174,7 @@ PRIVATE simple_list shorten2(const char *str) {
   while(line_pos < len) {
     /* case 1: quoted strings */
     if(tmp_pos != 0) {
-      option_item_t* i = (option_item_t)am_malloc(sizeof(option_item_t));
+      option_item_t* i = (option_item_t*)am_malloc(sizeof(option_item_t));
       
       if(i != NULL) {
          i->str = am_strdup(tmp);
@@ -238,10 +238,10 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *str = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
-  simple_list option = NULL;  
+  simple_list option_list = NULL;  
 
   str = shorten(match);
-  option = shorten2(match);
+  option_list = shorten2(match);
 
   line = strtok_r(str, AM_DELIMITER, &saveptr);
   while (line) {
@@ -274,7 +274,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
 
   am_free(str);
   if(option != NULL) {
-   freeList(option, freeOptionItem);
+   freeList(option_list, freeOptionItem);
   }
   return result;
 }
