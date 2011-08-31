@@ -283,9 +283,11 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   }
 
   am_free(str);
-  if(option != NULL) {
+  
+  if(option_list != NULL) {
    freeList(&option_list, freeOptionItem);
   }
+  
   return result;
 }
 
