@@ -244,46 +244,48 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 
 PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *line = NULL, *option = NULL, *param = NULL;
-  char *saveptr;
-  char *str = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
   simple_list option_list = NULL;  
-
-  str = shorten(match);
+  NODE * current = NULL;
+  option_item_t *opt_item = NULL;
+  
   option_list = shorten2(match);
+  current = option_list;
 
-  line = strtok_r(str, AM_DELIMITER, &saveptr);
-  while (line) {
-    if(!filter) {
-      filter = filter_new();
-      assert(filter && "filter_new() failed!");
-    }
-    if(parseSubOption(line, &option, &param) == 0) {
-      if(!strncmp(option, "pattern", 7)) {
-        filter->pattern = shorten(param);
-      } else if(!strncmp(option, "folder", 6)) {
-        filter->folder = shorten(param);
+  while (current != NULL) {
+    opt_item = (option_item_t*)current->data;
+    if(opt_item != NULL) {
+      if(!filter) {
+         filter = filter_new();
+         assert(filter && "filter_new() failed!");
+      }    
+       
+      if(parseSubOption(opt_item->str, &option, &param) == 0) {
+         if(!strncmp(option, "pattern", 7)) {
+           filter->pattern = shorten(param);
+          } else if(!strncmp(option, "folder", 6)) {
+           filter->folder = shorten(param);
+          } else {
+           dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
+          }
+         am_free(option);
+         am_free(param);
       } else {
-        dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
+        dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", opt_item->str);
       }
-      am_free(option);
-      am_free(param);
-    } else {
-      dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
     }
-    line = strtok_r(NULL, AM_DELIMITER, &saveptr);
+    
+    current = current->next;
   }
 
   if(filter && filter->pattern) {
     filter_add(filter, patlist);
   } else {
-    dbg_printf(P_ERROR, "Invalid filter: '%s'", str);
+    dbg_printf(P_ERROR, "Invalid filter: '%s'", match);
     result = FAILURE;
   }
-
-  am_free(str);
-  
+ 
   if(option_list != NULL) {
    freeList(&option_list, freeOptionItem);
   }
