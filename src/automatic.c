@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
   }
 
   /* check if Prowl API key is given, and if it is valid */
-  if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) ) {
+  if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) == 1 ) {
       session->prowl_key_valid = 1;
   }
 

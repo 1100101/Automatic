@@ -41,10 +41,10 @@ void testVerifyAPIKey(void) {
 	int ret = 0;
 
   ret = verifyProwlAPIKey(NULL);
-  assert(ret == 0);
+  assert(ret == -1);
 
   ret = verifyProwlAPIKey(wrong_key);
-  assert(ret == 0);
+  assert(ret == -401);
 
   ret = verifyProwlAPIKey(correct_key);
   assert(ret == 1);
