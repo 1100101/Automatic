@@ -171,24 +171,17 @@ PRIVATE simple_list shorten2(const char *str) {
     ++line_pos;
   }
   
-  tmp_pos = 0;
   while(line_pos < len) {
+    tmp_pos = 0;
     /* case 1: quoted strings */
-    if(tmp_pos != 0) {
-      option_item_t* i = (option_item_t*)am_malloc(sizeof(option_item_t));
-      
-      if(i != NULL) {
-         i->str = am_strdup(tmp);
-         addItem(i, &options);
-      }      
-    }
-    
     if (str[line_pos] == '"' || str[line_pos] == '\'') {
       c = str[line_pos];
       ++line_pos;  /* skip quote */
+
       while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
         tmp[tmp_pos++] = str[line_pos++];
       }
+
       if(str[line_pos] == c) {
         line_pos++; /* skip the closing quote */
       }
@@ -197,10 +190,21 @@ PRIVATE simple_list shorten2(const char *str) {
         tmp[tmp_pos++] = str[line_pos++];
       }
     }
+
     while (isspace(str[line_pos])) {
       ++line_pos;
     }
+
+    if(tmp_pos != 0) {
+      option_item_t* i = (option_item_t*)am_malloc(sizeof(option_item_t));
+      
+      if(i != NULL) {
+         i->str = am_strdup(tmp);
+         addItem(i, &options);
+      }      
+    }
   }
+
   tmp[tmp_pos] = '\0';
   assert(strlen(tmp) < MAX_PARAM_LEN);
   am_free(tmp);
