@@ -102,7 +102,7 @@ PRIVATE int parseUInt(const char *str) {
 }
 
 /* TODO: This does currently more than it should, clean this up. */
-PRIVATE char* trim(const char *str) {
+PRIVATE char* trim_obsolete(const char *str) {
 
   int tmp_pos;
   char c;
@@ -153,6 +153,37 @@ PRIVATE char* trim(const char *str) {
   
   return retStr;
 }
+
+/* http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way */
+PRIVATE char* trim(const char *str) {
+  const char *end;
+  
+  if(!str || !*str) {
+    return NULL;
+  }
+
+  // Trim leading space
+  while(isspace(*str)) {
+    str++;
+  }
+
+  if(*str == 0)  // All spaces?
+  {    
+    return NULL;
+  }
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace(*end)) {
+    end--;
+  }
+  
+  end++;
+
+  // Return copy of trimmed string
+  return am_strndup(str, end - str);
+}
+
 
 PRIVATE simple_list parseMultiOption(const char *str) {
 
