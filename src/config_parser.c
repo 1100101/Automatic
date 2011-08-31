@@ -63,10 +63,11 @@ typedef struct option_item option_item_t;
 
 PRIVATE const char *AM_DELIMITER = "²";
 
-PRIVATE void freeOptionItem(option_item_t* item) {
+PRIVATE void freeOptionItem(void* item) {
    if(item != NULL) {
-      am_free(item->str);
-      am_free(item);
+      option_item_t* obj = (option_item_t*)item;
+      am_free(obj->str);
+      am_free(obj);
    }
 }
 
@@ -274,7 +275,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
 
   am_free(str);
   if(option != NULL) {
-   freeList(option_list, freeOptionItem);
+   freeList(&option_list, freeOptionItem);
   }
   return result;
 }
