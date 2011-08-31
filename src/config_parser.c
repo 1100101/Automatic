@@ -165,14 +165,15 @@ PRIVATE simple_list shorten2(const char *str) {
     return NULL;
   }
 
-  memset(tmp, 0, MAX_PARAM_LEN+1);
 
   while (isspace(str[line_pos])) {
     ++line_pos;
   }
   
   while(line_pos < len) {
+    memset(tmp, 0, MAX_PARAM_LEN+1);
     tmp_pos = 0;
+    
     /* case 1: quoted strings */
     if (str[line_pos] == '"' || str[line_pos] == '\'') {
       c = str[line_pos];
@@ -191,21 +192,25 @@ PRIVATE simple_list shorten2(const char *str) {
       }
     }
 
-    while (isspace(str[line_pos])) {
-      ++line_pos;
-    }
+    /* A line is finished, end it with a null terminator */
+    tmp[tmp_pos] = '\0';
 
+    /* store the line in our list */
     if(tmp_pos != 0) {
       option_item_t* i = (option_item_t*)am_malloc(sizeof(option_item_t));
       
       if(i != NULL) {
          i->str = am_strdup(tmp);
          addItem(i, &options);
-      }      
+      }
+    }
+
+    /* skip any additional whitespace at the end of the line */
+    while (isspace(str[line_pos])) {
+      ++line_pos;
     }
   }
 
-  tmp[tmp_pos] = '\0';
   assert(strlen(tmp) < MAX_PARAM_LEN);
   am_free(tmp);
   return options;
