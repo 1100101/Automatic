@@ -54,17 +54,21 @@
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	20000
 
-struct am_option {
-  const char *name;
-  void       *data;
-  option_type type;
+struct option_item {
+   char *str;
 };
 
-typedef struct am_option am_option_t;
-
+typedef struct option_item option_item_t;
 /** \endcond */
 
 PRIVATE const char *AM_DELIMITER = "²";
+
+PRIVATE void freeOptionItem(option_item_t* item) {
+   if(item != NULL) {
+      am_free(item->str);
+      am_free(item);
+   }
+}
 
 PRIVATE void set_path(const char *src, char **dst) {
   char *tmp;
@@ -146,6 +150,63 @@ PRIVATE char* shorten(const char *str) {
   return retStr;
 }
 
+PRIVATE simple_list shorten2(const char *str) {
+
+  int tmp_pos;
+  char c;
+  char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
+  uint32_t line_pos = 0, i;
+  uint32_t len = strlen(str);
+  simple_list options = NULL;
+
+  if(!tmp) {
+    dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+    return NULL;
+  }
+
+  memset(tmp, 0, MAX_PARAM_LEN+1);
+
+  while (isspace(str[line_pos])) {
+    ++line_pos;
+  }
+  
+  tmp_pos = 0;
+  while(line_pos < len) {
+    /* case 1: quoted strings */
+    if(tmp_pos != 0) {
+      option_item_t* i = (option_item_t)am_malloc(sizeof(option_item_t));
+      
+      if(i != NULL) {
+         i->str = am_strdup(tmp);
+         addItem(i, &options);
+      }      
+    }
+    
+    if (str[line_pos] == '"' || str[line_pos] == '\'') {
+      c = str[line_pos];
+      ++line_pos;  /* skip quote */
+      while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+      if(str[line_pos] == c) {
+        line_pos++; /* skip the closing quote */
+      }
+    } else {
+      while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+    }
+    while (isspace(str[line_pos])) {
+      ++line_pos;
+    }
+  }
+  tmp[tmp_pos] = '\0';
+  assert(strlen(tmp) < MAX_PARAM_LEN);
+  am_free(tmp);
+  return options;
+}
+
+
 PRIVATE int parseSubOption(char* line, char **option, char **param) {
   const char *subopt_delim = "=>";
   uint32_t i = 0;
@@ -177,8 +238,10 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *str = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
+  simple_list option = NULL;  
 
   str = shorten(match);
+  option = shorten2(match);
 
   line = strtok_r(str, AM_DELIMITER, &saveptr);
   while (line) {
@@ -210,6 +273,9 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   }
 
   am_free(str);
+  if(option != NULL) {
+   freeList(option, freeOptionItem);
+  }
   return result;
 }
 
