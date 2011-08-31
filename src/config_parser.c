@@ -108,7 +108,7 @@ PRIVATE char* trim(const char *str) {
   char c;
   char *retStr;
   char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-  uint32_t line_pos = 0, i;
+  uint32_t line_pos = 0;
   uint32_t len = strlen(str);
 
   if(!tmp) {
@@ -306,7 +306,7 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
 
   assert(patlist != NULL);
   
-  option_list = parseMultiOption(match);
+  option_list = parseMultiOption(strlist);
   current = option_list;
 
   while (current != NULL) {
@@ -314,7 +314,7 @@ PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
     if(opt_item != NULL) {
       am_filter pat = filter_new();
       assert(pat != NULL);
-      pat->pattern = strdup(opt-item->str);
+      pat->pattern = strdup(opt_item->str);
       filter_add(pat, patlist);
     } else {
       assert(0 && "opt_item == NULL");
@@ -405,7 +405,7 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
 
   assert(head != NULL);
 
-  option_list = parseMultiOption(feedstr);
+  option_list = parseMultiOption(strlist);
   current = option_list;
   
   while (current != NULL) {
