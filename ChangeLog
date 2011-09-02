@@ -1,6 +1,15 @@
+2011-09-xx v0.6.6
+      Fixed:   Issues with UTF8 characters in the config file in general
+      Fixed:   Automatic would try to send Prowl notification even if an invalid key was specified
+
+2011-04-20 v0.6.5
+      Fixed:   Updated Prowl API URL to prowlapp.com
+      Fixed:   Curl redirect issue with some RSS feeds
+      Fixed:   Allow UTF8 characters in regular expressions
+
 2010-10-17 v0.6.4
       Added:   New commandline option "--append-log|-a" to not overwrite the log from a previous session
-	  Fixed:   Wrong regular expression for "Content-Disposition" still included a stray double-quote sometimes	
+	   Fixed:   Wrong regular expression for "Content-Disposition" still included a stray double-quote sometimes	
 	
 2010-05-11 v0.6.2
       Fixed:   The config parser choked on multiple newlines at the end of a config file

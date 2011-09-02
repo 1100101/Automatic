@@ -380,8 +380,8 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   char *download_folder = NULL;
   int8_t result;
 
-  if(!session) {
-    printf("session == NULL\n");
+  if(!curl_session || !session) {
+    printf("curl_session == NULL || session == NULL\n");
     abort();
   }
 
@@ -540,6 +540,7 @@ int main(int argc, char **argv) {
 
   filter_printList(session->filters);
 
+  dbg_printf(P_MSG, "Automatic version: %s", LONG_VERSION_STRING);
   dbg_printf(P_INFO, "verbose level: %d", verbose);
   dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
   dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);

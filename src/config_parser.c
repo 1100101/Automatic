@@ -287,7 +287,7 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 }
 
 PRIVATE int parseFilter(am_filters *patlist, const char* match) {
-  char *line = NULL, *option = NULL, *param = NULL;
+  char *option = NULL, *param = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
   simple_list option_list = NULL;  
