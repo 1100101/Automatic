@@ -2,10 +2,10 @@
       Fixed:   Issues with UTF8 characters in the config file in general
       Fixed:   Automatic would try to send Prowl notification even if an invalid key was specified
 
-2011-04-20 v0.6.5
+2011-04-19 v0.6.5
+      Fixed:   Support UTF-8 regular expressions in config file
+      Fixed:   Problem with redirecting URLs from some RSS feeds
       Fixed:   Updated Prowl API URL to prowlapp.com
-      Fixed:   Curl redirect issue with some RSS feeds
-      Fixed:   Allow UTF8 characters in regular expressions
 
 2010-10-17 v0.6.4
       Added:   New commandline option "--append-log|-a" to not overwrite the log from a previous session
@@ -27,7 +27,7 @@
 
 2009-12-05 v0.4.4
       Fixed: Segfault when a regular expression within the "patterns" option was missing the closing
-            double-quote
+             double-quote
       Fixed: Raised the maximum size for a parameter (necessary if you have many (long) patterns)
 
 
