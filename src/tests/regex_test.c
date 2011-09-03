@@ -56,7 +56,7 @@ void testIsRegexMatch(void) {
   check(isRegExMatch("def.*ghi", "def xyz (abc - ghi - rst)") == 1);
   check(isRegExMatch("def.*abc", "def xyz (ghi - rst)") == 0);
   check(isRegExMatch("def.*abc", "def xyz (abc - ghi - rst)") == 1);
-  check(isRegExMatch("Õdy", "Õdy") == 1);
+  check(isRegExMatch("√çdy", "√çdy") == 1);
 }
 
 

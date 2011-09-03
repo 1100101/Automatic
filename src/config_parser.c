@@ -54,17 +54,20 @@
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	20000
 
-struct am_option {
-  const char *name;
-  void       *data;
-  option_type type;
+struct option_item {
+   char *str;
 };
 
-typedef struct am_option am_option_t;
-
+typedef struct option_item option_item_t;
 /** \endcond */
 
-PRIVATE const char *AM_DELIMITER = "²";
+PRIVATE void freeOptionItem(void* item) {
+  if(item != NULL) {
+    option_item_t* obj = (option_item_t*)item;
+    am_free(obj->str);
+    am_free(obj);
+  }
+}
 
 PRIVATE void set_path(const char *src, char **dst) {
   char *tmp;
@@ -86,26 +89,29 @@ PRIVATE int parseUInt(const char *str) {
   uint32_t i;
 
   for(i = 0; i < strlen(str); i++) {
-    if(isdigit(str[i]) == 0)
+    if(isdigit(str[i]) == 0) {
       is_num--;
   }
+  }
+  
   if(is_num == 1 && atoi(str) > 0) {
     return atoi(str);
   }
   return -1;
 }
 
-PRIVATE char* shorten(const char *str) {
+/* TODO: This does currently more than it should, clean this up. */
+PRIVATE char* trim_obsolete(const char *str) {
 
   int tmp_pos;
   char c;
   char *retStr;
   char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-  uint32_t line_pos = 0, i;
+  uint32_t line_pos = 0;
   uint32_t len = strlen(str);
 
   if(!tmp) {
-    dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+    dbg_printf(P_ERROR, "[trim] calloc(MAX_PARAM_LEN) failed!");
     return NULL;
   }
 
@@ -117,10 +123,6 @@ PRIVATE char* shorten(const char *str) {
   tmp_pos = 0;
   while(line_pos < len) {
     /* case 1: quoted strings */
-    if(tmp_pos != 0) {
-      for(i = 0; i < strlen(AM_DELIMITER); ++i)
-        tmp[tmp_pos++] = AM_DELIMITER[i];
-    }
     if (str[line_pos] == '"' || str[line_pos] == '\'') {
       c = str[line_pos];
       ++line_pos;  /* skip quote */
@@ -146,6 +148,113 @@ PRIVATE char* shorten(const char *str) {
   return retStr;
 }
 
+/* http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way */
+PRIVATE char* trim(const char *str) {
+  const char *end;
+  
+  if(!str || !*str) {
+    return NULL;
+  }
+
+  // Trim leading space
+  while(isspace(*str)) {
+    str++;
+  }
+
+  if(*str == 0)  // All spaces?
+  {    
+    return NULL;
+  }
+
+  /* skip single or double quote */
+  if (*str == '"' || *str == '\'') {
+    str++;
+  }
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace(*end)) {
+    end--;
+  }
+  
+  /* skip single or double quote */
+  if (*end == '"' || *end == '\'') {
+    end--;
+  }
+
+  end++;
+
+  // Return copy of trimmed string
+  return am_strndup(str, end - str);
+}
+
+
+PRIVATE simple_list parseMultiOption(const char *str) {
+
+  int tmp_pos;
+  char c;
+  char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
+  uint32_t line_pos = 0;
+  uint32_t len = strlen(str);
+  simple_list options = NULL;
+
+  if(!tmp) {
+    dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+    return NULL;
+  }
+
+  while (isspace(str[line_pos])) {
+    ++line_pos;
+  }
+  
+  while(line_pos < len) {
+    memset(tmp, 0, MAX_PARAM_LEN+1);
+    tmp_pos = 0;
+    
+    /* case 1: quoted strings */
+    if (str[line_pos] == '"' || str[line_pos] == '\'') {
+      c = str[line_pos];
+      ++line_pos;  /* skip quote */
+
+      while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+
+      if(str[line_pos] == c) {
+        line_pos++; /* skip the closing quote */
+      }
+    } else {
+      while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+        tmp[tmp_pos++] = str[line_pos++];
+      }
+    }
+
+    /* A line is finished, end it with a null terminator */
+    tmp[tmp_pos] = '\0';
+
+    /* store the line in our list */
+    if(tmp_pos != 0) {
+      option_item_t* i = (option_item_t*)am_malloc(sizeof(option_item_t));
+      
+      if(i != NULL) {
+        i->str = am_strdup(tmp);
+        addItem(i, &options);
+      }
+    }
+
+    /* skip any additional whitespace at the end of the line */
+    while (isspace(str[line_pos])) {
+      ++line_pos;
+    }
+  }
+
+  assert(strlen(tmp) < MAX_PARAM_LEN);
+  am_free(tmp);
+  
+  return options;
+}
+
+
 PRIVATE int parseSubOption(char* line, char **option, char **param) {
   const char *subopt_delim = "=>";
   uint32_t i = 0;
@@ -156,8 +265,7 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
   assert(line && *line);
 
   while(line[i] != '\0') {
-    if(line[i]   == subopt_delim[0] &&
-       line[i+1] == subopt_delim[1]) {
+    if(line[i]   == subopt_delim[0] && line[i+1] == subopt_delim[1]) {
       *option = am_strndup(line, i-1);
       *param  = am_strdup(line + i + strlen(subopt_delim));
       break;
@@ -172,61 +280,86 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 }
 
 PRIVATE int parseFilter(am_filters *patlist, const char* match) {
-  char *line = NULL, *option = NULL, *param = NULL;
-  char *saveptr;
-  char *str = NULL;
+  char *option = NULL, *param = NULL;
   am_filter filter = NULL;
   int result = SUCCESS; /* be optimistic */
+  simple_list option_list = NULL;  
+  NODE * current = NULL;
+  option_item_t *opt_item = NULL;
+  
+  option_list = parseMultiOption(match);
+  current = option_list;
 
-  str = shorten(match);
-
-  line = strtok_r(str, AM_DELIMITER, &saveptr);
-  while (line) {
+  while (current != NULL) {
+    opt_item = (option_item_t*)current->data;
+    if(opt_item != NULL) {
     if(!filter) {
       filter = filter_new();
       assert(filter && "filter_new() failed!");
     }
-    if(parseSubOption(line, &option, &param) == 0) {
+       
+      if(parseSubOption(opt_item->str, &option, &param) == 0) {
       if(!strncmp(option, "pattern", 7)) {
-        filter->pattern = shorten(param);
+          filter->pattern = trim(param);
       } else if(!strncmp(option, "folder", 6)) {
-        filter->folder = shorten(param);
+          filter->folder = trim(param);
       } else {
         dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
       }
       am_free(option);
       am_free(param);
     } else {
-      dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
+        dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", opt_item->str);
     }
-    line = strtok_r(NULL, AM_DELIMITER, &saveptr);
+    } else {
+      assert(0 && "opt_item == NULL");
+    }
+    
+    current = current->next;
   }
 
   if(filter && filter->pattern) {
     filter_add(filter, patlist);
   } else {
-    dbg_printf(P_ERROR, "Invalid filter: '%s'", str);
+    dbg_printf(P_ERROR, "Invalid filter: '%s'", match);
     result = FAILURE;
   }
 
-  am_free(str);
+  if(option_list != NULL) {
+    freeList(&option_list, freeOptionItem);
+  }
+  
   return result;
 }
 
 PRIVATE int addPatterns_old(am_filters *patlist, const char* strlist) {
-  char *p = NULL;
-  char *str = NULL;
+  simple_list option_list = NULL;  
+  NODE * current = NULL;
+  option_item_t *opt_item = NULL;
+
   assert(patlist != NULL);
-  str = shorten(strlist);
-  p = strtok(str, AM_DELIMITER);
-  while (p) {
+  
+  option_list = parseMultiOption(strlist);
+  current = option_list;
+
+  while (current != NULL) {
+    opt_item = (option_item_t*)current->data;
+    if(opt_item != NULL) {
     am_filter pat = filter_new();
     assert(pat != NULL);
-    pat->pattern = strdup(p);
+      pat->pattern = strdup(opt_item->str);
     filter_add(pat, patlist);
-    p = strtok(NULL, AM_DELIMITER);
+    } else {
+      assert(0 && "opt_item == NULL");
+    }
+    
+    current = current->next;
   }
-  am_free(str);
+  
+  if(option_list != NULL) {
+    freeList(&option_list, freeOptionItem);
+  }
+  
   return SUCCESS;
 }
 
@@ -239,36 +372,43 @@ PRIVATE void parseCookiesFromURL(rss_feed* feed) {
 }
 
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
-  char *line = NULL, *option = NULL, *param = NULL;
-  char *saveptr;
-  char *str = NULL;
+  char *option = NULL, *param = NULL;
   rss_feed* feed = NULL;
   int result = SUCCESS; /* be optimistic */
+  simple_list option_list = NULL;  
+  NODE * current = NULL;
+  option_item_t *opt_item = NULL;
 
-  str = shorten(feedstr);
-
-  line = strtok_r(str, AM_DELIMITER, &saveptr);
-  while (line) {
+  option_list = parseMultiOption(feedstr);
+  current = option_list;
+  
+  while (current != NULL) {
+    opt_item = (option_item_t*)current->data;
+    if(opt_item != NULL) {
     if(!feed) {
       feed = feed_new();
       assert(feed && "feed_new() failed!");
     }
-    if(parseSubOption(line, &option, &param) == 0) {
+      
+      if(parseSubOption(opt_item->str, &option, &param) == 0) {
       if(!strncmp(option, "url", 3)) {
-        feed->url = shorten(param);
+          feed->url = trim(param);
       } else if(!strncmp(option, "cookies", 6)) {
-        feed->cookies = shorten(param);
+          feed->cookies = trim(param);
       } else {
         dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
       }
       am_free(option);
       am_free(param);
     } else {
-      dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", line);
+        dbg_printf(P_ERROR, "Invalid suboption string: '%s'!", opt_item->str);
     }
-    line = strtok_r(NULL, AM_DELIMITER, &saveptr);
+    } else {
+      assert(0 && "opt_item == NULL");
   }
 
+    current = current->next;
+  }
 
   if(feed && feed->url) {
     /* Maybe the cookies are encoded within the URL */
@@ -278,31 +418,49 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     feed->id = listCount(*feeds);
     feed_add(feed, feeds);
   } else {
-    dbg_printf(P_ERROR, "Invalid feed: '%s'", str);
+    dbg_printf(P_ERROR, "Invalid feed: '%s'", feedstr);
     result = FAILURE;
   }
 
-  am_free(str);
+  if(option_list != NULL) {
+    freeList(&option_list, freeOptionItem);
+  }
+
   return result;
 }
 
 PRIVATE int getFeeds(NODE **head, const char* strlist) {
-  char *p = NULL;
-  char *str;
-  str = shorten(strlist);
+  simple_list option_list = NULL;  
+  NODE * current = NULL;
+  option_item_t *opt_item = NULL;
+
   assert(head != NULL);
-  p = strtok(str, AM_DELIMITER);
-  while (p) {
+
+  option_list = parseMultiOption(strlist);
+  current = option_list;
+  
+  while (current != NULL) {
+    opt_item = (option_item_t*)current->data;
+    if(opt_item != NULL) {
     rss_feed* feed = feed_new();
     assert(feed && "feed_new() failed!");
-    feed->url = strdup(p);
+      feed->url = strdup(opt_item->str);
     feed->id  = listCount(*head);
+      
     /* Maybe the cookies are encoded within the URL */
     parseCookiesFromURL(feed);
     feed_add(feed, head);
-    p = strtok(NULL, AM_DELIMITER);
+    } else {
+      assert(0 && "opt_item == NULL");
   }
-  am_free(str);
+    
+    current = current->next;
+  }
+
+  if(option_list != NULL) {
+    freeList(&option_list, freeOptionItem);
+  }
+
   return 0;
 }
 

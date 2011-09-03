@@ -28,6 +28,7 @@
 #define FROM_XML_FILE 0
 #define TESTING 0
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -85,9 +86,9 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uint8_t * nofork,
-    uint8_t * verbose, uint8_t *once, uint8_t *append_log) {
-  char optstr[] = "afhv:c:l:o";
+PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char **xmlfile,
+                      uint8_t * nofork, uint8_t * verbose, uint8_t *once, uint8_t *append_log) {
+  char optstr[] = "afhv:c:l:ox:";
   struct option longopts[] = {
     { "verbose",    required_argument, NULL, 'v' },
     { "nodaemon",   no_argument,       NULL, 'f' },
@@ -96,6 +97,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uin
     { "once",       no_argument,       NULL, 'o' },
     { "logfile",    required_argument, NULL, 'l' },
     { "append-log", no_argument,       NULL, 'a' },
+    { "xml",        required_argument, NULL, 'x' },
     { NULL, 0, NULL, 0 } };
   int opt;
 
@@ -116,6 +118,8 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, uin
       case 'l':
         *logfile = optarg;
         break;
+      case 'x':
+        *xmlfile = optarg;
       case 'o':
         *once = 1;
         break;
@@ -453,6 +457,29 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
   return item_count;
 }
 
+PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
+  uint32_t item_count = 0;
+  char *xmldata = NULL;
+  uint32_t fileLen = 0;
+  uint32_t dummy_ttl;
+  simple_list items;
+
+  assert(xmlfile && *xmlfile);
+  dbg_printf(P_INFO, "Reading RSS feed file: %s", xmlfile);
+  xmldata = readFile(xmlfile, &fileLen);
+  if(xmldata != NULL) {
+    fileLen = strlen(xmldata);
+    items = parse_xmldata(xmldata, fileLen, &item_count, &dummy_ttl);
+    session->max_bucket_items += item_count;
+    dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
+    processRSSList(session, NULL, items, 0);
+    freeList(&items, freeFeedItem);
+    am_free(xmldata);
+  }
+
+  return item_count;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -460,10 +487,7 @@ int main(int argc, char **argv) {
   auto_handle *session = NULL;
   char *config_file = NULL;
   char *logfile = NULL;
-#if FROM_XML_FILE
-  char *xmldata = NULL;
-  int fileLen = 0;
-#endif
+  char *xmlfile = NULL;
   int daemonized = 0;
   char erbuf[100];
   NODE *current = NULL;
@@ -479,7 +503,7 @@ int main(int argc, char **argv) {
   */
   log_init(NULL, verbose, 0);
 
-  readargs(argc, argv, &config_file, &logfile, &nofork, &verbose, &once, &append_log);
+  readargs(argc, argv, &config_file, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log);
 
   /* reinitialize the logging with the values from the command line */
   log_init(logfile, verbose, append_log);
@@ -516,6 +540,7 @@ int main(int argc, char **argv) {
 
   filter_printList(session->filters);
 
+  dbg_printf(P_MSG, "Automatic version: %s", LONG_VERSION_STRING);
   dbg_printf(P_INFO, "verbose level: %d", verbose);
   dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
   dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);
@@ -556,21 +581,17 @@ int main(int argc, char **argv) {
   }
 
   /* check if Prowl API key is given, and if it is valid */
-  if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) ) {
+  if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) == 1 ) {
       session->prowl_key_valid = 1;
   }
 
   load_state(session->statefile, &session->downloads);
   while(!closing) {
     dbg_printft( P_INFO, "------ Checking for new episodes ------");
-#if FROM_XML_FILE
-    xmldata = readFile("feed.xml", &fileLen);
-    if(xmldata != NULL) {
-      fileLen = strlen(xmldata);
-      parse_xmldata(xmldata, fileLen);
-      am_free(xmldata);
-    }
-#else
+    if(xmlfile && *xmlfile) {
+      processFile(session, xmlfile);
+      once = 1;
+    } else {
     current = session->feeds;
     count = 0;
     while(current && current->data) {
@@ -583,7 +604,7 @@ int main(int argc, char **argv) {
       dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
     }
     first_run = 0;
-#endif
+    }
     /* leave loop when program is only supposed to run once */
     if(once) {
       break;

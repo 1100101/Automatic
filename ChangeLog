@@ -1,3 +1,7 @@
+2011-09-01 v0.6.6
+      Fixed:   Issues with UTF8 characters in the config file in general
+      Fixed:   Automatic would try to send Prowl notification even if an invalid key was specified
+
 2011-04-19 v0.6.5
       Fixed:   Support UTF-8 regular expressions in config file
       Fixed:   Problem with redirecting URLs from some RSS feeds

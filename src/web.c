@@ -429,7 +429,7 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &responseCode);
     dbg_printf(P_INFO2, "[getHTTPData] response code: %d", responseCode);
     if(res != 0) {
-        dbg_printf(P_ERROR, "[getHTTPData] '%s': %s", url, curl_easy_strerror(res));
+        dbg_printf(P_ERROR, "[getHTTPData] '%s': %s (retval: %d)", url, curl_easy_strerror(res), res);
     } else {
       /* Only the very first connection attempt (where curl_session == NULL) should store the session,
       ** and only the last one should close the session.
