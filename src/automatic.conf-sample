@@ -36,7 +36,18 @@ transmission-version = "1.3"
 
 
 # list of feed URLs. You can specify one or more feeds, in case of the latter use curly brackets (see the "patterns" option for an example)
+# Obsolete. Use "feed" option instead.
 url = ""
+
+# A feed contains at least a feed URL and some optional parameters:
+#    "cookie"  =>  If the feed sits behind a login-secured site, you may specify the cookie information here so that Automatic
+                   can download the feed (and any torrents that are matched)
+     "id"      =>  Give a feed a numeric feed ID which later on can be used to restrict certain filters to only be used with a specific feed.
+
+feed =  {  url     => ""
+           cookie  => "" 
+        }
+
 
 # interval in minutes between checks for new downloads
 interval = 30
@@ -66,8 +77,23 @@ statefile = "~/.config/automatic.state"
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter
+#
+# This is obsolete. See "filter" use below
 
-patterns =  { "Name.of.Something.I.Want.to.Download.Automatically.*HDTV"
-              "Something.else.to.download.*720p"
-              "(?!.*720p)Some.Video.But.Not.The.HD.Version"
-            }
+#patterns =  { "Name.of.Something.I.Want.to.Download.Automatically.*HDTV"
+#              "Something.else.to.download.*720p"
+#              "(?!.*720p)Some.Video.But.Not.The.HD.Version"
+#            }
+
+# A filter contains a regular expression which is matched against the RSS feed entries. Letter-casing does not matter in the regular
+# expression. You can list as many filters as you want.
+# Optional fields:
+#    "folder"  ==> Set a specific download folder for torrents that match this regular expression
+#    "feedID"  ==> Use this filter only for RSS items from the feed with the specified feed ID
+#
+# Please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
+
+filter = { pattern => "Name.of.Something.I.Want.to.Download.Automatically.*HDTV" 
+           folder => "/your/download/folder"
+           feedID => 1
+         }

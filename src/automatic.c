@@ -388,8 +388,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if (!has_been_downloaded(session->downloads, item->url) &&
-        (isMatch(session->filters, item->name, &download_folder)
-        /*|| isMatch(session->filters, item->category)*/) ) {
+       (isMatch(session->filters, item->name, feedID, &download_folder) ) ) {
       dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
       torrent = downloadTorrent(curl_session, item->url);
       if(torrent) {
@@ -443,13 +442,16 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
   if (response) {
     if(response->responseCode == 200 && response->data) {
       simple_list items = parse_xmldata(response->data, response->size, &item_count, &feed->ttl);
+      
       if(firstrun) {
         session->max_bucket_items += item_count;
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
       }
+      
       processRSSList(session, curl_session, items, feed->id);
       freeList(&items, freeFeedItem);
     }
+    
     HTTPResponse_free(response);
     closeCURLSession(curl_session);
   }
@@ -467,6 +469,7 @@ PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
   assert(xmlfile && *xmlfile);
   dbg_printf(P_INFO, "Reading RSS feed file: %s", xmlfile);
   xmldata = readFile(xmlfile, &fileLen);
+  
   if(xmldata != NULL) {
     fileLen = strlen(xmldata);
     items = parse_xmldata(xmldata, fileLen, &item_count, &dummy_ttl);
@@ -511,6 +514,7 @@ int main(int argc, char **argv) {
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
   }
+  
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
   session = session_init();

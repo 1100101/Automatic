@@ -54,7 +54,7 @@
  * \return 1 if a filter matched, 0 otherwise.
  *
  */
-uint8_t isMatch(const am_filters filters, const char* string, char **folder) {
+uint8_t isMatch(const am_filters filters, const char* string, uint16_t feedID, char **folder) {
 	am_filters current_regex = NULL;
   am_filter filter;
 
@@ -63,10 +63,12 @@ uint8_t isMatch(const am_filters filters, const char* string, char **folder) {
 	current_regex = filters;
 	while (current_regex != NULL && current_regex->data != NULL) {
 		filter = (am_filter) current_regex->data;
-    if(isRegExMatch(filter->pattern, string) == 1) {
-      *folder = filter->folder;
-			return 1;
-		}
+    if(!filter->feedIDSet || filter->feedID == feedID) {
+      if(isRegExMatch(filter->pattern, string) == 1) {
+        *folder = filter->folder;
+        return 1;
+      }
+    }
 		current_regex = current_regex->next;
 	}
 	return 0;

@@ -34,6 +34,8 @@ typedef struct NODE* am_filters;
 struct am_filter {
 	char    *pattern;  /**< Feed URL */
   char    *folder;
+  uint16_t feedID;
+  uint8_t  feedIDSet;
 };
 
 PUBLIC am_filter filter_new(void);

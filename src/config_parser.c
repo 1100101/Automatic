@@ -289,7 +289,7 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *option = NULL, *param = NULL;
   am_filter filter = NULL;
-  int result = SUCCESS; /* be optimistic */
+  int32_t result = SUCCESS, numval; /* be optimistic */
   simple_list option_list = NULL;  
   NODE * current = NULL;
   option_item_t *opt_item = NULL;
@@ -310,6 +310,14 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
           filter->pattern = trim(param);
         } else if(!strncmp(option, "folder", 6)) {
           filter->folder = trim(param);
+        } else if(!strncmp(option, "feedid", 6)) {
+          numval = parseUInt(param);
+          if (numval > 0) {
+            filter->feedID = (uint16_t)numval;
+            filter->feedIDSet = 1;
+          } else {
+            dbg_printf(P_ERROR, "Invalid value '%s' for filter option 'feedID'", param);
+          }
         } else {
           dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
         }
@@ -382,7 +390,7 @@ PRIVATE void parseCookiesFromURL(rss_feed* feed) {
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   char *option = NULL, *param = NULL;
   rss_feed* feed = NULL;
-  int result = SUCCESS; /* be optimistic */
+  int32_t result = SUCCESS, numval; /* be optimistic */
   simple_list option_list = NULL;  
   NODE * current = NULL;
   option_item_t *opt_item = NULL;
@@ -403,6 +411,13 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
           feed->url = trim(param);
         } else if(!strncmp(option, "cookies", 6)) {
           feed->cookies = trim(param);
+        } else if(!strncmp(option, "id", 2)) {
+          numval = parseUInt(param);
+          if (numval > 0) {
+            feed->id = (uint16_t)numval;
+          } else {
+            dbg_printf(P_ERROR, "Invalid value '%s' for feed option 'ID'", param);
+          }
         } else {
           dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
         }
@@ -425,7 +440,10 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
       parseCookiesFromURL(feed);
     }
 
-    feed->id = listCount(*feeds);
+    /* Give the feed an ID if the user didn't set one. */
+    if(feed->id != 0) {
+      feed->id = listCount(*feeds);
+    }
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", feedstr);

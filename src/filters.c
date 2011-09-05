@@ -53,7 +53,10 @@ PUBLIC am_filter filter_new(void) {
 	if(i != NULL) {
 		i->pattern = NULL;
 		i->folder = NULL;
+    i->feedIDSet = 0;
+    i->feedID = 0;
 	}
+  
 	return i;
 }
 

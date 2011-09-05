@@ -41,7 +41,7 @@
 #include "output.h"
 
 #ifdef MEMWATCH
-	#include "memwatch.h"
+  #include "memwatch.h"
 #endif
 
 
@@ -52,13 +52,14 @@
  * \return Pointer to the new feed node
  */
 PUBLIC rss_feed* feed_new(void) {
-	rss_feed* i = (rss_feed*)am_malloc(sizeof(struct rss_feed));
-	if(i != NULL) {
-		i->url  = NULL;
-        i->cookies = NULL;
-		i->ttl = -1;
-	}
-	return i;
+  rss_feed* i = (rss_feed*)am_malloc(sizeof(struct rss_feed));
+  if(i != NULL) {
+    i->url  = NULL;
+    i->cookies = NULL;  
+    i->ttl = -1;
+    i->id = 0;
+  }
+  return i;
 }
 
 
