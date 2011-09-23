@@ -68,13 +68,7 @@ static uint8_t bucket_hasURL(const char *url, NODE *head) {
  */
 
 uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
-	uint8_t res;
-
-	res = bucket_hasURL(url, bucket);
-	if (res) {
-		dbg_printf(P_INFO2, "Duplicate torrent");
-	}
-	return res;
+   return bucket_hasURL(url, bucket);
 }
 
 /** \brief add new item to bucket list

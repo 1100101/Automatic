@@ -171,7 +171,7 @@ int8_t prowl_sendNotification(enum prowl_event event, const char* apikey, const 
       return 0;
   }
 
-  dbg_printf(P_INFO2, "[prowl_sendNotification] I: %d E: %s\tD: %s", event, event_str, desc);
+  dbg_printf(P_INFO, "[prowl_sendNotification] I: %d E: %s\tD: %s", event, event_str, desc);
 
   if(sendProwlNotification(apikey, event_str, desc) == 1) {
     result = 1;

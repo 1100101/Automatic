@@ -387,34 +387,37 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
-    if (!has_been_downloaded(session->downloads, item->url) &&
-       (isMatch(session->filters, item->name, feedID, &download_folder) ) ) {
-      dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
-      torrent = downloadTorrent(curl_session, item->url);
-      if(torrent) {
-        if(torrent->responseCode == 200) {
-          get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
-          /* add torrent to Transmission */
-          result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
-          if( result >= 0) {  //result == 0 -> duplicate torrent
-            if(result > 0 && session->prowl_key_valid) {  //torrent was added
-              prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+    if(isMatch(session->filters, item->name, feedID, &download_folder)) {
+      if(has_been_downloaded(session->downloads, item->url)) {   
+		  dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
+	   } else {       
+        dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
+        torrent = downloadTorrent(curl_session, item->url);
+        if(torrent) {
+          if(torrent->responseCode == 200) {
+            get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
+            /* add torrent to Transmission */
+            result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+            if( result >= 0) {  //result == 0 -> duplicate torrent
+              if(result > 0 && session->prowl_key_valid) {  //torrent was added
+                prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+              }
+              /* add url to bucket list */
+              if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
+                session->bucket_changed = 1;
+                save_state(session->statefile, session->downloads);
+              }
+            } else {  //an error occurred
+              if(session->prowl_key_valid) {
+                prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
+              }
             }
-            /* add url to bucket list */
-            if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
-              session->bucket_changed = 1;
-              save_state(session->statefile, session->downloads);
-            }
-          } else {  //an error occurred
-            if(session->prowl_key_valid) {
-              prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
-            }
+          } else {
+            dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
           }
-        } else {
-          dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
+          HTTPResponse_free(torrent);
         }
-        HTTPResponse_free(torrent);
-      }
+      }  
     }
     current_item = current_item->next;
   }
@@ -430,7 +433,8 @@ PRIVATE HTTPResponse* getRSSFeed(const rss_feed* feed, CURL **session) {
 PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t firstrun) {
   HTTPResponse *response = NULL;
   CURL         *curl_session = NULL;
-  uint32_t item_count = 0;
+  uint32_t      item_count = 0;
+  
   response = getRSSFeed(feed, &curl_session);
   dbg_printf(P_INFO2, "[processFeed] curl_session=%p", (void*)curl_session);
 
@@ -442,7 +446,9 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
   if (response) {
     if(response->responseCode == 200 && response->data) {
       simple_list items = parse_xmldata(response->data, response->size, &item_count, &feed->ttl);
-      
+
+      dbg_printf(P_INFO, "Checking feed '%s' (%d items)", feed->url, item_count);
+
       if(firstrun) {
         session->max_bucket_items += item_count;
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
@@ -600,7 +606,6 @@ int main(int argc, char **argv) {
       count = 0;
       while(current && current->data) {
         ++count;
-        dbg_printf(P_INFO2, "Checking feed %d ...", count);
         processFeed(session, current->data, first_run);
         current = current->next;
       }
