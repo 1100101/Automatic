@@ -197,7 +197,9 @@ PRIVATE simple_list parseMultiOption(const char *str) {
   uint32_t line_pos = 0;
   uint32_t len = strlen(str);
   simple_list options = NULL;
-
+  const char *subopt_delim = "=>";
+  uint8_t subopt_count;
+   
   if(!tmp) {
     dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
     return NULL;
@@ -210,23 +212,13 @@ PRIVATE simple_list parseMultiOption(const char *str) {
   while(line_pos < len) {
     memset(tmp, 0, MAX_PARAM_LEN+1);
     tmp_pos = 0;
+    subopt_count = 0;
     
-    /* case 1: quoted strings */
-    if (str[line_pos] == '"' || str[line_pos] == '\'') {
-      c = str[line_pos];
-      ++line_pos;  /* skip quote */
-
-      while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
-        tmp[tmp_pos++] = str[line_pos++];
+    while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
+      if(line_pos > 0 && str[line_pos-1] == subopt_delim[0] && str[line_pos] == subopt_delim[1]) {
+         subopt_count++;
       }
-
-      if(str[line_pos] == c) {
-        line_pos++; /* skip the closing quote */
-      }
-    } else {
-      while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
-        tmp[tmp_pos++] = str[line_pos++];
-      }
+      tmp[tmp_pos++] = str[line_pos++];
     }
 
     /* A line is finished, end it with a null terminator */
@@ -241,14 +233,18 @@ PRIVATE simple_list parseMultiOption(const char *str) {
         addItem(i, &options);
       }
     }
-
+    
     /* skip any additional whitespace at the end of the line */
     while (isspace(str[line_pos])) {
       ++line_pos;
     }
   }
 
-  assert(strlen(tmp) < MAX_PARAM_LEN);
+  if(subopt_count > 1) {
+    dbg_printf(P_ERROR, "Error: Suboptions must be placed on separate lines!");
+    freeList(&options, freeOptionItem);
+  }
+
   am_free(tmp);
   
   return options;
