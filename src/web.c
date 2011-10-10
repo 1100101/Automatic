@@ -354,6 +354,7 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   //curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L );
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L );
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L );
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "WhoCares" );
 
   if(auth && *auth) {
     dbg_printf(P_INFO2, "auth: %s", auth);
