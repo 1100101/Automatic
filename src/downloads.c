@@ -39,23 +39,28 @@
 #include "list.h"
 #include "utils.h"
 #include "output.h"
+#include "feed_item.h"
 
 #ifdef MEMWATCH
 	#include "memwatch.h"
 #endif
 
-
-static uint8_t bucket_hasURL(const char *url, NODE *head) {
+static uint8_t bucket_hasGUID(const char * guid, NODE *head) {
 	NODE *p = head;
 	char *x;
+  
+  if(guid && *guid) {
+    while (p != NULL) {
+      x = (char*)p->data;
 
-	while (p != NULL) {
-		x = (char*)p->data;
-		if(strcmp(x, url) == 0) {
-			return 1;
-		}
-		p = p->next;
-	}
+      if(strcmp(x, guid) == 0) {
+        return 1;
+      }
+
+      p = p->next;
+    }
+  }
+  
 	return 0;
 }
 
@@ -63,17 +68,25 @@ static uint8_t bucket_hasURL(const char *url, NODE *head) {
 /** \brief Checks if a torrent file has been downloaded before
  *
  * \param bucket Bucket list that stores the URLS of previously downloaded torrents
- * \param url URL of the torrent that should be checked
+ * \param item feed item that should be checked
  * \return 0 if it's a new torrent, 1 if it has been downloaded before
  */
 
-uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
-   return bucket_hasURL(url, bucket);
+uint8_t has_been_downloaded(const simple_list bucket, const feed_item item) {
+#if 0
+  if(bucket_hasGUID(item->guid, bucket) || bucket_hasGUID(item->url, bucket)) {
+    return 1;
+  }
+  
+  return 0;
+#else
+  return bucket_hasGUID(item->guid, bucket) || bucket_hasGUID(item->url, bucket);
+#endif
 }
 
 /** \brief add new item to bucket list
  *
- * \param[in] identifier Unique identifier for a bucket item (e.g. a URL)
+ * \param[in] guid Unique identifier for a bucket item (e.g. a URL)
  * \param[in,out] head pointer to the bucket list
  * \param[in] maxBucketItems number of maximum items in bucket list
  * \return always returns 0
@@ -81,9 +94,9 @@ uint8_t has_been_downloaded(const simple_list bucket, const char *url) {
  * The size of the provided bucket list is kept to maxBucketItems.
  * If it gets larger than the specified value, the oldest element is removed from the list.
  */
-int addToBucket(const char* identifier, NODE **head, const int maxBucketItems) {
+int addToBucket(const char* guid, NODE **head, const int maxBucketItems) {
 
-	addToHead(am_strdup(identifier), head);
+	addToHead(am_strdup(guid), head);
 	if(maxBucketItems > 0 && listCount(*head) > (uint32_t)maxBucketItems) {
 		dbg_printf(P_INFO2, "[add_to_bucket] bucket gets too large, deleting last item...\n");
 		removeLast(*head, NULL);

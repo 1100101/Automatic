@@ -42,7 +42,7 @@
 #include "utils.h"
 
 #ifdef MEMWATCH
-	#include "memwatch.h"
+    #include "memwatch.h"
 #endif
 
 
@@ -54,24 +54,24 @@
  * \return 1 if a filter matched, 0 otherwise.
  *
  */
-uint8_t isMatch(const am_filters filters, const char* string, uint16_t feedID, char **folder) {
-	am_filters current_regex = NULL;
+uint8_t isMatch(const am_filters filters, const char * string, uint16_t feedID, char **folder) {
+  am_filters current_regex = NULL;
   am_filter filter;
 
   assert(folder != NULL);
 
-	current_regex = filters;
-	while (current_regex != NULL && current_regex->data != NULL) {
-		filter = (am_filter) current_regex->data;
+  current_regex = filters;
+  while (current_regex != NULL && current_regex->data != NULL) {
+    filter = (am_filter) current_regex->data;
     if(!filter->feedIDSet || filter->feedID == feedID) {
       if(isRegExMatch(filter->pattern, string) == 1) {
         *folder = filter->folder;
         return 1;
       }
     }
-		current_regex = current_regex->next;
-	}
-	return 0;
+    current_regex = current_regex->next;
+  }
+  return 0;
 }
 
 /** \brief Create a new RSS feed item
@@ -79,13 +79,14 @@ uint8_t isMatch(const am_filters filters, const char* string, uint16_t feedID, c
  * \return New feed item.
  */
 feed_item newFeedItem(void) {
-	feed_item i = (feed_item)am_malloc(sizeof(struct feed_item));
-	if(i != NULL) {
-		i->name     = NULL;
-		i->url      = NULL;
-    i->category = NULL;
-	}
-	return i;
+    feed_item i = (feed_item)am_malloc(sizeof(struct feed_item));
+    if(i != NULL) {
+      i->name     = NULL;
+      i->url      = NULL;
+      i->category = NULL;
+      i->guid     = NULL;
+    }
+    return i;
 }
 
 /** \brief Free all allocated memory associated with the given feed item
@@ -93,21 +94,29 @@ feed_item newFeedItem(void) {
  * \param[in] data Pointer to a feed item
  */
 void freeFeedItem(void *data) {
-	feed_item item = (feed_item)data;
-	if(item != NULL) {
-		if(item->name != NULL) {
-			am_free(item->name);
-			item->name = NULL;
-		}
-		if(item->url != NULL) {
-			am_free(item->url);
-			item->url = NULL;
-		}
-		if(item->category != NULL) {
-			am_free(item->category);
-			item->category = NULL;
-		}
-		am_free(item);
-		item = NULL;
-	}
+  feed_item item = (feed_item)data;
+  if(item != NULL) {
+    if(item->name != NULL) {
+      am_free(item->name);
+      item->name = NULL;
+    }
+
+    if(item->url != NULL) {
+      am_free(item->url);
+      item->url = NULL;
+    }
+
+    if(item->category != NULL) {
+      am_free(item->category);
+      item->category = NULL;
+    }
+    
+    if(item->guid != NULL) {
+      am_free(item->guid);
+      item->guid = NULL;
+    }
+    
+    am_free(item);
+    item = NULL;
+  }
 }

@@ -1,4 +1,12 @@
-2011-09-xx v0.6.6
+2011-xx-xx v.0.7.0
+      Added:   Assign each feed an ID, and bind filters to a certain feed using the ID.
+    Changed:   Store RSS GUID in history file instead of item URL.
+
+2011-10-10 v0.6.7
+      Fixed:   Issues with websites expecting a HTTP UserAgent.
+      Fixed:   Ignore multi-option options (filter, feed) with multiple suboptions on the same line in the config file.
+
+2011-09-01 v0.6.6
       Fixed:   Issues with UTF8 characters in the config file in general
       Fixed:   Automatic would try to send Prowl notification even if an invalid key was specified
 

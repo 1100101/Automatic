@@ -35,12 +35,13 @@ struct feed_item {
 	/** \{ */
 	char *name; /**< "Name" field of the RSS item */
 	char *url;  /**< URL field of the RSS item    */
-  char *category;
+	char *category;
+	char *guid;
 	/** \} */
 };
 
 void freeFeedItem(void *item);
 feed_item newFeedItem(void);
-uint8_t isMatch(const simple_list filters, const char* item, uint16_t feedID, char **folder);
+uint8_t isMatch(const simple_list filters, const char * string, uint16_t feedID, char **folder);
 
 #endif

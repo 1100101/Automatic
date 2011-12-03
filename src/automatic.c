@@ -120,6 +120,9 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
         break;
       case 'x':
         *xmlfile = optarg;
+        *nofork = 1;
+        *once = 1;
+        break;
       case 'o':
         *once = 1;
         break;
@@ -380,15 +383,15 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   char *download_folder = NULL;
   int8_t result;
 
-  if(!curl_session || !session) {
-    printf("curl_session == NULL || session == NULL\n");
+  if(!curl_session && !session) {
+    printf("curl_session == NULL && session == NULL\n");
     abort();
   }
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if(isMatch(session->filters, item->name, feedID, &download_folder)) {
-      if(has_been_downloaded(session->downloads, item->url)) {   
+      if(has_been_downloaded(session->downloads, item)) {   
 		  dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
 	   } else {       
         dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
@@ -403,7 +406,12 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                 prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
               }
               /* add url to bucket list */
-              if (addToBucket(item->url, &session->downloads, session->max_bucket_items) == 0) {
+              if(item->guid != NULL) {
+                result = addToBucket(item->guid, &session->downloads, session->max_bucket_items);
+              } else {
+                result = addToBucket(item->url, &session->downloads, session->max_bucket_items);
+              }
+              if (result == 0) {
                 session->bucket_changed = 1;
                 save_state(session->statefile, session->downloads);
               }
