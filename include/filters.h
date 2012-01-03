@@ -33,9 +33,8 @@ typedef struct NODE* am_filters;
 /** struct representing an RSS feed */
 struct am_filter {
 	char    *pattern;  /**< Feed URL */
-  char    *folder;
-  uint16_t feedID;
-  uint8_t  feedIDSet;
+   char    *folder;
+   char    *feedID;
 };
 
 PUBLIC am_filter filter_new(void);

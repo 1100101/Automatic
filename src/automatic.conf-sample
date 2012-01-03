@@ -41,11 +41,12 @@ url = ""
 
 # A feed contains at least a feed URL and some optional parameters:
 #    "cookie"  =>  If the feed sits behind a login-secured site, you may specify the cookie information here so that Automatic
-                   can download the feed (and any torrents that are matched)
-     "id"      =>  Give a feed a numeric feed ID which later on can be used to restrict certain filters to only be used with a specific feed.
+#                   can download the feed (and any torrents that are matched)
+#     "id"      =>  Give a feed a numeric ID which can be used to restrict certain filters to only be used with a specific feed.
 
 feed =  {  url     => ""
            cookie  => "" 
+           id      => 1
         }
 
 
@@ -89,11 +90,11 @@ statefile = "~/.config/automatic.state"
 # expression. You can list as many filters as you want.
 # Optional fields:
 #    "folder"  ==> Set a specific download folder for torrents that match this regular expression
-#    "feedID"  ==> Use this filter only for RSS items from the feed with the specified feed ID
+#    "feedid"  ==> Use this filter only for RSS items from the feed with the specified feed ID
 #
 # Please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 
 filter = { pattern => "Name.of.Something.I.Want.to.Download.Automatically.*HDTV" 
-           folder => "/your/download/folder"
-           feedID => 1
+           folder  => "/your/download/folder"
+           feedid  => 1
          }

@@ -56,9 +56,10 @@ PUBLIC rss_feed* feed_new(void) {
   if(i != NULL) {
     i->url  = NULL;
     i->cookies = NULL;  
+    i->id = NULL;
     i->ttl = -1;
-    i->id = 0;
   }
+
   return i;
 }
 
@@ -114,6 +115,7 @@ void feed_free(void* listItem) {
 	if(x != NULL) {
 		am_free(x->url);
 		am_free(x->cookies);
+		am_free(x->id);
 		am_free(x);
 	}
 }

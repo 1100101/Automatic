@@ -53,8 +53,7 @@ PUBLIC am_filter filter_new(void) {
 	if(i != NULL) {
 		i->pattern = NULL;
 		i->folder = NULL;
-    i->feedIDSet = 0;
-    i->feedID = 0;
+      i->feedID = NULL;
 	}
   
 	return i;
@@ -112,10 +111,12 @@ PUBLIC void filter_free(void* listItem) {
 
 	if(x != NULL) {
 	  am_free(x->pattern);
-		x->pattern = NULL;
+	  x->pattern = NULL;
 	  am_free(x->folder);
-		x->folder = NULL;
-		am_free(x);
-		x = NULL;
+	  x->folder = NULL;
+	  am_free(x->feedID);
+	  x->feedID = NULL;
+	  am_free(x);
+	  x = NULL;
 	}
 }

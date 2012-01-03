@@ -375,7 +375,7 @@ PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, uint16_t feedID) {
+PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const char * feedID) {
 
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
@@ -394,7 +394,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
       if(has_been_downloaded(session->downloads, item)) {   
 		  dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
 	   } else {       
-        dbg_printft(P_MSG, "[%d] Found new download: %s (%s)", feedID, item->name, item->url);
+        dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
         torrent = downloadTorrent(curl_session, item->url);
         if(torrent) {
           if(torrent->responseCode == 200) {
@@ -489,7 +489,7 @@ PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
     items = parse_xmldata(xmldata, fileLen, &item_count, &dummy_ttl);
     session->max_bucket_items += item_count;
     dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
-    processRSSList(session, NULL, items, 0);
+    processRSSList(session, NULL, items, NULL);
     freeList(&items, freeFeedItem);
     am_free(xmldata);
   }

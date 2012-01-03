@@ -54,7 +54,7 @@
  * \return 1 if a filter matched, 0 otherwise.
  *
  */
-uint8_t isMatch(const am_filters filters, const char * string, uint16_t feedID, char **folder) {
+uint8_t isMatch(const am_filters filters, const char * string, const char * feedID, char **folder) {
   am_filters current_regex = NULL;
   am_filter filter;
 
@@ -63,14 +63,23 @@ uint8_t isMatch(const am_filters filters, const char * string, uint16_t feedID, 
   current_regex = filters;
   while (current_regex != NULL && current_regex->data != NULL) {
     filter = (am_filter) current_regex->data;
-    if(!filter->feedIDSet || filter->feedID == feedID) {
+    
+    /* The isRegExMatch method is only called in two cases:
+    ** A) The given filter has no ID. We assume this filter matches items from all feeds.
+    ** B) Both filter and feed have matching IDs.
+    **
+    ** In all other cases, the item is ignored.
+    */     
+    if( !(filter->feedID && *filter->feedID) || (feedID && *feedID && strcasecmp(feedID, filter->feedID) == 0)) {
       if(isRegExMatch(filter->pattern, string) == 1) {
         *folder = filter->folder;
         return 1;
       }
     }
+    
     current_regex = current_regex->next;
   }
+  
   return 0;
 }
 
@@ -86,6 +95,7 @@ feed_item newFeedItem(void) {
       i->category = NULL;
       i->guid     = NULL;
     }
+    
     return i;
 }
 

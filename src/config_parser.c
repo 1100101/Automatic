@@ -84,23 +84,6 @@ PRIVATE void set_path(const char *src, char **dst) {
   }
 }
 
-PRIVATE int parseUInt(const char *str) {
-  int is_num = 1;
-  uint32_t i;
-
-  for(i = 0; i < strlen(str); i++) {
-    if(isdigit(str[i]) == 0) {
-      is_num--;
-    }
-  }
-  
-  if(is_num == 1 && atoi(str) > 0) {
-    return atoi(str);
-  }
-  
-  return -1;
-}
-
 /* TODO: This does currently more than it should, clean this up. */
 PRIVATE char* trim_obsolete(const char *str) {
 
@@ -194,6 +177,28 @@ PRIVATE char* trim(const char *str) {
   return am_strndup(str, end - str);
 }
 
+
+PRIVATE int parseUInt(const char *str) {
+  int is_num = 1;
+  uint32_t i;
+  uint32_t result = -1;
+  
+  char * trimmed = trim(str);
+
+  for(i = 0; i < strlen(trimmed); i++) {
+    if(isdigit(trimmed[i]) == 0) {
+      is_num--;
+    }
+  }
+  
+  if(is_num == 1 && atoi(trimmed) > 0) {
+    result = atoi(trimmed);
+  }
+  
+  am_free(trimmed);
+  
+  return result;
+}
 
 PRIVATE simple_list parseMultiOption(const char *str) {
 
@@ -311,13 +316,7 @@ PRIVATE int parseFilter(am_filters *patlist, const char* match) {
         } else if(!strncmp(option, "folder", 6)) {
           filter->folder = trim(param);
         } else if(!strncmp(option, "feedid", 6)) {
-          numval = parseUInt(param);
-          if (numval > 0) {
-            filter->feedID = (uint16_t)numval;
-            filter->feedIDSet = 1;
-          } else {
-            dbg_printf(P_ERROR, "Invalid value '%s' for filter option 'feedID'", param);
-          }
+          filter->feedID = trim(param);
         } else {
           dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
         }
@@ -412,12 +411,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
         } else if(!strncmp(option, "cookies", 6)) {
           feed->cookies = trim(param);
         } else if(!strncmp(option, "id", 2)) {
-          numval = parseUInt(param);
-          if (numval > 0) {
-            feed->id = (uint16_t)numval;
-          } else {
-            dbg_printf(P_ERROR, "Invalid value '%s' for feed option 'ID'", param);
-          }
+          feed->id = trim(param);
         } else {
           dbg_printf(P_ERROR, "Unknown suboption '%s'!", option);
         }
@@ -440,10 +434,6 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
       parseCookiesFromURL(feed);
     }
 
-    /* Give the feed an ID if the user didn't set one. */
-    if(feed->id != 0) {
-      feed->id = listCount(*feeds);
-    }
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", feedstr);
@@ -457,6 +447,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   return result;
 }
 
+/* Deprecated */
 PRIVATE int getFeeds(NODE **head, const char* strlist) {
   simple_list option_list = NULL;  
   NODE * current = NULL;
@@ -472,8 +463,7 @@ PRIVATE int getFeeds(NODE **head, const char* strlist) {
     if(opt_item != NULL) {
       rss_feed* feed = feed_new();
       assert(feed && "feed_new() failed!");
-      feed->url = strdup(opt_item->str);
-      feed->id  = listCount(*head);
+      feed->url = strdup(opt_item->str);      
       
       /* Maybe the cookies are encoded within the URL */
       parseCookiesFromURL(feed);
