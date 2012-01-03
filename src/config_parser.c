@@ -294,7 +294,7 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 PRIVATE int parseFilter(am_filters *patlist, const char* match) {
   char *option = NULL, *param = NULL;
   am_filter filter = NULL;
-  int32_t result = SUCCESS, numval; /* be optimistic */
+  int32_t result = SUCCESS; /* be optimistic */
   simple_list option_list = NULL;  
   NODE * current = NULL;
   option_item_t *opt_item = NULL;
@@ -389,7 +389,7 @@ PRIVATE void parseCookiesFromURL(rss_feed* feed) {
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   char *option = NULL, *param = NULL;
   rss_feed* feed = NULL;
-  int32_t result = SUCCESS, numval; /* be optimistic */
+  int32_t result = SUCCESS; /* be optimistic */
   simple_list option_list = NULL;  
   NODE * current = NULL;
   option_item_t *opt_item = NULL;
