@@ -1322,7 +1322,7 @@ uninstall-am: uninstall-automatic_mwHEADERS uninstall-binPROGRAMS \
 
 
 clean-local:
-	if test -d .svn; then rm -f version.h; fi;
+	rm -f version.h
 
 version.h:
 	echo '#define SVN_REVISION          "'`git rev-parse --short HEAD`'"' > version.h
