@@ -1,0 +1,13 @@
+src/automatic.conf
+src/*.o
+src/automatic
+src/automatic-mw
+Makefile
+config.log
+config.status
+src/.deps
+src/tests/.deps
+src/version.h
+src/automatic.state
+src/*.log
+autom4te.cache/
