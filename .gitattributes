@@ -1,2 +1,5 @@
 configure.in merge=ours
 configure merge=ours
+depcomp merge=ours
+install-sh merge=ours
+missing merge=ours
