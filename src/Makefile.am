@@ -75,7 +75,7 @@ LDADD = \
     $(PCRE_LIBS)
 
 clean-local:
-	if test -d .svn; then rm -f version.h; fi;
+	rm -f version.h
 
 EXTRA_automatic_SOURCES = \
     version.h
