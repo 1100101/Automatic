@@ -11,7 +11,3 @@ src/version.h
 src/automatic.state
 src/*.log
 autom4te.cache/
-depcomp
-install-sh
-missing
-config.status
