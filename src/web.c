@@ -87,14 +87,22 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   char        *filename = NULL;
   const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+?)\"?;?\\r?\\n?$";
   int          content_length = 0;
-
-  /* parse header for Content-Length to allocate correct size for data->response->data */
-  if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
+  static uint8_t isMoveHeader = 0;
+  
+  /* check the header if it is a redirection header */
+  if(line_len >= 9 && !memcmp(line, "Location:", 9)) {
+    isMoveHeader = 1;
+    if(mem->response->data != NULL) {
+      am_free(mem->response->data);
+      mem->content_length = 0;
+    }   
+  } else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
+    /* parse header for Content-Length to allocate correct size for data->response->data */
     tmp = getRegExMatch("Content-Length:\\s(\\d+)", line, 1);
     if(tmp != NULL) {
       dbg_printf(P_INFO2, "Content-Length: %s", tmp);
       content_length = atoi(tmp);
-      if(content_length > 0) {
+      if(content_length > 0 && !isMoveHeader) {
         mem->content_length = content_length;
         mem->response->data = am_realloc(mem->response->data, content_length + 1);
       }
@@ -107,28 +115,10 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       mem->content_filename = filename;
       dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
     }
+  } else if(line_len >= 2 && !memcmp(line, "\r\n", 2)) {
+    /* We're at the end of a header, reaset the relocation flag */
+    isMoveHeader = 0;
   }
-
-  //not sure if the following part is really necessary
-#if 0
-  /* save header line to mem->header */
-  if(!mem->header->data) {
-    mem->header->data = am_malloc(HEADER_BUFFER);
-    dbg_printf(P_INFO2, "[write_header_callback] allocated %d bytes for mem->header->data", HEADER_BUFFER);
-  }
-
-
-  if(mem->header->size + line_len + 1 > HEADER_BUFFER) {
-    mem->header->data = (char *)am_realloc(mem->header->data, mem->header->size + line_len + 1);
-  }
-
-  if (mem->header->data) {
-    memcpy(&(mem->header->data[mem->header->size]), ptr, line_len);
-    mem->header->size += line_len;
-    mem->header->data[mem->header->size] = 0;
-  }
-
-#endif
 
   return line_len;
 }

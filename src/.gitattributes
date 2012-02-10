@@ -1,1 +1,2 @@
 Makefile.am merge=ours
+Makefile.in merge=ours

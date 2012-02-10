@@ -11,3 +11,9 @@ src/version.h
 src/automatic.state
 src/*.log
 autom4te.cache/
+configure.lineno
+Makefile.in
+src/Makefile.in
+src/tests/Makefile.in
+configure
+aclocal.m4
