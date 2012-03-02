@@ -10,7 +10,8 @@
 
 #include "torrent.h"
 
-char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char *folder, uint32_t *setme_size);
+char* makeTorrentAddFilenameJSON(const char* torrent_name, uint8_t start, const char* folder, uint32_t *setme_size);
+char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start, const char *folder, uint32_t *setme_size);
 char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size);
 char* parseResponse(const char* response);
 torrent_id_t parseTorrentID(const char* response);
