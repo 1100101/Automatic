@@ -25,6 +25,8 @@
 #include "web.h"
 #include "file.h"
 
+static torrent_id_t sendTransmissionRPC(const char* rpc_packet, uint32_t packet_size, const char *url, const char* auth);
+
 /** \brief Determine the filename of a downloaded torrent and create its save path.
  *
  * \param path Full path where the torrent will be saved
@@ -38,7 +40,8 @@
  * to create a filename. The ".torrent" extension is appended if necessary.
  * The resulting filename is then appended to the torrent folder path (specified in automatic.conf)
  */
-void get_filename(char *path, const char *content_filename, const char* url, const char *t_folder) {
+void 
+get_filename(char *path, const char *content_filename, const char* url, const char *t_folder) {
   char *p, tmp[PATH_MAX], buf[PATH_MAX];
   int len;
 
@@ -64,8 +67,8 @@ void get_filename(char *path, const char *content_filename, const char* url, con
   snprintf(path, PATH_MAX - 1, "%s/%s", t_folder, buf);
 }
 
-int8_t changeUploadSpeed(const char* url, const char* auth,
-                         torrent_id_t id, uint16_t upspeed, uint8_t rpcVersion) {
+int8_t
+changeUploadSpeed(const char* url, const char* auth, torrent_id_t id, uint16_t upspeed, uint8_t rpcVersion) {
 
   uint32_t packet_size;
   char *packet = NULL;
@@ -96,20 +99,43 @@ int8_t changeUploadSpeed(const char* url, const char* auth,
   return result;
 }
 
-torrent_id_t uploadTorrent(const void *t_data, int t_size,
-                     const char *url, const char* auth, uint8_t start,
-                     const char* folder) {
+torrent_id_t
+uploadMagnet(const char* magnet_uri, const char *url, const char* auth, uint8_t start, const char* folder) {
   char         *packet = NULL;
-  HTTPResponse *res = NULL;
-  const char   *response = NULL;
   uint32_t      packet_size = 0;
   torrent_id_t  ret = -1;
 
   /* packet torrent data in a JSON package */
-  packet = makeJSON(t_data, t_size, start, folder, &packet_size);
-  if(packet && packet_size > 0) {
+  packet = makeTorrentAddFilenameJSON(magnet_uri, start, folder, &packet_size);
+  ret = sendTransmissionRPC(packet, packet_size, url, auth);
+  am_free(packet);
+  return ret;
+}
+
+
+torrent_id_t
+uploadTorrent(const void *t_data, int t_size, const char *url, const char* auth, uint8_t start, const char* folder) {
+  char         *packet = NULL;
+  uint32_t      packet_size = 0;
+  torrent_id_t  ret = -1;
+
+  /* packet torrent data in a JSON package */
+  packet = makeTorrentAddMetaInfoJSON(t_data, t_size, start, folder, &packet_size);
+  ret = sendTransmissionRPC(packet, packet_size, url, auth);
+  am_free(packet);
+  return ret;
+}
+
+
+static torrent_id_t
+sendTransmissionRPC(const char* rpc_packet, uint32_t packet_size, const char *url, const char* auth) {
+  HTTPResponse *res = NULL;
+  const char   *response = NULL;
+  torrent_id_t  ret = -1;
+
+  if(rpc_packet && packet_size > 0) {
     /* send JSON package to Transmission via HTTP POST */
-    res = sendHTTPData(url, auth, packet, packet_size);
+    res = sendHTTPData(url, auth, rpc_packet, packet_size);
     if(res != NULL) {
       if(res->responseCode == 200) {
         response = parseResponse(res->data);
@@ -135,7 +161,6 @@ torrent_id_t uploadTorrent(const void *t_data, int t_size,
     } else {
       dbg_printf(P_ERROR, "sendHTTPData() failed! (resp == NULL)");
     }
-    am_free(packet);
   }
   return ret;
 }

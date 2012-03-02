@@ -60,7 +60,7 @@
 
 PRIVATE char AutoConfigFile[MAXPATHLEN + 1];
 PRIVATE void session_free(auto_handle *as);
-
+PRIVATE uint8_t isMagnetURI(const char* uri);
 uint8_t closing = 0;
 uint8_t nofork  = AM_DEFAULT_NOFORK;
 
@@ -375,6 +375,33 @@ PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, const char *folder) {
+   int8_t success = -1;
+   torrent_id_t tid;
+   char url[MAX_URL_LEN];
+  
+   if (ah->transmission_version == AM_TRANSMISSION_1_3) {
+      snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
+      tid = uploadMagnet(magnet_uri, url, ah->auth, ah->start_torrent, folder);
+      if(tid > 0) {  /* tid > 0: torrent ID --> torrent was added to TM */
+         success = 1;
+         if(ah->upspeed > 0) {
+            changeUploadSpeed(url, ah->auth, tid, ah->upspeed, ah->rpc_version);
+         }
+      } else if(tid == 0) {  /* duplicate torrent */
+         success = 0;
+      } else {      /* torrent was not added */
+         success = -1;
+      }
+   } else {
+      dbg_printf(P_ERROR, "[addMagnetToTM] Magnet Links only work with Transmission 1.3+");
+   }
+   return success;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const char * feedID) {
 
   simple_list current_item = items;
@@ -395,38 +422,39 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
 		  dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
 	   } else {       
         dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
-        torrent = downloadTorrent(curl_session, item->url);
-        if(torrent) {
-          if(torrent->responseCode == 200) {
-            get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
-            /* add torrent to Transmission */
-            result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
-            if( result >= 0) {  //result == 0 -> duplicate torrent
-              if(result > 0 && session->prowl_key_valid) {  //torrent was added
-                prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
-              }
-              /* add url to bucket list */
-              if(item->guid != NULL) {
-                result = addToBucket(item->guid, &session->downloads, session->max_bucket_items);
-              } else {
-                result = addToBucket(item->url, &session->downloads, session->max_bucket_items);
-              }
-              if (result == 0) {
-                session->bucket_changed = 1;
-                save_state(session->statefile, session->downloads);
-              }
-            } else {  //an error occurred
-              if(session->prowl_key_valid) {
-                prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
-              }
+        if(isMagnetURI(item->url)) {
+            result = addMagnetToTM(session, item->url, download_folder);
+        } else {
+          torrent = downloadTorrent(curl_session, item->url);
+          if(torrent) {
+            if(torrent->responseCode == 200) {
+              get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
+              /* add torrent to Transmission */
+              result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+            } else {
+              dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
             }
-          } else {
-            dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
-          }
+          }            
           HTTPResponse_free(torrent);
+        }
+        if( result >= 0) {  //result == 0 -> duplicate torrent
+          if(result > 0 && session->prowl_key_valid) {  //torrent was added
+            prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+          }
+          /* add url to bucket list */
+          result = addToBucket(item->guid != NULL ? item->guid : item->url, &session->downloads, session->max_bucket_items);
+          if (result == 0) {
+            session->bucket_changed = 1;
+            save_state(session->statefile, session->downloads);
+          }
+        } else {  //an error occurred
+          if(session->prowl_key_valid) {
+            prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
+          }
         }
       }  
     }
+    
     current_item = current_item->next;
   }
 }
@@ -630,5 +658,18 @@ int main(int argc, char **argv) {
   }
   shutdown_daemon(session);
   return 0;
+}
+
+PRIVATE uint8_t isMagnetURI(const char* url) {
+  if(url == NULL || *url == NULL) {
+    return 0;
+  }
+  
+  if(strlen(url) < 7) {
+    return 0;
+  }
+  
+  return !strncmp(url, "magnet:", 7);
+  
 }
 
