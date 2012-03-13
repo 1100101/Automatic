@@ -3,6 +3,11 @@ src/*.o
 src/automatic
 src/automatic-mw
 Makefile
+Makefile.in
+depcomp
+install-sh
+missing
+aclocal.m4
 config.log
 config.status
 src/.deps
@@ -10,6 +15,8 @@ src/tests/.deps
 src/version.h
 src/automatic.state
 src/*.log
+src/Makefile.in
+src/tests/Makefile.in
 autom4te.cache/
 configure.lineno
 Makefile.in
