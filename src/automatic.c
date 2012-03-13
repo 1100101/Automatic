@@ -661,7 +661,7 @@ int main(int argc, char **argv) {
 }
 
 PRIVATE uint8_t isMagnetURI(const char* url) {
-  if(url == NULL || *url == NULL) {
+  if(url == NULL || *url == 0) {
     return 0;
   }
   
