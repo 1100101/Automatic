@@ -1,3 +1,6 @@
+2012-02-10 v0.7.2
+      Fixed:   Downloading a torrent from a feed caused a crash in some rare situations.
+      
 2012-01-09 v0.7.1
       Fixed:   Problems with assigning a feed ID.
       
