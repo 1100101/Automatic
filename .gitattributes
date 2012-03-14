@@ -1,5 +1,5 @@
-configure.in merge=ours
-configure merge=ours
-depcomp merge=ours
-install-sh merge=ours
-missing merge=ours
+configure.in merge=ours -diff
+configure merge=ours -diff
+depcomp merge=ours -diff
+install-sh merge=ours -dif
+missing merge=ours -diff
