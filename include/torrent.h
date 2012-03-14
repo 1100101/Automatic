@@ -14,7 +14,7 @@ void get_filename(char *filename, const char *content_filename, const char *url,
 torrent_id_t uploadTorrent(const void *t_data, int t_size,
                            const char *url, const char* auth, uint8_t start,
                            const char* folder);
-
+torrent_id_t uploadMagnet(const char* magnet_uri, const char *url, const char* auth, uint8_t start, const char* folder);
 int8_t changeUploadSpeed(const char* url, const char* auth, torrent_id_t id,
                          uint16_t upspeed, uint8_t rpcVersion);
 

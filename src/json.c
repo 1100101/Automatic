@@ -26,15 +26,74 @@
 /** \brief Create a Transmission-specific JSON packet in order to add a new download
  * to Transmission.
  *
- * \param[in] data Pointer to the torrent data
- * \param[in] tsize size of the torrent data
+ * \param[in] torrent_name A filename, a URL or a magnet link
+ * \param[in] start Determines if the torrent shall start to download right away or be added in a paused state
+ * \param[in] folder Optional parameter to set the download folder for this torrent
  * \param[out] setme_size size of the resulting JSON packet
  * \return pointer to the JSON string
  *
  * The function Base64-encodes the given torrent content and encapsulates it in a JSON packet.
  * The packet can then be sent to Transmission via HTTP POST.
  */
-char* makeJSON(const void *data, uint32_t tsize, uint8_t start, const char* folder, uint32_t *setme_size) {
+char* makeTorrentAddFilenameJSON(const char* torrent_name, uint8_t start, const char* folder, uint32_t *setme_size) {
+   char *buf = NULL;
+   char *folder_str = NULL;
+   int buf_size, json_size, folderstr_size = 0;   
+   const char *JSONstr =
+		"{\n"
+		"\"method\": \"torrent-add\",\n"
+		"\"arguments\": {\n"
+		"\"filename\": \"%s\",\n"
+    "%s"
+    "\"paused\": %d\n"
+		"}\n"
+		"}";
+
+   *setme_size = 0;
+
+   if(folder && *folder) {
+     folderstr_size = strlen(folder) + 20;
+     folder_str = (char*)am_malloc(folderstr_size);
+     assert(folder_str && "am_malloc(folder_str) failed!");
+     snprintf(folder_str, folderstr_size, "\"download-dir\": \"%s\",\n", folder);
+     dbg_printf(P_INFO, "folder_str: %s", folder_str);
+   }
+
+   buf_size = strlen(torrent_name) + strlen(JSONstr) + folderstr_size + 10;
+   buf = (char*)am_malloc(buf_size);
+    memset(buf, 0, buf_size);
+   json_size = snprintf(buf, buf_size, JSONstr, torrent_name, folder_str ? folder_str : "", start ? 0 : 1);
+   if(json_size < 0 || json_size >= buf_size) {
+     dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+     am_free(buf);
+     return NULL;
+   }
+
+   buf[json_size] = '\0';
+   dbg_printf(P_INFO2, "JSON: %s", buf);
+
+   if(setme_size) {
+     *setme_size = json_size;
+   }
+
+   am_free(folder_str);
+   return buf;
+}
+
+/** \brief Create a Transmission-specific JSON packet in order to add a new download
+ * to Transmission.
+ *
+ * \param[in] data Pointer to the torrent data
+ * \param[in] tsize size of the torrent data
+ * \param[in] start Determines if the torrent shall start to download right away or be added in a paused state
+ * \param[in] folder Optional parameter to set the download folder for this torrent
+ * \param[out] setme_size size of the resulting JSON packet
+ * \return pointer to the JSON string
+ *
+ * The function Base64-encodes the given torrent content and encapsulates it in a JSON packet.
+ * The packet can then be sent to Transmission via HTTP POST.
+ */
+char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start, const char* folder, uint32_t *setme_size) {
 
 	char *encoded = NULL;
 
