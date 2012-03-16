@@ -406,7 +406,11 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
       }
       
       if(parseSubOption(opt_item->str, &option, &param) == 0) {
-        if(!strncmp(option, "url", 3)) {
+        if(!strncmp(option, "url_pattern", 11)) {
+          feed->url_pattern = trim(param);
+        } else if(!strncmp(option, "url_replace", 11)) {
+          feed->url_replace = trim(param);
+        } else if(!strncmp(option, "url", 3)) {
           feed->url = trim(param);
         } else if(!strncmp(option, "cookies", 6)) {
           feed->cookies = trim(param);

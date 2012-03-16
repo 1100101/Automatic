@@ -50,6 +50,7 @@
 #include "file.h"
 #include "output.h"
 #include "prowl.h"
+#include "regex.h"
 #include "state.h"
 #include "torrent.h"
 #include "transmission.h"
@@ -402,30 +403,43 @@ PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, cons
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const char * feedID) {
+PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const rss_feed * feed) {
 
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
   char *download_folder = NULL;
+  char *feedID = NULL;
+  char *download_url = NULL;
   int8_t result;
 
   if(!curl_session && !session) {
     printf("curl_session == NULL && session == NULL\n");
     abort();
   }
+  
+  if(feed != NULL) {
+    feedID = feed->id;
+  }
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
     if(isMatch(session->filters, item->name, feedID, &download_folder)) {
       if(has_been_downloaded(session->downloads, item)) {   
-		  dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
-	   } else {       
+        dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
+      } else {       
         dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
         if(isMagnetURI(item->url)) {
             result = addMagnetToTM(session, item->url, download_folder);
         } else {
-          torrent = downloadTorrent(curl_session, item->url);
+          // Rewrite torrent URL, if necessary
+          if(feed->url_pattern !=NULL && feed->url_replace != NULL) {
+            download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
+          }         
+
+          torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
+          am_free(download_url);
+          
           if(torrent) {
             if(torrent->responseCode == 200) {
               get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
@@ -434,9 +448,12 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
             } else {
               dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
             }
-          }            
+          }
+          
           HTTPResponse_free(torrent);
         }
+        
+        // process result
         if( result >= 0) {  //result == 0 -> duplicate torrent
           if(result > 0 && session->prowl_key_valid) {  //torrent was added
             prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
@@ -490,7 +507,7 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
       }
       
-      processRSSList(session, curl_session, items, feed->id);
+      processRSSList(session, curl_session, items, feed);
       freeList(&items, freeFeedItem);
     }
     

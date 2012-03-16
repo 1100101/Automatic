@@ -109,8 +109,47 @@ void testGetMatch(void) {
   am_free(res_str);
 }
 
+
+void testRegexReplace() {
+  const char* pattern1 = "Content-Disposition:\\s(inline|attachment);\\s*filename=\"?(.+?)\"?;?\\r?\\n?$";
+  const char* pattern2 = "abc";
+  const char* substitute1 = "abc\\a\\100xyz";
+  const char* substitute2 = "abc\\a\\1xyz";
+  const char* substitute3 = "abc\\a\\2xyz";
+  const char* string1 = "Content-Disposition: inline; filename=\"this.is.a.test-file.torrent\"";
+  char *res_str = NULL;
+
+  res_str = performRegexReplace(NULL, NULL, NULL);
+  check(res_str == NULL);
+
+  res_str = performRegexReplace(NULL, pattern1, NULL);
+  check(res_str == NULL);
+
+  res_str = performRegexReplace(string1, NULL, NULL);
+  check(res_str == NULL);
+
+  res_str = performRegexReplace(string1, pattern1, NULL);
+  check(res_str == NULL);
+
+  res_str = performRegexReplace(string1, pattern1, substitute1);
+  check(res_str == NULL);
+
+  res_str = performRegexReplace(string1, pattern1, substitute2);
+  check(strcmp(res_str, "abc\\ainlinexyz") == 0);
+  am_free(res_str);
+
+  res_str = performRegexReplace(string1, pattern1, substitute3);
+  check(strcmp(res_str, "abc\\athis.is.a.test-file.torrentxyz") == 0);
+  am_free(res_str);
+
+  res_str = performRegexReplace(string1, pattern2, substitute3);
+  check(res_str == NULL);
+  am_free(res_str);
+}
+
 int main(void) {
   testIsRegexMatch();
   testGetMatch();
+  testRegexReplace();
   return 0;
 }

@@ -8,6 +8,7 @@ depcomp
 install-sh
 missing
 aclocal.m4
+configure
 config.log
 config.status
 src/.deps
