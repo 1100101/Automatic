@@ -14,6 +14,7 @@ http_test_SOURCES = $(GLOBAL_SOURCES)  \
    http_test.c                         \
    $(top_srcdir)/src/web.c             \
    $(top_srcdir)/src/regex.c           \
+   $(top_srcdir)/src/urlcode.c         \
    $(top_srcdir)/src/file.c
 
 list_test_SOURCES = $(GLOBAL_SOURCES) \
@@ -54,6 +55,7 @@ noinst_HEADERS = \
    $(top_srcdir)/include/utils.h    \
    $(top_srcdir)/include/prowl.h    \
    $(top_srcdir)/include/memwatch.h \
+   $(top_srcdir)/include/urlcode.h  \
    $(top_srcdir)/include/regex.h    \
    $(top_srcdir)/include/json.h     \
    $(top_srcdir)/include/web.h      \

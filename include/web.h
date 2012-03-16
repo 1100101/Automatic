@@ -48,5 +48,5 @@ HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, 
 void     HTTPResponse_free(struct HTTPResponse *response);
 void     SessionID_free(void);
 void     closeCURLSession(CURL* curl_handle);
-
+char   * rewriteURL(const char * url, const char * pattern, const char * substitute);
 #endif /* WEB_H_ */

@@ -6,10 +6,13 @@ Makefile
 Makefile.in
 depcomp
 install-sh
+missing
+aclocal.m4
 configure
 configure.in
 config.log
 config.status
+configure.lineno
 src/.deps
 src/tests/.deps
 src/version.h
@@ -18,3 +21,5 @@ src/*.log
 src/Makefile.in
 src/tests/Makefile.in
 autom4te.cache/
+src/Makefile.in
+src/tests/Makefile.in

@@ -1,4 +1,16 @@
-2011-xx-xx v.0.7.0
+2012-03-xx v.8.0
+      Added:   URL Rewrite for torrent download URLs
+      
+2012-03-14 v0.7.3
+      Added:   Support Magnet URIs in torrent feeds
+      
+2012-02-10 v0.7.2
+      Fixed:   Downloading a torrent from a feed caused a crash in some rare situations.
+      
+2012-01-09 v0.7.1
+      Fixed:   Problems with assigning a feed ID.
+      
+2011-12-08 v.0.7.0
       Added:   Assign each feed an ID, and bind filters to a certain feed using the ID.
     Changed:   Store RSS GUID in history file instead of item URL.
 
