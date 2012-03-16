@@ -67,47 +67,6 @@ uint8_t isRegExMatch(const char* pattern, const char* str) {
   return result;
 }
 
-int32_t getRegExCaptureGroups(const char* pattern, const char* str, int catgroupcount, const char ***stringlist) {
-  int32_t count = -1;
-  pcre *result_preg = NULL;
-  int * offsets = NULL;
-
-  if(!str || (str && strlen(str) == 0)) {
-    dbg_printf(P_ERROR, "[getRegExCaptureGroups] Empty string!");
-    return 0;
-  }
-  
-  offsets = (int*)am_malloc(catgroupcount * sizeof(int));
-  
-  if(offsets == NULL) {
-    dbg_printf(P_ERROR, "[getRegExCaptureGroups] malloc(offsets) failed!");
-    return 0;
-  }  
-
-  result_preg = init_regex(pattern);
-  if(result_preg) {
-    dbg_printf(P_INFO2, "[getRegExCaptureGroups] Text to match against: %s (%d byte)", str, strlen(str));
-    count = pcre_exec(result_preg, NULL, str, strlen(str), 0, 0, offsets, catgroupcount);
-    if(count > 1) { /* regex matches */
-      if(pcre_get_substring_list(str, offsets, count, stringlist) < 0) {
-        dbg_printf(P_ERROR, "[getRegExCaptureGroups] Unable to obtain captured strings in regular expression.");
-      }
-    } else if(count < 0) {
-      if(count == PCRE_ERROR_NOMATCH) {
-        dbg_printf(P_DBG, "[getRegExCaptureGroups] No match");
-      } else {
-        dbg_printf(P_ERROR, "[getRegExCaptureGroups] regexec error: %d", count);
-      }
-    }
-    
-    pcre_free(result_preg);
-  }
-  
-  am_free(offsets);
-  
-  return count;
-}
-
 
 /** \brief Retrieve a matched string from a regular expression comparison
  *
@@ -121,26 +80,28 @@ int32_t getRegExCaptureGroups(const char* pattern, const char* str, int catgroup
  */
 char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) {
   int count;
+  pcre *result_preg = NULL;
   char *result_str = NULL;
-  const char **stringlist = NULL;
+    const char **stringlist;
+  int offsets[OVECCOUNT];
 
   if(!str || (str && strlen(str) == 0)) {
     dbg_printf(P_ERROR, "[getRegExMatch] Empty string!");
     return NULL;
   }
 
-#if 1
-  count = getRegExCaptureGroups(pattern, str, OVECCOUNT, &stringlist);
-  if(count > which_result) {
-    result_str = am_strdup(stringlist[which_result]);
-    pcre_free_substring_list(stringlist);
-  }
-#else
   result_preg = init_regex(pattern);
   if(result_preg) {
     dbg_printf(P_INFO2, "[getRegExMatch] Text to match against: %s (%d byte)", str, strlen(str));
     count = pcre_exec(result_preg, NULL, str, strlen(str), 0, 0, offsets, OVECCOUNT);
     if(count > which_result) { /* regex matches */
+      //~ int i;
+      //~ for (i = 0; i < count; i++) {
+        //~ dbg_printf(P_DBG, "%2d: %.*s", i, offsets[2*i+1] - offsets[2*i], str + offsets[2*i]);
+      //~ }
+      //~ len = offsets[2 * which_result + 1] - offsets[2 * which_result];
+      //~ result_str = am_strndup(str + offsets[2 * which_result], len);
+      //~ dbg_printf(P_DBG, "[getMatch] result: '%s' (%d -> %d)", result_str, offsets[2 * which_result], offsets[2 * which_result + 1]);
       if(pcre_get_substring_list(str, offsets, count, &stringlist) < 0) {
         dbg_printf(P_ERROR, "[getRegExMatch] Unable to obtain captured strings in regular expression.");
       } else {
@@ -160,96 +121,5 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
     }
     pcre_free(result_preg);
   }
-  #endif
   return strstrip(result_str);
-}
-
-char * performRegexReplace(const char* str, const char* pattern, const char* replace) {
-  int match_count;
-  const char **stringlist = NULL;
-  int len,  pos;
-#define MAX_SUBST_LEN 1024  
-#define MAX_IDX_LEN 5
-  char index[MAX_IDX_LEN];
-  int ic = 0; /* index counter */
-  int si = 0; /* subsitute index */
-  int num;
-  int fail = 0;
-  char substitute[MAX_SUBST_LEN];
-  
-  memset(&substitute, 0, sizeof(substitute));
-
-  if(!str || (str && strlen(str) == 0)) {
-    dbg_printf(P_ERROR, "[regExReplace] Empty string!");
-    return NULL;
-  }
-  
-  if(!pattern || (pattern && strlen(pattern) == 0)) {
-    dbg_printf(P_ERROR, "[regExReplace] Empty pattern!");
-    return NULL;
-  }
-  
-  if(!replace || (replace && strlen(replace) == 0)) {
-    dbg_printf(P_ERROR, "[regExReplace] Empty substitution string!");
-    return NULL;
-  }
-  
-  match_count = getRegExCaptureGroups(pattern, str, OVECCOUNT, &stringlist);
-  if(match_count > 1) {
-    len = strlen(replace);
-    for(pos = 0; pos < len; ++pos) {
-      if(replace[pos] == '\\') {
-        pos++;
-        
-        if(!(replace[pos] >= 48 && replace[pos] <= 57)) {
-          /* Not a substitution placeholder. */
-          substitute[si++] = replace[pos - 1];
-          substitute[si++] = replace[pos];
-          continue;
-        }
-        
-        while(replace[pos] >= '0' && replace[pos] <= '9') {
-          if(ic > MAX_IDX_LEN - 2) {
-            dbg_printf(P_ERROR, "[regExReplace] Substitute number must be between 1 and 99.");
-            fail = 1;
-            break;
-          }
-          
-          index[ic++] =replace[pos++];
-        }
-        
-        index[ic] = '\0';
-        ic = 0;
-        num = atoi(index);
-        
-        if (num < 1 || num > 99) {
-          dbg_printf(P_ERROR, "[regExReplace] Substitute must be between 1 and 99.");
-          fail = 1;
-          break;
-        }
-        
-        if(num < match_count) {
-          int substring_len = strlen(stringlist[num]);
-          memcpy(&substitute[si], stringlist[num], substring_len);
-          si += strlen(stringlist[num]);
-        } else {
-          dbg_printf(P_ERROR, "[regExReplace] Substitution number greater than available capture groups.");
-          fail = 1;
-          break;
-        }
-			}
-      
-      substitute[si++] = replace[pos];
-    }
-    
-    pcre_free_substring_list(stringlist);
-    substitute[si] = '\0';
-  } else if(match_count == 1) {
-    dbg_printf(P_ERROR, "[regExReplace] No capture groups in regular expression! Nothing to replace");
-    fail = 1;
-  } else {
-    fail = 1;
-  }
-  
-  return (fail == 0) ? am_strdup(&substitute[0]) : NULL;
 }

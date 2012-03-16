@@ -11,7 +11,6 @@
 #include "output.h"
 #include "utils.h"
 #include "web.h"
-#include "urlcode.h"
 
 int8_t verbose = P_NONE;
 

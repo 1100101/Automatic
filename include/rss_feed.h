@@ -34,10 +34,8 @@ typedef struct NODE*    rss_feeds;
 /** struct representing an RSS feed */
 struct rss_feed {
 	char    *url;  /**< Feed URL */
-  char    *cookies;
-  char    *id;
-  char    *url_pattern;
-  char    *url_replace;
+   char    *cookies;
+   char    *id;
 	uint32_t ttl;	 /**< Time-To-Live for the specific feed */
 };
 

@@ -561,7 +561,3 @@ PUBLIC void closeCURLSession(CURL* curl_handle) {
     curl_handle = NULL;
   }
 }
-
-PUBLIC char * rewriteURL(const char * url, const char * pattern, const char * substitute) {
-  return performRegexReplace(url, pattern, substitute);
-}
