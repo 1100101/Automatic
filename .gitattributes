@@ -1,2 +1,2 @@
-configure.in merge=ours
-configure merge=ours
+configure.in merge=ours -diff
+configure merge=ours -diff

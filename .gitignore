@@ -6,6 +6,8 @@ Makefile
 Makefile.in
 depcomp
 install-sh
+configure
+configure.in
 config.log
 config.status
 src/.deps
