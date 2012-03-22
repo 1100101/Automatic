@@ -242,3 +242,16 @@ char* strstrip( char * str ) {
 
   return str;
 }
+
+char * stringToLower(char *string) {
+   int i;
+   int len = strlen(string);
+   
+   for(i=0; i<len; i++) {
+     if(string[i] >= 'A' && string[i] <= 'Z') {
+       string[i] += 32;
+     }
+   }
+   
+   return string;
+}

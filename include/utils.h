@@ -50,7 +50,8 @@ void* am_realloc(void *p, size_t size);
 void am_free(void *p);
 char* am_strdup(const char *str);
 char* am_strndup(const char *str, int len);
-
+char * stringToLower(char *string);
+   
 char* resolve_path(const char *path);
 char* get_home_folder(void);
 char* get_temp_folder(void);
