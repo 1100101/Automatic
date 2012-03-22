@@ -44,26 +44,25 @@ struct auto_handle {
 	char *torrent_folder;
 	char *auth;
 	char *host;
-  char *prowl_key;
+   char *prowl_key;
  	char *transmission_external;
 	rss_feeds 	feeds;
 	am_filters  filters;
 	simple_list downloads;
 	int8_t      rpc_version;
-	uint16_t 		max_bucket_items;
+	uint16_t 	max_bucket_items;
 	uint8_t 		bucket_changed;
 	uint8_t 		check_interval;
 	uint8_t 		use_transmission;
 	uint8_t 		start_torrent;
-	uint16_t 		rpc_port;
+	uint16_t    rpc_port;
 	uint8_t 		transmission_version;
 	int16_t     upspeed;
-  uint8_t     prowl_key_valid;
+   uint8_t     prowl_key_valid;
+   uint8_t     match_only;
 };
 /** \endcond */
 
 typedef struct auto_handle auto_handle;
-
-/* uint8_t am_get_verbose(void); */
-
+typedef struct auto_handle am_session_t;
 #endif
