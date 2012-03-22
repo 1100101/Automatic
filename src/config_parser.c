@@ -84,59 +84,6 @@ PRIVATE void set_path(const char *src, char **dst) {
   }
 }
 
-/* TODO: This does currently more than it should, clean this up. */
-PRIVATE char* trim_obsolete(const char *str) {
-
-  int tmp_pos;
-  char c;
-  char *retStr;
-  char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-  uint32_t line_pos = 0;
-  uint32_t len = strlen(str);
-
-  if(!tmp) {
-    dbg_printf(P_ERROR, "[trim] calloc(MAX_PARAM_LEN) failed!");
-    return NULL;
-  }
-
-  memset(tmp, 0, MAX_PARAM_LEN+1);
-
-  while (isspace(str[line_pos])) {
-    ++line_pos;
-  }
-
-  tmp_pos = 0;
-  while(line_pos < len) {
-    /* case 1: quoted strings */
-    if (str[line_pos] == '"' || str[line_pos] == '\'') {
-      c = str[line_pos];
-      ++line_pos;  /* skip quote */
-      while(str[line_pos] != c && line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
-        tmp[tmp_pos++] = str[line_pos++];
-      }
-      
-      if(str[line_pos] == c) {
-        line_pos++; /* skip the closing quote */
-      }
-    } else {
-      while(line_pos < len && str[line_pos] != '\n' && str[line_pos] != '\0') {
-        tmp[tmp_pos++] = str[line_pos++];
-      }
-    }
-    
-    while (isspace(str[line_pos])) {
-      ++line_pos;
-    }
-  }
-  
-  tmp[tmp_pos] = '\0';
-  assert(strlen(tmp) < MAX_PARAM_LEN);
-  retStr = am_strdup(tmp);
-  am_free(tmp);
-  
-  return retStr;
-}
-
 /* http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way */
 PRIVATE char* trim(const char *str) {
   const char *end;
