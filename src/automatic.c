@@ -88,8 +88,9 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char **xmlfile,
-                      uint8_t * nofork, uint8_t * verbose, uint8_t *once, uint8_t *append_log) {
-  char optstr[] = "afhv:c:l:ox:";
+                      uint8_t * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
+                      uint8_t * match_only) {
+  char optstr[] = "afhv:c:l:ox:m";
   struct option longopts[] = {
     { "verbose",    required_argument, NULL, 'v' },
     { "nodaemon",   no_argument,       NULL, 'f' },
@@ -99,6 +100,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
     { "logfile",    required_argument, NULL, 'l' },
     { "append-log", no_argument,       NULL, 'a' },
     { "xml",        required_argument, NULL, 'x' },
+    { "match-only", no_argument,       NULL, 'm' },
     { NULL, 0, NULL, 0 } };
   int opt;
 
@@ -126,6 +128,9 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
         break;
       case 'o':
         *once = 1;
+        break;
+      case 'm':
+        *match_only = 1;
         break;
       default:
         usage();
@@ -249,7 +254,7 @@ auto_handle* session_init(void) {
   char path[MAXPATHLEN];
   char *home;
 
-  auto_handle *ses = am_malloc(sizeof(auto_handle));
+  am_session_t *ses = am_malloc(sizeof(am_session_t));
 
   /* numbers */
   ses->rpc_version          = AM_DEFAULT_RPC_VERSION;
@@ -272,6 +277,7 @@ auto_handle* session_init(void) {
   ses->statefile             = am_strdup(path);
   ses->prowl_key             = NULL;
   ses->prowl_key_valid       = 0;
+  ses->match_only            = 0;
   ses->transmission_external = NULL;
 
   /* lists */
@@ -424,53 +430,59 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
+    
     if(isMatch(session->filters, item->name, feedID, &download_folder)) {
-      if(has_been_downloaded(session->downloads, item)) {   
-        dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
-      } else {       
-        dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
-        if(isMagnetURI(item->url)) {
-            result = addMagnetToTM(session, item->url, download_folder);
-        } else {
-          // Rewrite torrent URL, if necessary
-          if(feed->url_pattern !=NULL && feed->url_replace != NULL) {
-            download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
-          }         
-
-          torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
-          am_free(download_url);
-          
-          if(torrent) {
-            if(torrent->responseCode == 200) {
-              get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
-              /* add torrent to Transmission */
-              result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+      if(!session->match_only) {
+         if(has_been_downloaded(session->downloads, item)) {   
+            dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
+         } else {       
+            dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
+            if(isMagnetURI(item->url)) {
+               result = addMagnetToTM(session, item->url, download_folder);
             } else {
-              dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
+               // Rewrite torrent URL, if necessary
+               if(feed->url_pattern != NULL && feed->url_replace != NULL) {
+                  download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
+               }         
             }
-          }
+
+            torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
+            am_free(download_url);
           
-          HTTPResponse_free(torrent);
-        }
+            if(torrent) {
+               if(torrent->responseCode == 200) {
+                  get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
+                  /* add torrent to Transmission */
+                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+               } else {
+                  dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
+               }
+   
+               HTTPResponse_free(torrent);
+            }
         
-        // process result
-        if( result >= 0) {  //result == 0 -> duplicate torrent
-          if(result > 0 && session->prowl_key_valid) {  //torrent was added
-            prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
-          }
-          /* add url to bucket list */
-          result = addToBucket(item->guid != NULL ? item->guid : item->url, &session->downloads, session->max_bucket_items);
-          if (result == 0) {
-            session->bucket_changed = 1;
-            save_state(session->statefile, session->downloads);
-          }
-        } else {  //an error occurred
-          if(session->prowl_key_valid) {
-            prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
-          }
-        }
-      }  
-    }
+            // process result
+            if( result >= 0) {  //result == 0 -> duplicate torrent
+               if(result > 0 && session->prowl_key_valid) {  //torrent was added
+                  prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+               }
+            
+               /* add url to bucket list */
+               result = addToBucket(item->guid != NULL ? item->guid : item->url, &session->downloads, session->max_bucket_items);
+               if (result == 0) {
+                  session->bucket_changed = 1;
+                  save_state(session->statefile, session->downloads);
+               }
+            } else {  //an error occurred
+               if(session->prowl_key_valid) {
+                  prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
+               }
+            }
+         }
+      } else {
+         dbg_printft(P_MSG, "[%s] Match: %s (%s)", feedID, item->name, item->url);
+      }
+    }    
     
     current_item = current_item->next;
   }
@@ -558,6 +570,7 @@ int main(int argc, char **argv) {
   uint8_t once = 0;
   uint8_t verbose = AM_DEFAULT_VERBOSE;
   uint8_t append_log = 0;
+  uint8_t match_only = 0;
 
   /* this sets the log level to the default before anything else is done.
   ** This way, if any outputting happens in readargs(), it'll be printed
@@ -565,7 +578,7 @@ int main(int argc, char **argv) {
   */
   log_init(NULL, verbose, 0);
 
-  readargs(argc, argv, &config_file, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log);
+  readargs(argc, argv, &config_file, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log, &match_only);
 
   /* reinitialize the logging with the values from the command line */
   log_init(logfile, verbose, append_log);
@@ -577,6 +590,7 @@ int main(int argc, char **argv) {
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
   session = session_init();
+  session->match_only = match_only;
 
   if(parse_config_file(session, AutoConfigFile) != 0) {
     if(errno == ENOENT) {
