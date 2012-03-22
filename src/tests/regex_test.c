@@ -13,7 +13,6 @@
 
 int8_t verbose = P_NONE;
 
-
 #define VERBOSE 1
 
 static int test = 0;
@@ -40,7 +39,7 @@ static int test = 0;
     }
 #endif
 
-void testIsRegexMatch(void) {
+int testIsRegexMatch(void) {
   check(isRegExMatch(NULL, NULL) == 0);
   check(isRegExMatch(NULL, "test") == 0);
   check(isRegExMatch("test", NULL) == 0);
@@ -57,10 +56,11 @@ void testIsRegexMatch(void) {
   check(isRegExMatch("def.*abc", "def xyz (ghi - rst)") == 0);
   check(isRegExMatch("def.*abc", "def xyz (abc - ghi - rst)") == 1);
   check(isRegExMatch("Ídy", "Ídy") == 1);
+  return 0;
 }
 
 
-void testGetMatch(void) {
+int testGetMatch(void) {
   const char* pattern1 = "Content-Disposition:\\s(inline|attachment);\\s*filename=\"?(.+?)\"?;?\\r?\\n?$";
   const char* pattern2 = "\"result\":\\s\"(.+)\"\n";
   const char* string1 = "Content-Disposition: inline; filename=\"this.is.a.test-file.torrent\"";
@@ -88,7 +88,7 @@ void testGetMatch(void) {
   check(strcmp(res_str, "this.is.a.test-file.torrent") == 0);
   am_free(res_str);
 
-  res_str = getRegExMatch(pattern1, string2, 2);
+  res_str = getRegExMatch(pattern1, string3, 2);
   check(res_str == NULL);
   am_free(res_str);
 
@@ -107,10 +107,11 @@ void testGetMatch(void) {
   res_str = getRegExMatch(pattern2, "\"result\": \"duplicate torrent\"", 1);
   check(strcmp(res_str, "duplicate torrent") == 0);
   am_free(res_str);
+  return 0;
 }
 
 
-void testRegexReplace() {
+int testRegexReplace() {
   const char* pattern1 = "Content-Disposition:\\s(inline|attachment);\\s*filename=\"?(.+?)\"?;?\\r?\\n?$";
   const char* pattern2 = "abc";
   const char* substitute1 = "abc\\a\\100xyz";
@@ -145,11 +146,21 @@ void testRegexReplace() {
   res_str = performRegexReplace(string1, pattern2, substitute3);
   check(res_str == NULL);
   am_free(res_str);
+  
+  return 0;
 }
 
 int main(void) {
-  testIsRegexMatch();
-  testGetMatch();
-  testRegexReplace();
-  return 0;
+  int i;
+  i = testIsRegexMatch();
+  
+  if(!i) {
+    i = testGetMatch();
+  }
+  
+  if(!i) {
+    i = testRegexReplace();
+  }
+  
+  return i;
 }

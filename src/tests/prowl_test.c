@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "utils.h"
 #include "output.h"
@@ -11,85 +13,126 @@
 
 int8_t verbose = P_MSG;
 
+#define VERBOSE 1
+
+static int test = 0;
+
+#ifdef VERBOSE
+  #define check( A ) \
+    { \
+        ++test; \
+        if( A ){ \
+            fprintf( stderr, "PASS test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+        } else { \
+            fprintf( stderr, "FAIL test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+            return test; \
+        } \
+    }
+#else
+  #define check( A ) \
+    { \
+        ++test; \
+        if( !( A ) ){ \
+            fprintf( stderr, "FAIL test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+            return test; \
+        } \
+    }
+#endif
+
 const char* correct_key = "";
 const char* wrong_key = "132ieosdsd";
 
-void testSendNotification(void) {
-	int ret = 0;
+static int
+ testSendNotification(void) {
+  int ret = 0;
 
   ret = sendProwlNotification(NULL, NULL, NULL);
-  assert(ret == -1);
+  check(ret == -1);
   ret = sendProwlNotification(wrong_key, NULL, NULL);
-  assert(ret == -1);
+  check(ret == -1);
   ret = sendProwlNotification(wrong_key, "Event", NULL);
-  assert(ret == -401);
+  check(ret == -401);
   ret = sendProwlNotification(wrong_key, NULL, "Desc");
-  assert(ret == -401);
+  check(ret == -401);
   ret = sendProwlNotification(wrong_key, "Event", "Desc");
-  assert(ret == -401);
+  check(ret == -401);
   ret = sendProwlNotification(correct_key, NULL, NULL);
-  assert(ret == -1);
+  check(ret == -1);
   ret = sendProwlNotification(correct_key, "Event", NULL);
-  assert(ret == 1);
+  check(ret == 1);
   ret = sendProwlNotification(correct_key, NULL, "Desc");
-  assert(ret == 1);
+  check(ret == 1);
   ret = sendProwlNotification(correct_key, "Event", "Desc");
-  assert(ret == 1);
+  check(ret == 1);
+  return 0;
 }
 
-void testVerifyAPIKey(void) {
+static int
+testVerifyAPIKey(void) {
 	int ret = 0;
 
   ret = verifyProwlAPIKey(NULL);
-  assert(ret == -1);
+  check(ret == -1);
 
   ret = verifyProwlAPIKey(wrong_key);
-  assert(ret == -401);
+  check(ret == -401);
 
   ret = verifyProwlAPIKey(correct_key);
-  assert(ret == 1);
+  check(ret == 1);
 
+  return 0;
 }
 
-void testSendNotification2(void) {
-	int ret = 0;
+static int
+testSendNotification2(void) {
+  int ret = 0;
 
   ret = prowl_sendNotification(0, NULL, NULL);
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(0, NULL, "file");
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(0, wrong_key, NULL);
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(0, wrong_key, "File");
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(0, correct_key, NULL);
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(0, correct_key, "File");
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, wrong_key, NULL);
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, wrong_key, "file");
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, wrong_key, NULL);
-  assert(ret == 0);
+  check(ret == 0);
   ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, wrong_key, "file");
-  assert(ret == 0);
+  check(ret == 0);
 
   ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, correct_key, NULL);
-  assert(ret == 1);
+  check(ret == 1);
   ret = prowl_sendNotification(PROWL_NEW_DOWNLOAD, correct_key, "file");
-  assert(ret == 1);
+  check(ret == 1);
   ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, correct_key, NULL);
-  assert(ret == 1);
+  check(ret == 1);
   ret = prowl_sendNotification(PROWL_DOWNLOAD_FAILED, correct_key, "file");
-  assert(ret == 1);
+  check(ret == 1);
+  return 0;
 }
 
 
 
 int main(void) {
-//	testVerifyAPIKey();
-//  testSendNotification();
-  testSendNotification2();
-	return 0;
+  int i;
+  
+  i = testVerifyAPIKey();
+  
+  if(!i) { 
+    i = testSendNotification();
+  }
+  
+  if(!i) {
+    i = testSendNotification2();
+  }
+  
+  return i;
 }

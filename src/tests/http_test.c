@@ -15,31 +15,56 @@
 
 int8_t verbose = P_NONE;
 
-void testGetHTTP(void) {
+#define VERBOSE 1
+
+static int test = 0;
+
+#ifdef VERBOSE
+  #define check( A ) \
+    { \
+        ++test; \
+        if( A ){ \
+            fprintf( stderr, "PASS test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+        } else { \
+            fprintf( stderr, "FAIL test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+            return test; \
+        } \
+    }
+#else
+  #define check( A ) \
+    { \
+        ++test; \
+        if( !( A ) ){ \
+            fprintf( stderr, "FAIL test #%d (%s, %d)\n", test, __FILE__, __LINE__ ); \
+            return test; \
+        } \
+    }
+#endif
+
+static int
+ testGetHTTP(void) {
 	int ret = 1;
 	HTTPResponse *response = NULL;
-  CURL *curl_session = NULL;
+   CURL *curl_session = NULL;
 
 
 	//test invalid URL
 	response = getHTTPData(NULL, NULL, &curl_session);
-	assert(response == NULL);
+	check(response == NULL);
 
 	//test invalid URL 2
 	response = getHTTPData("http://thisurldoesntexist.co.ge", NULL, &curl_session);
-	assert(response);
-	assert(response->responseCode != 200);
-	assert(response->data == NULL);
-	HTTPResponse_free(response);
+	check(response == NULL);
 
 	//test HTTP URL
-	response = getHTTPData("http://www.binsearch.info/?action=nzb&33455941=1", NULL, &curl_session);
-	assert(response && response->data);
+	response = getHTTPData("http://www.heise.de/", NULL, &curl_session);
+	check(response && response->data);
 	HTTPResponse_free(response);
-  closeCURLSession(curl_session);
+   closeCURLSession(curl_session);
+   
+   return 0;
 }
 
 int main(void) {
-	testGetHTTP();
-	return 0;
+	return testGetHTTP();
 }
