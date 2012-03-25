@@ -148,25 +148,31 @@ PRIVATE int parseUInt(const char *str) {
 }
 
 PRIVATE simple_list parseMultiOption(const char *str) {
-
   int tmp_pos;
   char c;
-  char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
   uint32_t line_pos = 0;
   uint32_t len = strlen(str);
   simple_list options = NULL;
+  char *tmp = NULL;
+  
+  if(len == 0) {
+    dbg_printf(P_ERROR, "[parseMultiOption] empty input string!");
+    return NULL;
+  }
+  
+  tmp = (char*)am_malloc(MAX_PARAM_LEN + 1);
 
   if(!tmp) {
-    dbg_printf(P_ERROR, "[shorten] calloc(MAX_PARAM_LEN) failed!");
+    dbg_printf(P_ERROR, "[parseMultiOption] am_malloc(MAX_PARAM_LEN) failed!");
     return NULL;
   }
 
-  while (isspace(str[line_pos])) {
+  while (line_pos < len && isspace(str[line_pos])) {
     ++line_pos;
   }
   
   while(line_pos < len) {
-    memset(tmp, 0, MAX_PARAM_LEN+1);
+    memset(tmp, 0, MAX_PARAM_LEN + 1);
     tmp_pos = 0;
     
     /* case 1: quoted strings */
