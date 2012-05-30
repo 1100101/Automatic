@@ -20,7 +20,7 @@
 #define AM_DEFAULT_CONFIGFILE      "/etc/automatic.conf"
 #define AM_DEFAULT_STATEFILE       ".automatic.state"
 #define AM_DEFAULT_VERBOSE         P_MSG
-#define AM_DEFAULT_NOFORK          0
+#define AM_DEFAULT_NOFORK          false
 #define AM_DEFAULT_MAXBUCKET       30
 #define AM_DEFAULT_USETRANSMISSION 1
 #define AM_DEFAULT_STARTTORRENTS   1
@@ -61,9 +61,12 @@
 
 PRIVATE char AutoConfigFile[MAXPATHLEN + 1];
 PRIVATE void session_free(auto_handle *as);
-PRIVATE uint8_t isMagnetURI(const char* uri);
-uint8_t closing = 0;
-uint8_t nofork  = AM_DEFAULT_NOFORK;
+PRIVATE bool isMagnetURI(const char* uri);
+PRIVATE auto_handle * mySession = NULL;
+PRIVATE bool closing = false;
+PRIVATE bool nofork  = AM_DEFAULT_NOFORK;
+PRIVATE bool isRunning = false;
+PRIVATE bool seenHUP = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +91,7 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char **xmlfile,
-                      uint8_t * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
+                      bool * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
                       uint8_t * match_only) {
   char optstr[] = "afhv:c:l:ox:m";
   struct option longopts[] = {
@@ -113,7 +116,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
         *verbose = atoi(optarg);
         break;
       case 'f':
-        *nofork = 1;
+        *nofork = true;
         break;
       case 'c':
         *c_file = optarg;
@@ -123,7 +126,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
         break;
       case 'x':
         *xmlfile = optarg;
-        *nofork = 1;
+        *nofork = true;
         *once = 1;
         break;
       case 'o':
@@ -216,40 +219,6 @@ PRIVATE int daemonize(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void signal_handler(int sig) {
-  switch (sig) {
-    case SIGINT:
-    case SIGTERM: {
-      dbg_printf(P_INFO2, "SIGTERM/SIGINT caught");
-      closing = 1;
-      break;
-    }
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-PRIVATE void setup_signals(void) {
-  signal(SIGCHLD, SIG_IGN);       /* ignore child       */
-  signal(SIGTSTP, SIG_IGN);       /* ignore tty signals */
-  signal(SIGTTOU, SIG_IGN);
-  signal(SIGTTIN, SIG_IGN);
-  signal(SIGTERM, signal_handler); /* catch kill signal */
-  signal(SIGINT , signal_handler); /* catch kill signal */
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-uint8_t am_get_verbose(void) {
-  return verbose;
-}*/
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 auto_handle* session_init(void) {
   char path[MAXPATHLEN];
   char *home;
@@ -287,6 +256,121 @@ auto_handle* session_init(void) {
   ses->upspeed               = -1;
 
   return ses;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE void printSessionSettings() {
+  dbg_printf(P_INFO, "Transmission version: 1.%d", mySession->transmission_version);
+  dbg_printf(P_INFO, "RPC host: %s", mySession->host != NULL ? mySession->host : AM_DEFAULT_HOST);
+  dbg_printf(P_INFO, "RPC port: %d", mySession->rpc_port);
+  dbg_printf(P_INFO, "RPC auth: %s", mySession->auth != NULL ? mySession->auth : "none");
+  dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
+  dbg_printf(P_INFO, "Transmission home: %s", mySession->transmission_path);
+  dbg_printf(P_INFO, "check interval: %d min", mySession->check_interval);
+  dbg_printf(P_INFO, "Upload limit: %d KB/s", mySession->upspeed);
+  dbg_printf(P_INFO, "torrent folder: %s", mySession->torrent_folder);
+  dbg_printf(P_INFO, "start torrents: %s", mySession->start_torrent == 1 ? "yes" : "no");
+  dbg_printf(P_INFO, "state file: %s", mySession->statefile);
+
+  /* determine RPC version */
+  if(mySession->use_transmission && mySession->transmission_version == AM_TRANSMISSION_1_3) {
+      mySession->rpc_version = getRPCVersion((mySession->host != NULL) ? mySession->host : AM_DEFAULT_HOST,
+                                            mySession->rpc_port,mySession->auth);
+      dbg_printf(P_INFO, "RPC Version: %d", mySession->rpc_version);
+  }
+
+  if(mySession->prowl_key) {
+    dbg_printf(P_INFO, "Prowl API key: %s", mySession->prowl_key);
+  }
+
+  dbg_printf(P_MSG,  "%d feed URLs", listCount(mySession->feeds));
+  dbg_printf(P_MSG,  "Read %d filters from config file", listCount(mySession->filters));
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE void setupSession(auto_handle * session) {
+   if(session != NULL) {
+      // There's been a previous session.
+      // Copy over some of its values, and properly free its memory.
+      if(mySession != NULL) {
+         session->match_only = mySession->match_only;
+         if(mySession->bucket_changed) {
+            save_state(mySession->statefile, mySession->downloads);
+         }
+         
+         session_free(mySession);
+      }
+      
+      //SessionID_free();
+      mySession = session;
+         
+      if(listCount(mySession->feeds) == 0) {
+         dbg_printf(P_ERROR, "No feed URL specified in automatic.conf!\n");
+         shutdown_daemon(mySession);
+      }
+         
+      if(listCount(mySession->filters) == 0) {
+         dbg_printf(P_ERROR, "No filters specified in automatic.conf!\n");
+         shutdown_daemon(mySession);
+      }
+         
+      /* check if Prowl API key is given, and if it is valid */
+      if(mySession->prowl_key && verifyProwlAPIKey(mySession->prowl_key) == 1 ) {
+         mySession->prowl_key_valid = 1;
+      }
+         
+      load_state(mySession->statefile, &mySession->downloads);
+
+      printSessionSettings();
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE void signal_handler(int sig) {
+  switch (sig) {
+    case SIGINT:
+    case SIGTERM: {
+      dbg_printf(P_INFO2, "SIGTERM/SIGINT caught");
+      closing = true;
+      break;
+    }
+    case SIGHUP: {
+      if(isRunning || !mySession) {
+         seenHUP = true;
+      } else {
+         auto_handle * s = NULL;
+         dbg_printf(P_MSG, "Caught SIGHUP. Reloading config file.");
+         s = session_init();
+         if(parse_config_file(s, AutoConfigFile) != 0) {
+            dbg_printf(P_ERROR, "Error parsing config file. Keeping the old settings.");
+         } else {
+            setupSession(s);
+         }
+
+         seenHUP = false;
+      }
+      
+      break;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE void setup_signals(void) {
+  signal(SIGCHLD, SIG_IGN);       /* ignore child       */
+  signal(SIGTSTP, SIG_IGN);       /* ignore tty signals */
+  signal(SIGTTOU, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTERM, signal_handler); /* catch kill signal */
+  signal(SIGINT , signal_handler); /* catch kill signal */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -488,6 +572,9 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 PRIVATE HTTPResponse* getRSSFeed(const rss_feed* feed, CURL **session) {
   return getHTTPData(feed->url, feed->cookies, session);
 }
@@ -530,6 +617,9 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
   return item_count;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
   uint32_t item_count = 0;
   char *xmldata = NULL;
@@ -558,7 +648,7 @@ PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv) {
-  auto_handle *session = NULL;
+  auto_handle * ses = NULL;
   char *config_file = NULL;
   char *logfile = NULL;
   char *xmlfile = NULL;
@@ -582,120 +672,91 @@ int main(int argc, char **argv) {
   /* reinitialize the logging with the values from the command line */
   log_init(logfile, verbose, append_log);
 
+  dbg_printf(P_MSG, "Automatic version: %s", LONG_VERSION_STRING);
+
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
   }
   
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
-  session = session_init();
-  session->match_only = match_only;
+  ses = session_init();
+  ses->match_only = match_only;
 
-  if(parse_config_file(session, AutoConfigFile) != 0) {
+  if(parse_config_file(ses, AutoConfigFile) != 0) {
     if(errno == ENOENT) {
       snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
     } else {
       snprintf(erbuf, sizeof(erbuf), "Unknown error");
     }
+    
     fprintf(stderr, "Error parsing config file: %s\n", erbuf);
-    shutdown_daemon(session);
+    shutdown_daemon(ses);
   }
+  
+  setupSession(ses);
 
   setup_signals();
 
   if(!nofork) {
-
     /* start daemon */
     if(daemonize() != 0) {
       dbg_printf(P_ERROR, "Error: Daemonize failed. Aborting...");
-      shutdown_daemon(session);
+      shutdown_daemon(mySession);
     }
     dbg_printft( P_MSG, "Daemon started");
   }
-
-  filter_printList(session->filters);
-
-  dbg_printf(P_MSG, "Automatic version: %s", LONG_VERSION_STRING);
+ 
   dbg_printf(P_INFO, "verbose level: %d", verbose);
-  dbg_printf(P_INFO, "Transmission version: 1.%d", session->transmission_version);
-  dbg_printf(P_INFO, "RPC host: %s", session->host != NULL ? session->host : AM_DEFAULT_HOST);
-  dbg_printf(P_INFO, "RPC port: %d", session->rpc_port);
-  dbg_printf(P_INFO, "RPC auth: %s", session->auth != NULL ? session->auth : "none");
-  dbg_printf(P_INFO, "foreground mode: %s", nofork == 1 ? "yes" : "no");
-  dbg_printf(P_INFO, "config file: %s", AutoConfigFile);
-  dbg_printf(P_INFO, "Transmission home: %s", session->transmission_path);
-  dbg_printf(P_INFO, "check interval: %d min", session->check_interval);
-  dbg_printf(P_INFO, "Upload limit: %d KB/s", session->upspeed);
-  dbg_printf(P_INFO, "torrent folder: %s", session->torrent_folder);
-  dbg_printf(P_INFO, "start torrents: %s", session->start_torrent == 1 ? "yes" : "no");
-  dbg_printf(P_INFO, "state file: %s", session->statefile);
-  if(session->prowl_key) {
-    dbg_printf(P_INFO, "Prowl API key: %s", session->prowl_key);
-  }
-  dbg_printf(P_MSG,  "%d feed URLs", listCount(session->feeds));
-  dbg_printf(P_MSG,  "Read %d filters from config file", listCount(session->filters));
+  dbg_printf(P_INFO, "foreground mode: %s", nofork == true ? "yes" : "no");
 
-
-  if(listCount(session->feeds) == 0) {
-    dbg_printf(P_ERROR, "No feed URL specified in automatic.conf!\n");
-    shutdown_daemon(session);
-  }
-
-  if(listCount(session->filters) == 0) {
-    dbg_printf(P_ERROR, "No filters specified in automatic.conf!\n");
-    shutdown_daemon(session);
-  }
-
-  /* determine RPC version */
-  if(session->use_transmission &&
-     session->transmission_version == AM_TRANSMISSION_1_3) {
-      session->rpc_version = getRPCVersion(
-            (session->host != NULL) ? session->host : AM_DEFAULT_HOST,
-            session->rpc_port,session->auth);
-      dbg_printf(P_INFO, "RPC Version: %d", session->rpc_version);
-  }
-
-  /* check if Prowl API key is given, and if it is valid */
-  if(session->prowl_key && verifyProwlAPIKey(session->prowl_key) == 1 ) {
-      session->prowl_key_valid = 1;
-  }
-
-  load_state(session->statefile, &session->downloads);
   while(!closing) {
+    isRunning = true;
     dbg_printft( P_INFO, "------ Checking for new episodes ------");
     if(xmlfile && *xmlfile) {
-      processFile(session, xmlfile);
+      processFile(mySession, xmlfile);
       once = 1;
     } else {
-      current = session->feeds;
+      current = mySession->feeds;
       count = 0;
       while(current && current->data) {
         ++count;
-        processFeed(session, current->data, first_run);
+        processFeed(mySession, current->data, first_run);
         current = current->next;
       }
       if(first_run) {
-        dbg_printf(P_INFO2, "New bucket size: %d", session->max_bucket_items);
+        dbg_printf(P_INFO2, "New bucket size: %d", mySession->max_bucket_items);
       }
       first_run = 0;
     }
     /* leave loop when program is only supposed to run once */
     if(once) {
-      break;
+      break;    
     }
-    sleep(session->check_interval * 60);
+    
+    isRunning = false;
+    
+    if(seenHUP) {
+      signal_handler(SIGHUP);
+    }
+    
+    sleep(mySession->check_interval * 60);
   }
-  shutdown_daemon(session);
+  
+  shutdown_daemon(mySession);
   return 0;
 }
 
-PRIVATE uint8_t isMagnetURI(const char* url) {
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PRIVATE bool isMagnetURI(const char* url) {
   if(url == NULL || *url == 0) {
-    return 0;
+    return false;
   }
   
   if(strlen(url) < 7) {
-    return 0;
+    return false;
   }
   
   return !strncmp(url, "magnet:", 7);
