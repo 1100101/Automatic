@@ -45,6 +45,16 @@
 
 #include <stdlib.h>
 
+#if !defined(__cplusplus)
+ #ifdef HAVE_STDBOOL_H
+  #include <stdbool.h>
+ #elif !defined(__bool_true_false_are_defined)
+  #define bool uint8_t
+  #define true 1
+  #define false 0
+ #endif
+#endif
+
 void* am_malloc(size_t size);
 void* am_realloc(void *p, size_t size);
 void am_free(void *p);
