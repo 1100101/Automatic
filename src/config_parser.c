@@ -316,7 +316,6 @@ PRIVATE void parseCookiesFromURL(rss_feed* feed) {
 }
 
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
-  char *option = NULL, *param = NULL;
   rss_feed* feed = NULL;
   int32_t result = SUCCESS; /* be optimistic */
   simple_list option_list = NULL;  
@@ -514,8 +513,6 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
   int opt_pos;
   int param_pos;
   int parse_error = 0;
-  int opt_good = 0;
-  int param_good = 0;
   struct stat fs;
   option_type type;
 
@@ -570,7 +567,6 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       if (opt_pos >= MAX_OPT_LEN) {
         dbg_printf(P_ERROR, "too long option at line %d", line_num);
         parse_error = 1;
-        opt_good = 0;
       }
     }
     
@@ -580,7 +576,6 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       break;
     } else {
       opt[opt_pos] = '\0';
-      opt_good = 1;
     }
     
     line_pos = SkipWhitespace(line, line_pos, &line_num);
@@ -643,7 +638,6 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
         }
       }
       
-      dbg_printf(P_INFO2, "multiline param: param_good=%d", param_good);
       if(parse_error == 0) {
         line_pos++;  /* skip the closing '}' */
         type = CONF_TYPE_STRINGLIST;
