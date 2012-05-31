@@ -105,7 +105,6 @@ int8_t call_external(const char *external_name, const char *filename) {
 }
 
 int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
-
 	char url[MAX_URL_LEN];
 	int8_t result = 0;
 	char *response = NULL;
@@ -122,7 +121,7 @@ int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
 
 	snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
 
-  res = sendHTTPData(url, auth, JSONstr, strlen(JSONstr));
+   res = sendHTTPData(url, auth, JSONstr, strlen(JSONstr));
 	if(res != NULL && res->responseCode == 200) {
 	  dbg_printf(P_DBG, "[getRPCVersion] got response!");
 		response = parseResponse(res->data);
