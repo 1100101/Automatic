@@ -277,8 +277,10 @@ PRIVATE void printSessionSettings() {
   /* determine RPC version */
   if(mySession->use_transmission && mySession->transmission_version == AM_TRANSMISSION_1_3) {
       mySession->rpc_version = getRPCVersion((mySession->host != NULL) ? mySession->host : AM_DEFAULT_HOST,
-                                            mySession->rpc_port,mySession->auth);
-      dbg_printf(P_INFO, "RPC Version: %d", mySession->rpc_version);
+                                            mySession->rpc_port, mySession->auth);
+      if(mySession->rpc_version != 0) {                                            
+         dbg_printf(P_INFO, "Transmission RPC Version: %d", mySession->rpc_version);
+      }      
   }
 
   if(mySession->prowl_key) {
@@ -371,6 +373,7 @@ PRIVATE void setup_signals(void) {
   signal(SIGTTIN, SIG_IGN);
   signal(SIGTERM, signal_handler); /* catch kill signal */
   signal(SIGINT , signal_handler); /* catch kill signal */
+  signal(SIGHUP , signal_handler); /* catch hangup signal */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
