@@ -294,41 +294,47 @@ PRIVATE void printSessionSettings() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void setupSession(auto_handle * session) {
+PRIVATE bool setupSession(auto_handle * session) {
+   bool sessionOk = true;
+   
    if(session != NULL) {
-      // There's been a previous session.
-      // Copy over some of its values, and properly free its memory.
-      if(mySession != NULL) {
-         session->match_only = mySession->match_only;
-         if(mySession->bucket_changed) {
-            save_state(mySession->statefile, mySession->downloads);
-         }
+      if(listCount(session->feeds) == 0) {
+         dbg_printf(P_ERROR, "No feeds specified in automatic.conf!");
+         sessionOk = false;
+      }
          
-         session_free(mySession);
+      if(listCount(session->filters) == 0) {
+         dbg_printf(P_ERROR, "No filters specified in automatic.conf!");
+         sessionOk = false;
       }
       
-      //SessionID_free();
-      mySession = session;
+      if(sessionOk) {
+         // There's been a previous session.
+         // Copy over some of its values, and properly free its memory.
+         if(mySession != NULL) {
+            session->match_only = mySession->match_only;
+            if(mySession->bucket_changed) {
+               save_state(mySession->statefile, mySession->downloads);
+            }
          
-      if(listCount(mySession->feeds) == 0) {
-         dbg_printf(P_ERROR, "No feed URL specified in automatic.conf!\n");
-         shutdown_daemon(mySession);
+            session_free(mySession);
+         }
+         
+         mySession = session;      
+         
+         /* check if Prowl API key is given, and if it is valid */
+         if(mySession->prowl_key && verifyProwlAPIKey(mySession->prowl_key) == 1 ) {
+            mySession->prowl_key_valid = 1;
+         }
+         
+         load_state(mySession->statefile, &mySession->downloads);
+         printSessionSettings();
       }
-         
-      if(listCount(mySession->filters) == 0) {
-         dbg_printf(P_ERROR, "No filters specified in automatic.conf!\n");
-         shutdown_daemon(mySession);
-      }
-         
-      /* check if Prowl API key is given, and if it is valid */
-      if(mySession->prowl_key && verifyProwlAPIKey(mySession->prowl_key) == 1 ) {
-         mySession->prowl_key_valid = 1;
-      }
-         
-      load_state(mySession->statefile, &mySession->downloads);
-
-      printSessionSettings();
+   } else {
+      sessionOk = false;
    }
+   
+   return sessionOk;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -349,10 +355,9 @@ PRIVATE void signal_handler(int sig) {
          auto_handle * s = NULL;
          dbg_printf(P_MSG, "Caught SIGHUP. Reloading config file.");
          s = session_init();
-         if(parse_config_file(s, AutoConfigFile) != 0) {
+         if((parse_config_file(s, AutoConfigFile) != 0) || !setupSession(s)) {
             dbg_printf(P_ERROR, "Error parsing config file. Keeping the old settings.");
-         } else {
-            setupSession(s);
+            session_free(s);
          }
 
          seenHUP = false;
@@ -697,8 +702,10 @@ int main(int argc, char **argv) {
     shutdown_daemon(ses);
   }
   
-  setupSession(ses);
-
+  if(!setupSession(ses)) {  
+   shutdown_daemon(ses);
+  }
+  
   setup_signals();
 
   if(!nofork) {
