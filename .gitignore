@@ -24,4 +24,4 @@ src/version.h
 src/automatic.state
 src/automatic-mw
 src/automatic.conf
-
+src/core
