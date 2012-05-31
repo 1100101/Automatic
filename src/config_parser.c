@@ -386,7 +386,7 @@ PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, opti
   int32_t numval;
   int32_t result = SUCCESS;
 
-  dbg_printf(P_INFO2, "%s=%s (type: %d)", opt, param, type);
+  dbg_printf(P_INFO2, "[config] %s=%s (type: %d)", opt, param, type);
 
   assert(as != NULL);
   if(!strcmp(opt, "url")) {
@@ -483,7 +483,7 @@ PRIVATE int SkipWhitespace(const char *line, int line_pos, int * line_number) {
     while (isspace(line[line_pos]) && line_pos < len) {
       if(line[line_pos] == '\n') {
         *line_number += 1;
-        dbg_printf(P_INFO2, "skipping newline (line %d)", *line_number);
+        dbg_printf(P_DBG, "skipping newline (line %d)", *line_number);
       }
       
       ++line_pos;
@@ -621,7 +621,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
         break;
       }
     } else if (line[line_pos] == '{') { /* case 2: multiple items, linebreaks allowed */
-      dbg_printf(P_INFO2, "reading multiline param", line_num);
+      dbg_printf(P_DBG, "reading multiline param", line_num);
       ++line_pos;
       parse_error = 0;
       
@@ -664,9 +664,9 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     }
 
     param[param_pos] = '\0';
-    dbg_printf(P_INFO2, "[parse_config_file] option: %s", opt);
-    dbg_printf(P_INFO2, "[parse_config_file] param: %s (%d byte)", param, strlen(param));
-    dbg_printf(P_INFO2, "[parse_config_file] -----------------");
+    dbg_printf(P_DBG, "[parse_config_file] option: %s", opt);
+    dbg_printf(P_DBG, "[parse_config_file] param: %s (%d byte)", param, strlen(param));
+    dbg_printf(P_DBG, "[parse_config_file] -----------------");
 
     if(set_option(as, opt, param, type) == FAILURE) {
       parse_error = 1;
