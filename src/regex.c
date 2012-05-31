@@ -114,7 +114,7 @@ int32_t getRegExCaptureGroups(const char* pattern, const char* str, const char *
       }
     }
     
-    dbg_printf(P_INFO2, "[getRegExCaptureGroups] Text to match against: %s (%d byte)", str, strlen(str));
+    dbg_printf(P_DBG, "[getRegExCaptureGroups] Text to match against: %s (%d byte)", str, strlen(str));
 
     count = pcre_exec(result_preg, NULL, str, strlen(str), 0, 0, ovec, ovecSize);
     if(count > 1) { /* regex matches */
