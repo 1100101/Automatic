@@ -225,7 +225,7 @@ int addToTail(void* elem, NODE **head) {
 void freeList( NODE **head, listFuncPtr freeFunc ) {
 	NODE* node = NULL;
 
-	dbg_printf(P_INFO2, "[cleanupList] size before: %d", listCount(*head));
+	dbg_printf(P_DBG, "[cleanupList] size before: %d", listCount(*head));
 	while (*head != NULL) {
 		node = *head;
 		*head = (*head)->next;
@@ -236,7 +236,7 @@ void freeList( NODE **head, listFuncPtr freeFunc ) {
 		}
 		am_free(node);
 	}
-	dbg_printf(P_INFO2, "[cleanupList] size after: %d", listCount(*head));
+	dbg_printf(P_DBG, "[cleanupList] size after: %d", listCount(*head));
 }
 
 /** \brief Remove the last item of a list
