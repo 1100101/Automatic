@@ -515,19 +515,19 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
     printf("curl_session == NULL && session == NULL\n");
     abort();
   }
-  
+
   if(feed != NULL) {
     feedID = feed->id;
   }
 
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
-    
+
     if(isMatch(session->filters, item->name, feedID, &download_folder)) {
       if(!session->match_only) {
-         if(has_been_downloaded(session->downloads, item)) {   
+         if(has_been_downloaded(session->downloads, item)) {
             dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
-         } else {       
+         } else {
             dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
             if(isMagnetURI(item->url)) {
                result = addMagnetToTM(session, item->url, download_folder);
@@ -535,30 +535,34 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                // Rewrite torrent URL, if necessary
                if(feed->url_pattern != NULL && feed->url_replace != NULL) {
                   download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
-               }         
+               }
             }
 
             torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
             am_free(download_url);
-          
+
             if(torrent) {
                if(torrent->responseCode == 200) {
                   get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
                   /* add torrent to Transmission */
                   result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
                } else {
-                  dbg_printf(P_ERROR, "Error: Download failed (Error Code %d)", torrent->responseCode);
+                  if(torrent->responseCode == 403) {
+                     dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: Bad authentication (error: %d)", torrent->responseCode);
+                  } else {
+                     dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed (error: %d)", torrent->responseCode);
+                  }
                }
-   
+
                HTTPResponse_free(torrent);
             }
-        
+
             // process result
             if( result >= 0) {  //result == 0 -> duplicate torrent
                if(result > 0 && session->prowl_key_valid) {  //torrent was added
                   prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
                }
-            
+
                /* add url to bucket list */
                result = addToBucket(item->guid != NULL ? item->guid : item->url, &session->downloads, session->max_bucket_items);
                if (result == 0) {
@@ -574,8 +578,8 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
       } else {
          dbg_printft(P_MSG, "[%s] Match: %s (%s)", feedID, item->name, item->url);
       }
-    }    
-    
+    }
+
     current_item = current_item->next;
   }
 }
@@ -594,7 +598,7 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
   HTTPResponse *response = NULL;
   CURL         *curl_session = NULL;
   uint32_t      item_count = 0;
-  
+
   response = getRSSFeed(feed, &curl_session);
   dbg_printf(P_INFO2, "[processFeed] curl_session=%p", (void*)curl_session);
 
