@@ -98,7 +98,7 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 	char *encoded = NULL;
 
 	char *buf = NULL;
-  char *folder_str = NULL;
+   char *folder_str = NULL;
 	int buf_size, json_size, folderstr_size = 0;
 	uint32_t enc_size;
 	const char *JSONstr =
@@ -106,8 +106,8 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 		"\"method\": \"torrent-add\",\n"
 		"\"arguments\": {\n"
 		"\"metainfo\": \"%s\",\n"
-    "%s"
-    "\"paused\": %d\n"
+      "%s"
+      "\"paused\": %d\n"
 		"}\n"
 		"}";
 
@@ -134,6 +134,7 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
       am_free(buf);
       return NULL;
     }
+
     buf[json_size] = '\0';
     dbg_printf(P_INFO2, "JSON: %s", buf);
     if(setme_size) {
@@ -147,7 +148,6 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 }
 
 char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {
-
   char *buf = NULL;
   int buf_size, json_size = 0;
   const char *JSONstr =

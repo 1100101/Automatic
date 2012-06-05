@@ -489,11 +489,13 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
         //Transmission-specific options for HTTP POST
         if(strstr(response_data->url, "transmission") != NULL) {
           curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parse_Transmission_response );
-         headers = curl_slist_append(headers, "Content-Type: application/json");
+          headers = curl_slist_append(headers, "Content-Type: application/json");
+
           if( gSessionID ) {
             if((len = snprintf(sessionKey, MAXLEN, "X-Transmission-Session-Id: %s", gSessionID)) > 0) {
               sessionKey[len] = '\0';
             }
+
             headers = curl_slist_append(headers, sessionKey);
           }
           curl_easy_setopt( curl_handle, CURLOPT_HTTPHEADER, headers );
@@ -516,10 +518,11 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
       dbg_printf(P_INFO2, "response code: %ld", rc);
       if(rc == 409) {
         if(gSessionID) {
-          dbg_printf(P_INFO2, "Error code 409, session ID: %s", gSessionID);
+          dbg_printf(P_DBG, "Error code 409, session ID: %s", gSessionID);
         } else {
-          dbg_printf(P_INFO2, "Error code 409, no session ID");
+          dbg_printf(P_ERROR, "Error code 409, no session ID");
         }
+
         closeCURLSession( curl_handle );
         curl_slist_free_all( headers );
         headers = NULL;
