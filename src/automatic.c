@@ -547,10 +547,15 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                   /* add torrent to Transmission */
                   result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
                } else {
-                  if(torrent->responseCode == 403) {
-                     dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: Bad authentication (error: %d)", torrent->responseCode);
-                  } else {
-                     dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed (error: %d)", torrent->responseCode);
+                  switch(torrent->responseCode) {
+                     case 401:
+                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: Bad authentication (error: %d)", torrent->responseCode);
+                        break;
+                     case 403:
+                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: IP address not on whitelist (error: %d)", torrent->responseCode);
+                        break;
+                     default:
+                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed (error: %d)", torrent->responseCode);
                   }
                }
 
