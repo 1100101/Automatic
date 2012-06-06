@@ -129,38 +129,48 @@ uploadTorrent(const void *t_data, int t_size, const char *url, const char* auth,
 
 static torrent_id_t
 sendTransmissionRPC(const char* rpc_packet, uint32_t packet_size, const char *url, const char* auth) {
-  HTTPResponse *res = NULL;
-  const char   *response = NULL;
-  torrent_id_t  ret = -1;
+   HTTPResponse *res = NULL;
+   const char   *response = NULL;
+   torrent_id_t  ret = -1;
 
-  if(rpc_packet && packet_size > 0) {
-    /* send JSON package to Transmission via HTTP POST */
-    res = sendHTTPData(url, auth, rpc_packet, packet_size);
-    if(res != NULL) {
-      if(res->responseCode == 200) {
-        response = parseResponse(res->data);
-        if(response != NULL) {
-          if(!strncmp(response, "success", 7)) {
-            dbg_printf(P_MSG, "Torrent upload successful!");
-            ret = parseTorrentID(res->data);
-          } else if(!strncmp(response, "duplicate torrent", 17)) {
-            dbg_printf(P_MSG, "Torrent has already been added to Transmission");
-            ret = 0;
-          } else {
-            dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
-            ret = -1;
-          }
-          am_free((void*)response);
-        } else {
-          dbg_printf(P_ERROR, "parseResponse() failed!");
+   assert(rpc_packet && packet_size > 0);
+
+   /* send JSON package to Transmission via HTTP POST */
+   res = sendHTTPData(url, auth, rpc_packet, packet_size);
+   if(res != NULL) {
+     if(res->responseCode == 200) {
+       response = parseResponse(res->data);
+       if(response != NULL) {
+         if(!strncmp(response, "success", 7)) {
+           dbg_printf(P_MSG, "Torrent upload successful!");
+           ret = parseTorrentID(res->data);
+         } else if(!strncmp(response, "duplicate torrent", 17)) {
+           dbg_printf(P_MSG, "Torrent has already been added to Transmission");
+           ret = 0;
+         } else {
+           dbg_printf(P_ERROR, "Error uploading torrent: %s", response);
+           ret = -1;
+         }
+         am_free((void*)response);
+       } else {
+         dbg_printf(P_ERROR, "parseResponse() failed!");
+       }
+     } else {
+        switch(res->responseCode) {
+           case 401:
+              dbg_printf(P_ERROR, "Error: Sending RPC to Transmission failed: Bad authentication (error: %d)", res->responseCode);
+              break;
+           case 403:
+              dbg_printf(P_ERROR, "Error: Sending RPC to Transmission failed: Access denied (IP address not on whitelist?) (error: %d)", res->responseCode);
+              break;
+           default:
+              dbg_printf(P_ERROR, "Error: Sending RPC to Transmission failed (error: %d)", res->responseCode);
         }
-        HTTPResponse_free(res);
-      } else {
-        dbg_printf(P_ERROR, "sendHTTPData() failed! (Response Code: %d)", res->responseCode);
-      }
-    } else {
-      dbg_printf(P_ERROR, "sendHTTPData() failed! (resp == NULL)");
-    }
-  }
-  return ret;
+     }
+      HTTPResponse_free(res);
+   } else {
+     dbg_printf(P_ERROR, "sendHTTPData() failed! (res == NULL)");
+   }
+
+   return ret;
 }

@@ -412,8 +412,26 @@ PRIVATE void session_free(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
-  dbg_printf(P_INFO2, "[downloadTorrent] url=%s, curl_session=%p", url, (void*)curl_session);
-  return getHTTPData(url, NULL, &curl_session);
+   HTTPResponse * torrent = NULL;
+   dbg_printf(P_INFO2, "[downloadTorrent] url=%s, curl_session=%p", url, (void*)curl_session);
+   torrent = getHTTPData(url, NULL, &curl_session);
+   if(torrent && torrent->responseCode != 200) {
+      switch(torrent->responseCode) {
+         case 401:
+            dbg_printf(P_ERROR, "Error downloading torrent (HTTP error %d: Bad authentication)", torrent->responseCode);
+            break;
+         case 403:
+           dbg_printf(P_ERROR, "Error downloading torrent (HTTP error %d: Forbidden)", torrent->responseCode);
+           break;
+         default:
+           dbg_printf(P_ERROR, "Error downloading torrent (HTTP error %d)", torrent->responseCode);
+      }
+
+      HTTPResponse_free(torrent);
+      torrent = NULL;
+   }
+
+   return torrent;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -502,14 +520,12 @@ PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, cons
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const rss_feed * feed) {
-
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
   char *download_folder = NULL;
   char *feedID = NULL;
   char *download_url = NULL;
-  int8_t result;
 
   if(!curl_session && !session) {
     printf("curl_session == NULL && session == NULL\n");
@@ -528,38 +544,27 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
          if(has_been_downloaded(session->downloads, item)) {
             dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
          } else {
+            int8_t result = -1;
             dbg_printft(P_MSG, "[%s] Found new download: %s (%s)", feedID, item->name, item->url);
             if(isMagnetURI(item->url)) {
                result = addMagnetToTM(session, item->url, download_folder);
             } else {
+               // It's a torrent file
                // Rewrite torrent URL, if necessary
                if(feed->url_pattern != NULL && feed->url_replace != NULL) {
                   download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
                }
-            }
 
-            torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
-            am_free(download_url);
-
-            if(torrent) {
-               if(torrent->responseCode == 200) {
+               torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
+               if(torrent) {
                   get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
+
                   /* add torrent to Transmission */
                   result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
-               } else {
-                  switch(torrent->responseCode) {
-                     case 401:
-                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: Bad authentication (error: %d)", torrent->responseCode);
-                        break;
-                     case 403:
-                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed: IP address not on whitelist (error: %d)", torrent->responseCode);
-                        break;
-                     default:
-                        dbg_printf(P_ERROR, "Error: Adding torrent to Transmission failed (error: %d)", torrent->responseCode);
-                  }
+                  HTTPResponse_free(torrent);
                }
 
-               HTTPResponse_free(torrent);
+               am_free(download_url);
             }
 
             // process result
@@ -694,27 +699,27 @@ int main(int argc, char **argv) {
   if(!config_file) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
   }
-  
+
   strncpy(AutoConfigFile, config_file, strlen(config_file));
 
   ses = session_init();
   ses->match_only = match_only;
 
   if(parse_config_file(ses, AutoConfigFile) != 0) {
-    if(errno == ENOENT) {
-      snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
-    } else {
-      snprintf(erbuf, sizeof(erbuf), "Unknown error");
-    }
-    
-    fprintf(stderr, "Error parsing config file: %s\n", erbuf);
-    shutdown_daemon(ses);
+     if(errno == ENOENT) {
+        snprintf(erbuf, sizeof(erbuf), "Cannot find file '%s'", config_file);
+     } else {
+        snprintf(erbuf, sizeof(erbuf), "Unknown error");
+     }
+
+     fprintf(stderr, "Error parsing config file: %s\n", erbuf);
+     shutdown_daemon(ses);
   }
-  
-  if(!setupSession(ses)) {  
-   shutdown_daemon(ses);
+
+  if(!setupSession(ses)) {
+     shutdown_daemon(ses);
   }
-  
+
   setup_signals();
 
   if(!nofork) {
@@ -725,7 +730,7 @@ int main(int argc, char **argv) {
     }
     dbg_printft( P_MSG, "Daemon started");
   }
- 
+
   dbg_printf(P_INFO, "verbose level: %d", verbose);
   dbg_printf(P_INFO, "foreground mode: %s", nofork == true ? "yes" : "no");
 
@@ -748,20 +753,21 @@ int main(int argc, char **argv) {
       }
       first_run = 0;
     }
+
     /* leave loop when program is only supposed to run once */
     if(once) {
-      break;    
+      break;
     }
-    
+
     isRunning = false;
-    
+
     if(seenHUP) {
       signal_handler(SIGHUP);
     }
-    
+
     sleep(mySession->check_interval * 60);
   }
-  
+
   shutdown_daemon(mySession);
   return 0;
 }
@@ -773,12 +779,12 @@ PRIVATE bool isMagnetURI(const char* url) {
   if(url == NULL || *url == 0) {
     return false;
   }
-  
+
   if(strlen(url) < 7) {
     return false;
   }
-  
+
   return !strncmp(url, "magnet:", 7);
-  
+
 }
 
