@@ -42,7 +42,7 @@
 #include "regex.h"
 #include "urlcode.h"
 #include "utils.h"
-
+#include "version.h"
 
 /** \cond */
 #define DATA_BUFFER 1024 * 100
@@ -340,6 +340,7 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
   curl_easy_setopt(curl, CURLOPT_DNS_CACHE_TIMEOUT, 600L );
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L );
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "Automatic/" SHORT_VERSION_STRING );
   //~ curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1L );
   //curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L );
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L );

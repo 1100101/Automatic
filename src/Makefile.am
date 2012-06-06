@@ -85,6 +85,7 @@ BUILT_SOURCES = \
 
 version.h:
 	echo '#define SVN_REVISION          "'`git rev-parse --short HEAD`'"' > version.h
+	echo '#define SHORT_VERSION_STRING  "'@VERSION_NUMBER@'"' >> version.h
 	echo '#define LONG_VERSION_STRING   "'@VERSION_NUMBER@' ('`git rev-parse --short HEAD`')"' >> version.h
 
 strip:
