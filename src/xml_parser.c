@@ -51,17 +51,23 @@ static int getNodeText(xmlNodePtr child, char **dest) {
   xmlChar * textNode;
   int result = 0;
 
+  assert(dest && *dest);
   textNode = xmlNodeGetContent(child);
   *dest = am_strdup((char*) textNode);
   xmlFree(textNode);
-  if (*dest)
+	if (*dest) {
     result = 1;
+  }
   return result;
 }
 
 static rssNode* getNodeAttributes(xmlNodePtr child) {
   rssNode *tmp = am_malloc(sizeof(rssNode));
   xmlAttrPtr attr = child->properties;
+
+  tmp->url = NULL;
+  tmp->type = NULL;
+  
   while (attr) {
     if ((strcmp((char*) attr->name, "url") == 0)) {
       getNodeText(attr->children, &tmp->url);
@@ -170,7 +176,10 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count,
   }
 
   /* Load XML document */
-  doc = xmlParseMemory(data, size);
+	if((doc = xmlParseMemory(data, size)) == NULL) {
+    doc = xmlRecoverMemory(data, size);
+  }
+  
   if (doc == NULL) {
     dbg_printf(P_ERROR, "Error: Unable to parse input data!");
     return NULL;

@@ -120,6 +120,7 @@ int16_t sendProwlNotification(const char* apikey, const char* event, const char*
     }
     am_free(data);
   }
+
   return result;
 }
 
@@ -160,11 +161,11 @@ int8_t prowl_sendNotification(enum prowl_event event, const char* apikey, const 
   switch(event) {
     case PROWL_NEW_DOWNLOAD:
       event_str = "Torrent File Auto-Added";
-      snprintf(desc, 500, "%s", filename);
+      snprintf(desc, sizeof(desc), "%s", filename);
       break;
     case PROWL_DOWNLOAD_FAILED:
       event_str = "Auto-Add Failed";
-      snprintf(desc, 500, "%s", filename);
+      snprintf(desc, sizeof(desc), "%s", filename);
       break;
     default:
       dbg_printf(P_ERROR, "Unknown Prowl event code %d", event);

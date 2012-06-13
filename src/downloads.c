@@ -73,15 +73,7 @@ static uint8_t bucket_hasGUID(const char * guid, NODE *head) {
  */
 
 uint8_t has_been_downloaded(const simple_list bucket, const feed_item item) {
-#if 0
-  if(bucket_hasGUID(item->guid, bucket) || bucket_hasGUID(item->url, bucket)) {
-    return 1;
-  }
-  
-  return 0;
-#else
   return bucket_hasGUID(item->guid, bucket) || bucket_hasGUID(item->url, bucket);
-#endif
 }
 
 /** \brief add new item to bucket list

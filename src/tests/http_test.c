@@ -60,9 +60,9 @@ static int
 	response = getHTTPData("http://www.heise.de/", NULL, &curl_session);
 	check(response && response->data);
 	HTTPResponse_free(response);
-   closeCURLSession(curl_session);
+  closeCURLSession(curl_session);
    
-   return 0;
+  return 0;
 }
 
 int main(void) {

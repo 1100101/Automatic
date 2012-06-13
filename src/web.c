@@ -104,7 +104,8 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       content_length = atoi(tmp);
       if(content_length > 0 && !isMoveHeader) {
         mem->content_length = content_length;
-        mem->response->data = am_realloc(mem->response->data, content_length + 1);
+        mem->response->buffer_size = content_length + 1;
+        mem->response->data = am_realloc(mem->response->data, mem->response->buffer_size);
       }
       am_free(tmp);
     }
@@ -134,7 +135,6 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
   const size_t  key_len = strlen( session_key );
   char         *tmp = NULL;
   int           content_length = 0;
-
 
   if( (line_len >= key_len) && !memcmp(line, session_key, key_len) ) {
       const char * begin = line + key_len;
@@ -179,15 +179,15 @@ PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *d
   if(!mem->response->data) {
     mem->response->buffer_size = DATA_BUFFER_SIZE;
     mem->response->data = (char*)am_malloc(mem->response->buffer_size);
-    dbg_printf(P_INFO2, "[write_data_callback] allocated %d bytes for mem->response->data", DATA_BUFFER_SIZE);
+    dbg_printf(P_INFO2, "[write_data_callback] allocated %d bytes for mem->response->data", mem->response->buffer_size);
   }
 
   if(mem->response->buffer_pos + line_len + 1 > mem->response->buffer_size) {
-    mem->response->buffer_size = mem->response->buffer_size * 2;
-    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size * 2);
+    mem->response->buffer_size *= 2;
+    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size);
   }
 
-  if (mem->response->data) {
+  if(mem->response->data) {
     memcpy(&(mem->response->data[mem->response->buffer_pos]), ptr, line_len);
     mem->response->buffer_pos += line_len;
     mem->response->data[mem->response->buffer_pos] = 0;
@@ -261,18 +261,11 @@ PRIVATE struct WebData* WebData_new(const char *url) {
   data->url = NULL;
   data->content_filename = NULL;
   data->content_length = -1;
-  //data->header = NULL;
   data->response = NULL;
 
   if(url) {
     data->url = am_strdup((char*)url);
   }
-
-  //data->header = HTTPData_new();
-  //if(!data->header) {
-  //  WebData_free(data);
-  //  return NULL;
-  //}
 
   data->response = HTTPData_new();
   if(!data->response) {
@@ -293,7 +286,9 @@ PRIVATE void WebData_clear(struct WebData *data) {
 
     if(data->response) {
       am_free(data->response->data);
-      data->response = NULL;
+      data->response->data = NULL;
+      data->response->buffer_size = 0;
+      data->response->buffer_pos = 0;
     }
   }
 }
