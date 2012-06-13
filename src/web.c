@@ -94,6 +94,8 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
     isMoveHeader = 1;
     if(mem->response->data != NULL) {
       am_free(mem->response->data);
+      mem->response->data = NULL;
+      mem->response->buffer_size = 0;
       mem->content_length = 0;
     }
   } else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
@@ -112,6 +114,7 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   } else if(line_len >= 19 && !memcmp(line, "Content-Disposition", 19)) {
     /* parse header for Content-Disposition to get correct filename */
     filename = getRegExMatch(content_pattern, line, 2);
+
     if(filename) {
       mem->content_filename = filename;
       dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
@@ -183,8 +186,11 @@ PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *d
   }
 
   if(mem->response->buffer_pos + line_len + 1 > mem->response->buffer_size) {
-    mem->response->buffer_size *= 2;
-    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size);
+   do {
+      mem->response->buffer_size *= 2;
+   }while(mem->response->buffer_size < mem->response->buffer_pos + line_len + 1);
+
+   mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size);
   }
 
   if(mem->response->data) {
@@ -218,10 +224,13 @@ PRIVATE struct HTTPData* HTTPData_new(void) {
 
 PRIVATE void HTTPData_free(HTTPData* data) {
 
-  if(data)
+  if(data) {
     am_free(data->data);
+    data->buffer_size = 0;
+    data->buffer_pos = 0;
+  }
+
   am_free(data);
-  data = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
