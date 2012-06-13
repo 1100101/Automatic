@@ -45,7 +45,7 @@
 #include "version.h"
 
 /** \cond */
-#define DATA_BUFFER 1024 * 100
+#define DATA_BUFFER_SIZE 1024 * 100
 #define HEADER_BUFFER 500
 /** \endcond */
 
@@ -57,7 +57,8 @@ PRIVATE uint8_t gbGlobalInitDone = FALSE;
 typedef struct HTTPData {
   /** \{ */
  char   *data;  /**< Stored data */
- size_t  size;  /**< Size of the stored data */
+ size_t  buffer_size;
+ size_t  buffer_pos;  /**< Size of the stored data */
  /** \{ */
 } HTTPData;
 
@@ -68,7 +69,6 @@ typedef struct WebData {
   long       responseCode;     /**< HTTP response code        */
   size_t     content_length;   /**< size of the received data determined through header field "Content-Length" */
   char      *content_filename; /**< name of the downloaded file determined through header field "Content-Length" */
-  //HTTPData  *header;           /**< complete header information in a HTTPData object */
   HTTPData  *response;         /**< HTTP response in a HTTPData object */
   /** \} */
 } WebData;
@@ -88,14 +88,14 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   const char  *content_pattern = "Content-Disposition:\\s(inline|attachment);\\s+filename=\"?(.+?)\"?;?\\r?\\n?$";
   int          content_length = 0;
   static uint8_t isMoveHeader = 0;
-  
+
   /* check the header if it is a redirection header */
   if(line_len >= 9 && !memcmp(line, "Location:", 9)) {
     isMoveHeader = 1;
     if(mem->response->data != NULL) {
       am_free(mem->response->data);
       mem->content_length = 0;
-    }   
+    }
   } else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
     /* parse header for Content-Length to allocate correct size for data->response->data */
     tmp = getRegExMatch("Content-Length:\\s(\\d+)", line, 1);
@@ -142,6 +142,7 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
       while( !isspace( *end ) ) {
         ++end;
       }
+
       am_free( gSessionID );
       gSessionID = NULL;
       gSessionID = am_strndup( begin, end-begin );
@@ -153,8 +154,10 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
       content_length = atoi(tmp);
       if(content_length > 0) {
         mem->content_length = content_length;
-        mem->response->data = am_realloc(mem->response->data, content_length + 1);
+        mem->response->buffer_size = content_length + 1;
+        mem->response->data = am_realloc(mem->response->data, mem->response->buffer_size);
       }
+
       am_free(tmp);
     }
   }
@@ -174,18 +177,20 @@ PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *d
    * as a fallback, allocate a predefined size of memory and realloc if necessary
   **/
   if(!mem->response->data) {
-    mem->response->data = (char*)am_malloc(DATA_BUFFER);
-    dbg_printf(P_INFO2, "[write_data_callback] allocated %d bytes for mem->response->data", DATA_BUFFER);
+    mem->response->buffer_size = DATA_BUFFER_SIZE;
+    mem->response->data = (char*)am_malloc(mem->response->buffer_size);
+    dbg_printf(P_INFO2, "[write_data_callback] allocated %d bytes for mem->response->data", DATA_BUFFER_SIZE);
   }
 
-  if(mem->response->size + line_len + 1 > DATA_BUFFER) {
-    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->size + line_len + 1);
+  if(mem->response->buffer_pos + line_len + 1 > mem->response->buffer_size) {
+    mem->response->buffer_size = mem->response->buffer_size * 2;
+    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size * 2);
   }
 
   if (mem->response->data) {
-    memcpy(&(mem->response->data[mem->response->size]), ptr, line_len);
-    mem->response->size += line_len;
-    mem->response->data[mem->response->size] = 0;
+    memcpy(&(mem->response->data[mem->response->buffer_pos]), ptr, line_len);
+    mem->response->buffer_pos += line_len;
+    mem->response->data[mem->response->buffer_pos] = 0;
   }
 
   return line_len;
@@ -201,8 +206,10 @@ PRIVATE struct HTTPData* HTTPData_new(void) {
   if(!data) {
     return NULL;
   }
+
   data->data = NULL;
-  data->size = 0;
+  data->buffer_size = 0;
+  data->buffer_pos = 0;
   return data;
 }
 
@@ -229,7 +236,6 @@ PRIVATE void WebData_free(struct WebData *data) {
   if(data) {
     am_free(data->url);
     am_free(data->content_filename);
-    //HTTPData_free(data->header);
     HTTPData_free(data->response);
     am_free(data);
     data = NULL;
@@ -284,16 +290,10 @@ PRIVATE void WebData_clear(struct WebData *data) {
   if(data) {
     am_free(data->content_filename);
     data->content_filename = NULL;
-    //if(data->header) {
-    //  am_free(data->header->data);
-    //  data->header->data = NULL;
-    //  data->header->size = 0;
-    //}
 
     if(data->response) {
       am_free(data->response->data);
-      data->response->data = NULL;
-      data->response->size = 0;
+      data->response = NULL;
     }
   }
 }
@@ -343,8 +343,8 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "Automatic/" SHORT_VERSION_STRING );
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L );
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L );
-  
-  // The  encoding option was renamed in culr 7.21.6
+
+  // The  encoding option was renamed in curl 7.21.6
 #if LIBCURL_VERSION_NUM < 0x071506
   curl_easy_setopt(curl, CURLOPT_ENCODING, "" );
 #else
@@ -434,7 +434,7 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
       resp->responseCode = responseCode;
       //copy data if present
       if(data->response->data) {
-        resp->size = data->response->size;
+        resp->size = data->response->buffer_pos;
         resp->data = am_strndup(data->response->data, resp->size);
       }
       //copy filename if present
@@ -539,7 +539,7 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
 
         //copy data if present
         if(response_data->response->data) {
-          resp->size = response_data->response->size;
+          resp->size = response_data->response->buffer_pos;
           resp->data = am_strndup(response_data->response->data, resp->size);
         }
         //copy filename if present
