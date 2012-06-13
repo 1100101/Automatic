@@ -3,6 +3,7 @@
       Added:   Reload configuration when SIGHUP is received
       Added:   Configuration text can be split over multiple lines now. 
                Use '\' or '+' at the end of a line to signal a linebreak.
+      Fixed:   Configure curl to accept encoded data. (CURLOPT_ACCEPT_ENCODING)
       
 2012-03-14 v0.7.3
       Added:   Support Magnet URIs in torrent feeds
