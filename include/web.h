@@ -38,7 +38,7 @@ struct HTTPResponse {
  char    *data;
  char    *content_filename; /**< name of the downloaded file determined through header field "Content-Length" */
  size_t   size;             /**< size of the received data determined through header field  "Content-Length" */
- uint32_t responseCode;
+ long     responseCode;
 };
 
 typedef struct HTTPResponse HTTPResponse;

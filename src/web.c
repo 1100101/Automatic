@@ -385,7 +385,7 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
   char         *escaped_url = NULL;
   WebData      *data = NULL;
   HTTPResponse *resp = NULL;
-  int responseCode = -1;
+  long          responseCode = -1;
 
   if(!url) {
     return NULL;
