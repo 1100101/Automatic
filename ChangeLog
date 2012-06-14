@@ -1,9 +1,9 @@
-2012-06-xx v.8.0
+2012-06-14 v0.8.0
       Added:   URL Rewrite for torrent download URLs
       Added:   Reload configuration when SIGHUP is received
       Added:   Configuration text can be split over multiple lines now. 
                Use '\' or '+' at the end of a line to signal a linebreak.
-      Fixed:   Configure curl to accept encoded data. (CURLOPT_ACCEPT_ENCODING)
+      Fixed:   Configure curl to accept encoded data. (HTTP header "Accept-Encoding")
       
 2012-03-14 v0.7.3
       Added:   Support Magnet URIs in torrent feeds
