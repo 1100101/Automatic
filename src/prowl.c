@@ -32,7 +32,7 @@
 #include "output.h"
 #include "utils.h"
 
-#define PROWL_URL "https://prowlapp.com"
+#define PROWL_URL "https://api.prowlapp.com"
 #define PROWL_ADD "/publicapi/add"
 #define PROWL_VERIFY "/publicapi/verify"
 
