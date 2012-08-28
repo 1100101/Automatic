@@ -1,3 +1,7 @@
+2012-xx-xx v0.8.1
+      Fixed:   If the config file contains 'folder' suboptions with escaped whitespace ("My\ Download\ Folder")
+               the escaping backlash is now filtered out.
+               Fixes issue where Transmission doesn't properly recognize a JSON packet sent by Automatic.
 2012-06-14 v0.8.0
       Added:   URL Rewrite for torrent download URLs
       Added:   Reload configuration when SIGHUP is received
