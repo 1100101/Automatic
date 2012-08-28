@@ -260,27 +260,44 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
 {
   char *ret;
   int i, count = 0;
-  size_t newlen = strlen(subst);
-  size_t oldlen = strlen(pattern);
+  size_t substlen, patternlen;
+  
+  // No replacement possible if either the original string or the pattern is empty
+  if(s == NULL || *s == '\0' || pattern == NULL || *pattern == '\0' || subst == NULL ) {
+    return NULL;
+  }  
+   
+  // No replacement possible if the pattern is not in the string
+  if(strstr(s, pattern) == NULL) {
+    return NULL;
+  }
 
+  substlen = strlen(subst);
+  patternlen = strlen(pattern);  
+
+  // No replacement possible if the pattern is longer than the string.
+  if(patternlen > strlen(s)) {
+    return NULL;
+  }
+  
   for (i = 0; s[i] != '\0'; i++) {
     if (strstr(&s[i], pattern) == &s[i]) {
       count++;
-      i += oldlen - 1;
+      i += patternlen - 1;
     }
   }
 
-  ret = malloc(i + count * (newlen - oldlen));
+  ret = malloc(i + count * (substlen - patternlen));
   if (ret == NULL) {
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   i = 0;
   while (*s) {
     if (strstr(s, pattern) == s) {
       strcpy(&ret[i], subst);
-      i += newlen;
-      s += oldlen;
+      i += substlen;
+      s += patternlen;
     } else {
       ret[i++] = *s++;
     }

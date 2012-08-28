@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir)/include/
 
-check_PROGRAMS = list_test base64_test regex_test http_test json_test prowl_test parser_test
+check_PROGRAMS = list_test base64_test regex_test http_test json_test prowl_test parser_test utils_test
 
 TESTS = $(check_PROGRAMS)
 
@@ -23,6 +23,9 @@ list_test_SOURCES = $(GLOBAL_SOURCES) \
 base64_test_SOURCES = $(GLOBAL_SOURCES) \
    $(top_srcdir)/src/base64.c           \
    base64_test.c
+
+utils_test_SOURCES = $(GLOBAL_SOURCES) \
+   utils_test.c
 
 regex_test_SOURCES = $(GLOBAL_SOURCES) \
    $(top_srcdir)/src/regex.c           \
