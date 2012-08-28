@@ -66,10 +66,14 @@ testStringReplace(void) {
   check(ret == NULL);
 
   ret = am_replace_str("test", "test2", "");
-  check(ret == NULL);
+  check(ret != NULL);
+  check(strcmp(ret, "test") == 0);
+  am_free(ret);
 
   ret = am_replace_str("test", "abc", "");
-  check(ret == NULL);
+  check(ret != NULL);
+  check(strcmp(ret, "test") == 0);
+  am_free(ret);
 
   ret = am_replace_str("test", "es", "");
   check(ret != NULL);

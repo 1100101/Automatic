@@ -267,19 +267,19 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
     return NULL;
   }  
    
-  // No replacement possible if the pattern is not in the string
-  if(strstr(s, pattern) == NULL) {
-    return NULL;
-  }
-
   substlen = strlen(subst);
   patternlen = strlen(pattern);  
 
   // No replacement possible if the pattern is longer than the string.
   if(patternlen > strlen(s)) {
-    return NULL;
+    return am_strdup(s);
   }
-  
+
+  // No replacement possible if the pattern is not in the string
+  if(strstr(s, pattern) == NULL) {
+    return am_strdup(s);
+  }
+
   for (i = 0; s[i] != '\0'; i++) {
     if (strstr(&s[i], pattern) == &s[i]) {
       count++;
@@ -288,6 +288,7 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
   }
 
   ret = am_malloc(i + 1 + count * (substlen - patternlen));
+
   if (ret == NULL) {
     return NULL;
   }
