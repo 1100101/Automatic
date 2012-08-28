@@ -158,7 +158,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
     return NULL;
   }
 
-  count = getRegExCaptureGroups(pattern, str, &stringlist);  
+  count = getRegExCaptureGroups(pattern, str, &stringlist);
 
   if(count > 0) {
     if(count > which_result) {
@@ -169,7 +169,7 @@ char* getRegExMatch(const char* pattern, const char* str, uint8_t which_result) 
     }
   }
 
-  return strstrip(result_str);
+  return am_strstrip(result_str);
 }
 
 char * performRegexReplace(const char* str, const char* pattern, const char* replace) {

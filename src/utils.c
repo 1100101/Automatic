@@ -221,7 +221,7 @@ char* get_temp_folder(void) {
 ** licensed unter the GPL version 2. http://www.transmissionbt.com
 */
 
-char* strstrip( char * str ) {
+char* am_strstrip( char * str ) {
   if( str && *str )
   {
     size_t pos;
@@ -243,7 +243,7 @@ char* strstrip( char * str ) {
   return str;
 }
 
-char * stringToLower(char *string) {
+char* am_stringToLower(char *string) {
    int i;
    int len = strlen(string);
    
@@ -254,4 +254,39 @@ char * stringToLower(char *string) {
    }
    
    return string;
+}
+
+char *am_replace_str(const char *s, const char *pattern, const char *subst)
+{
+  char *ret;
+  int i, count = 0;
+  size_t newlen = strlen(subst);
+  size_t oldlen = strlen(pattern);
+
+  for (i = 0; s[i] != '\0'; i++) {
+    if (strstr(&s[i], pattern) == &s[i]) {
+      count++;
+      i += oldlen - 1;
+    }
+  }
+
+  ret = malloc(i + count * (newlen - oldlen));
+  if (ret == NULL) {
+    exit(EXIT_FAILURE);
+  }
+
+  i = 0;
+  while (*s) {
+    if (strstr(s, pattern) == s) {
+      strcpy(&ret[i], subst);
+      i += newlen;
+      s += oldlen;
+    } else {
+      ret[i++] = *s++;
+    }
+  }
+  
+  ret[i] = '\0';
+
+  return ret;
 }
