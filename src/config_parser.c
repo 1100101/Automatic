@@ -81,7 +81,12 @@ PRIVATE void set_path(const char *src, char **dst) {
         am_free(*dst);
       }
       
-      *dst = am_strdup(tmp);
+      *dst = am_replace_str(tmp, "\\ ", " ");
+      
+      if(*dst == NULL) {
+        dbg_printf(P_ERROR, "[set_path] Error executing am_replace_str()!");
+      }
+      
       am_free(tmp);
     }
   }
@@ -265,6 +270,7 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
   simple_list option_list = NULL;  
   NODE * current = NULL;
   suboption_t *opt_item = NULL;
+  char *tmpStr = NULL;
   
   option_list = parseMultiOption(filter_str);
   current = option_list;
@@ -280,7 +286,9 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
       if(!strncmp(opt_item->option, "pattern", 7)) {
         filter->pattern = trim(opt_item->value);
       } else if(!strncmp(opt_item->option, "folder", 6)) {
-        filter->folder = trim(opt_item->value);
+        tmpStr = trim(opt_item->value);
+        set_path(tmpStr, &filter->folder);
+        am_free(tmpStr);
       } else if(!strncmp(opt_item->option, "feedid", 6)) {
         filter->feedID = trim(opt_item->value);
       } else {
