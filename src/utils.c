@@ -287,7 +287,7 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
     }
   }
 
-  ret = malloc(i + count * (substlen - patternlen));
+  ret = am_malloc(i + 1 + count * (substlen - patternlen));
   if (ret == NULL) {
     return NULL;
   }
