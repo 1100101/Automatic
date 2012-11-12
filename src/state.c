@@ -102,10 +102,8 @@ int load_state(const char* state_file, NODE **head) {
 	}
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		len = strlen(line);
-		if(len > 20) {  /* arbitrary threshold for the length of a URL */
-			data = am_strndup(line, len-1);  /* len-1 to get rid of the \n at the end of each line */
-			addToTail(data, head);
-		}
+      data = am_strndup(line, len-1);  /* len-1 to get rid of the \n at the end of each line */
+		addToTail(data, head);
 	}
 	fclose(fp);
 	dbg_printf(P_MSG, "Restored %d old entries", listCount(*head));
