@@ -68,7 +68,7 @@ static rssNode* getNodeAttributes(xmlNodePtr child) {
 
   tmp->url = NULL;
   tmp->type = NULL;
-  
+
   while (attr) {
     if ((strcmp((char*) attr->name, "url") == 0)) {
       getNodeText(attr->children, &tmp->url);
@@ -113,25 +113,27 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
               getNodeText(child->children, &item->category);
           } else if ((strcmp((char*) child->name, "enclosure") == 0)) {
             enclosure = getNodeAttributes(child);
-            if ((strcmp(enclosure->type, "application/x-bittorrent") == 0)) {
-              if (enclosure->url) {
-                am_free(item->url);
-                item->url = am_strdup(enclosure->url);
-                url_set = 1;
-                freeNode(enclosure);
-              }
+
+            if ( enclosure->url != NULL && enclosure->type != NULL &&
+                 strcmp(enclosure->type, "application/x-bittorrent") == 0 ) {
+              am_free(item->url);
+              item->url = am_strdup(enclosure->url);
+              url_set = 1;
+              freeNode(enclosure);
             }
           } else if((strcmp((char*)child->name, "guid") == 0)) {
             getNodeText(child->children, &item->guid);
           }
-        
+
           child = child->next;
         }
-        
+
         if (name_set && url_set) {
           addItem(item, &itemList);
+        } else {
+          dbg_printf(P_ERROR, "Node without name or URL! Processing skipped.");
         }
-        
+
         child = cur = NULL;
       }
     } else {
