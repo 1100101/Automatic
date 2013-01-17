@@ -278,9 +278,9 @@ PRIVATE void printSessionSettings() {
   if(mySession->use_transmission && mySession->transmission_version == AM_TRANSMISSION_1_3) {
       mySession->rpc_version = getRPCVersion((mySession->host != NULL) ? mySession->host : AM_DEFAULT_HOST,
                                             mySession->rpc_port, mySession->auth);
-      if(mySession->rpc_version != 0) {                                            
+      if(mySession->rpc_version != 0) {
          dbg_printf(P_INFO, "Transmission RPC Version: %d", mySession->rpc_version);
-      }      
+      }
   }
 
   if(mySession->prowl_key) {
@@ -296,18 +296,18 @@ PRIVATE void printSessionSettings() {
 
 PRIVATE bool setupSession(auto_handle * session) {
    bool sessionOk = true;
-   
+
    if(session != NULL) {
       if(listCount(session->feeds) == 0) {
          dbg_printf(P_ERROR, "No feeds specified in automatic.conf!");
          sessionOk = false;
       }
-         
+
       if(listCount(session->filters) == 0) {
          dbg_printf(P_ERROR, "No filters specified in automatic.conf!");
          sessionOk = false;
       }
-      
+
       if(sessionOk) {
          // There's been a previous session.
          // Copy over some of its values, and properly free its memory.
@@ -316,24 +316,24 @@ PRIVATE bool setupSession(auto_handle * session) {
             if(mySession->bucket_changed) {
                save_state(mySession->statefile, mySession->downloads);
             }
-         
+
             session_free(mySession);
          }
-         
-         mySession = session;      
-         
+
+         mySession = session;
+
          /* check if Prowl API key is given, and if it is valid */
          if(mySession->prowl_key && verifyProwlAPIKey(mySession->prowl_key) == 1 ) {
             mySession->prowl_key_valid = 1;
          }
-         
+
          load_state(mySession->statefile, &mySession->downloads);
          printSessionSettings();
       }
    } else {
       sessionOk = false;
    }
-   
+
    return sessionOk;
 }
 
@@ -362,7 +362,7 @@ PRIVATE void signal_handler(int sig) {
 
          seenHUP = false;
       }
-      
+
       break;
     }
   }
@@ -496,22 +496,27 @@ PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, cons
    int8_t success = -1;
    torrent_id_t tid;
    char url[MAX_URL_LEN];
-  
-   if (ah->transmission_version == AM_TRANSMISSION_1_3) {
-      snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
-      tid = uploadMagnet(magnet_uri, url, ah->auth, ah->start_torrent, folder);
-      if(tid > 0) {  /* tid > 0: torrent ID --> torrent was added to TM */
-         success = 1;
-         if(ah->upspeed > 0) {
-            changeUploadSpeed(url, ah->auth, tid, ah->upspeed, ah->rpc_version);
-         }
-      } else if(tid == 0) {  /* duplicate torrent */
-         success = 0;
-      } else {      /* torrent was not added */
-         success = -1;
-      }
+
+   if (ah->use_transmission) {
+     if (ah->transmission_version == AM_TRANSMISSION_1_3) {
+        snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", (ah->host != NULL) ? ah->host : AM_DEFAULT_HOST, ah->rpc_port);
+        tid = uploadMagnet(magnet_uri, url, ah->auth, ah->start_torrent, folder);
+        if(tid > 0) {  /* tid > 0: torrent ID --> torrent was added to TM */
+           success = 1;
+           if(ah->upspeed > 0) {
+             changeUploadSpeed(url, ah->auth, tid, ah->upspeed, ah->rpc_version);
+           }
+        } else if(tid == 0) {  /* duplicate torrent */
+          success = 0;
+        } else {      /* torrent was not added */
+          success = -1;
+        }
+     } else {
+       dbg_printf(P_ERROR, "[addMagnetToTM] Magnet Links only work with Transmission 1.3+");
+     }
    } else {
-      dbg_printf(P_ERROR, "[addMagnetToTM] Magnet Links only work with Transmission 1.3+");
+     success = 1; // debug!
+     dbg_printf(P_ERROR, "[addMagnetToTM] Magnet links only work with Transmission, but use of Transmission is disabled in configuration!");
    }
    return success;
 }
@@ -627,11 +632,11 @@ PRIVATE uint16_t processFeed(auto_handle *session, rss_feed* feed, uint8_t first
         session->max_bucket_items += item_count;
         dbg_printf(P_INFO2, "History bucket size changed: %d", session->max_bucket_items);
       }
-      
+
       processRSSList(session, curl_session, items, feed);
       freeList(&items, freeFeedItem);
     }
-    
+
     HTTPResponse_free(response);
     closeCURLSession(curl_session);
   }
@@ -652,7 +657,7 @@ PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
   assert(xmlfile && *xmlfile);
   dbg_printf(P_INFO, "Reading RSS feed file: %s", xmlfile);
   xmldata = readFile(xmlfile, &fileLen);
-  
+
   if(xmldata != NULL) {
     fileLen = strlen(xmldata);
     items = parse_xmldata(xmldata, fileLen, &item_count, &dummy_ttl);
