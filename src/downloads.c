@@ -48,7 +48,7 @@
 static uint8_t bucket_hasGUID(const char * guid, NODE *head) {
 	NODE *p = head;
 	char *x;
-  
+
   if(guid && *guid) {
     while (p != NULL) {
       x = (char*)p->data;
@@ -60,7 +60,7 @@ static uint8_t bucket_hasGUID(const char * guid, NODE *head) {
       p = p->next;
     }
   }
-  
+
 	return 0;
 }
 
@@ -87,11 +87,11 @@ uint8_t has_been_downloaded(const simple_list bucket, const feed_item item) {
  * If it gets larger than the specified value, the oldest element is removed from the list.
  */
 int addToBucket(const char* guid, NODE **head, const int maxBucketItems) {
-
 	addToHead(am_strdup(guid), head);
 	if(maxBucketItems > 0 && listCount(*head) > (uint32_t)maxBucketItems) {
 		dbg_printf(P_INFO2, "[add_to_bucket] bucket gets too large, deleting last item...\n");
 		removeLast(*head, NULL);
 	}
+
 	return 0;
 }
