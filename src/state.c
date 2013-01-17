@@ -45,7 +45,7 @@
 #endif
 
 /** \cond */
-#define MAX_LINE_LEN	300
+#define MAX_LINE_LEN	2048
 /** \endcond */
 
 /** \brief Store the URLs of the downloaded torrents on disk for later retrieval
@@ -64,7 +64,7 @@ int save_state(const char* state_file, const simple_list const downloads) {
 	if(state_file) {
 		current = downloads;
 		dbg_printf(P_MSG, "Saving state (%d downloaded torrents) to disk", listCount(current));
-		if((fp = fopen(state_file, "wb")) == NULL) {
+		if((fp = fopen(state_file, "w")) == NULL) {
 			dbg_printf(P_ERROR, "Error: Unable to open statefile '%s' for writing: %s", state_file, strerror(errno));
 			return -1;
 		}
@@ -76,8 +76,10 @@ int save_state(const char* state_file, const simple_list const downloads) {
 				return -1;
 			}
 			current = current->next;
-		}
+	   }
+
 		fclose(fp);
+		dbg_printf(P_INFO, "Done saving state");
 	}
 	return 0;
 }
@@ -96,7 +98,7 @@ int load_state(const char* state_file, NODE **head) {
 	char line[MAX_LINE_LEN];
 	char *data;
 
-	if((fp = fopen(state_file, "rb")) == NULL) {
+	if((fp = fopen(state_file, "r")) == NULL) {
 		dbg_printf(P_ERROR, "[load_state] Error: Unable to open statefile '%s' for reading: %s", state_file, strerror(errno));
 		return -1;
 	}
