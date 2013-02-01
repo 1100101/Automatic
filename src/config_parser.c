@@ -80,13 +80,13 @@ PRIVATE void set_path(const char *src, char **dst) {
       if ( *dst != NULL ) {
         am_free(*dst);
       }
-      
+
       *dst = am_replace_str(tmp, "\\ ", " ");
-      
+
       if(*dst == NULL) {
         dbg_printf(P_ERROR, "[set_path] Error executing am_replace_str()!");
       }
-      
+
       am_free(tmp);
     }
   }
@@ -95,7 +95,7 @@ PRIVATE void set_path(const char *src, char **dst) {
 /* http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way */
 PRIVATE char* trim(const char *str) {
   const char *end;
-  
+
   if(!str || !*str) {
     return NULL;
   }
@@ -106,7 +106,7 @@ PRIVATE char* trim(const char *str) {
   }
 
   if(*str == 0)  // All spaces?
-  {    
+  {
     return NULL;
   }
 
@@ -120,7 +120,7 @@ PRIVATE char* trim(const char *str) {
   while(end > str && isspace(*end)) {
     end--;
   }
-  
+
   /* skip single or double quote */
   if (*end == '"' || *end == '\'') {
     end--;
@@ -137,7 +137,7 @@ PRIVATE int parseUInt(const char *str) {
   int is_num = 1;
   uint32_t i;
   uint32_t result = -1;
-  
+
   char * trimmed = trim(str);
 
   for(i = 0; i < strlen(trimmed); i++) {
@@ -145,13 +145,12 @@ PRIVATE int parseUInt(const char *str) {
       is_num--;
     }
   }
-  
+
   if(is_num == 1 && atoi(trimmed) > 0) {
     result = atoi(trimmed);
   }
-  
+
   am_free(trimmed);
-  
   return result;
 }
 
@@ -173,7 +172,7 @@ PRIVATE int parseSubOption(char* line, char **option, char **param) {
 
     i++;
   }
-  
+
   return (*option && *param) ? SUCCESS : FAILURE;
 }
 
@@ -186,23 +185,23 @@ PRIVATE simple_list parseMultiOption(const char *str) {
   int last_dbl_quote_pos;
   int8_t parse_error = 0;
   int32_t current_line_pos = -1;
-  
+
   if(len == 0) {
     dbg_printf(P_ERROR, "[parseMultiOption] empty input string!");
     return NULL;
   }
-  
+
    while(line_pos < len) {
     memset(&tmp, 0, sizeof(tmp));
     // Skip any initial whitespace
     while (line_pos < len && isspace(str[line_pos])) {
       ++line_pos;
     }
-  
+
     tmp_pos = 0;
     parse_error = 0;
     last_dbl_quote_pos = -1;
-    
+
     while(line_pos < len && str[line_pos] != '\0') {
       if(str[line_pos] == '\"') {
         last_dbl_quote_pos = tmp_pos;
@@ -220,7 +219,7 @@ PRIVATE simple_list parseMultiOption(const char *str) {
             // Reset the string index to the position of the last double-quote, and properly null-terminate it
             tmp_pos = last_dbl_quote_pos;
             tmp[tmp_pos] = '\0';
-            
+
             // Skip the double-quote on the new line as well
             line_pos++;
           } else {
@@ -233,7 +232,7 @@ PRIVATE simple_list parseMultiOption(const char *str) {
           // If the character before the newline is not a backslash ('\'), consider this suboption complete
           break;
         }
-        
+
         current_line_pos = tmp_pos;
       }
 
@@ -250,7 +249,7 @@ PRIVATE simple_list parseMultiOption(const char *str) {
     /* store the line in our list */
     if(tmp_pos != 0) {
       suboption_t* i = (suboption_t*)am_malloc(sizeof(suboption_t));
-      
+
       if(i != NULL) {
         if(parseSubOption(tmp, &i->option, &i->value) == SUCCESS) {
           addItem(i, &options);
@@ -267,11 +266,11 @@ PRIVATE simple_list parseMultiOption(const char *str) {
 PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
   am_filter filter = NULL;
   int32_t result = SUCCESS; /* be optimistic */
-  simple_list option_list = NULL;  
+  simple_list option_list = NULL;
   NODE * current = NULL;
   suboption_t *opt_item = NULL;
   char *tmpStr = NULL;
-  
+
   option_list = parseMultiOption(filter_str);
   current = option_list;
 
@@ -281,8 +280,8 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
       if(!filter) {
         filter = filter_new();
         assert(filter && "filter_new() failed!");
-      }    
-       
+      }
+
       if(!strncmp(opt_item->option, "pattern", 7)) {
         filter->pattern = trim(opt_item->value);
       } else if(!strncmp(opt_item->option, "folder", 6)) {
@@ -297,7 +296,7 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
     } else {
       assert(0 && "opt_item == NULL");
     }
-    
+
     current = current->next;
   }
 
@@ -307,11 +306,11 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
     dbg_printf(P_ERROR, "Invalid filter: '%s'", filter_str);
     result = FAILURE;
   }
- 
+
   if(option_list != NULL) {
     freeList(&option_list, freeOptionItem);
   }
-  
+
   return result;
 }
 
@@ -326,22 +325,22 @@ PRIVATE void parseCookiesFromURL(rss_feed* feed) {
 PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
   rss_feed* feed = NULL;
   int32_t result = SUCCESS; /* be optimistic */
-  simple_list option_list = NULL;  
+  simple_list option_list = NULL;
   NODE * current = NULL;
   suboption_t *opt_item = NULL;
 
   option_list = parseMultiOption(feedstr);
   current = option_list;
-  
+
   while (current != NULL) {
     opt_item = (suboption_t*)current->data;
-    
+
     if(opt_item != NULL) {
       if(!feed) {
         feed = feed_new();
         assert(feed && "feed_new() failed!");
       }
-      
+
       if(!strncmp(opt_item->option, "url_pattern", 11)) {
         feed->url_pattern = trim(opt_item->value);
       } else if(!strncmp(opt_item->option, "url_replace", 11)) {
@@ -358,7 +357,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     } else {
       assert(0 && "opt_item == NULL");
     }
-    
+
     current = current->next;
   }
 
@@ -477,29 +476,29 @@ PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, opti
   } else {
     dbg_printf(P_ERROR, "Unknown option: %s", opt);
   }
-  
+
   return result;
 }
 
 PRIVATE int SkipWhitespace(const char *line, int line_pos, int * line_number) {
   int len = 0;
-  
+
   /* skip whitespaces */
   if(line && *line) {
-    len = strlen(line);   
-  
+    len = strlen(line);
+
     while (isspace(line[line_pos]) && line_pos < len) {
       if(line[line_pos] == '\n') {
         *line_number += 1;
         dbg_printf(P_DBG, "skipping newline (line %d)", *line_number);
       }
-      
+
       ++line_pos;
     }
   } else {
     line_pos = -1;
   }
-  
+
   return line_pos;
 }
 
@@ -527,7 +526,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
   if(stat(filename, &fs) == -1)  {
     return -1;
   }
-  
+
   if ((fp = fopen(filename, "rb")) == NULL) {
     perror("fopen");
     return -1;
@@ -544,11 +543,11 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     am_free(line);
     return -1;
   }
-  
+
   if(fp) {
     fclose(fp);
   }
-  
+
   while(line_pos != fs.st_size) {
     line_pos = SkipWhitespace(line, line_pos, &line_num);
 
@@ -562,7 +561,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       while (line[line_pos] != '\n') {
         ++line_pos;
       }
-      
+
       ++line_num;
       ++line_pos;  /* skip the newline as well */
       continue;
@@ -577,7 +576,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
         parse_error = 1;
       }
     }
-    
+
     if (opt_pos == 0 || parse_error == 1) {
       dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
       parse_error = 1;
@@ -585,7 +584,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     } else {
       opt[opt_pos] = '\0';
     }
-    
+
     line_pos = SkipWhitespace(line, line_pos, &line_num);
 
     if(line_pos >= fs.st_size) {
@@ -621,7 +620,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
           break;
         }
       }
-      
+
       if(parse_error == 0) {
         line_pos++;  /* skip the closing " or ' */
         type = CONF_TYPE_STRING;
@@ -632,7 +631,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       dbg_printf(P_DBG, "reading multiline param", line_num);
       ++line_pos;
       parse_error = 0;
-      
+
       for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
         if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
           param[param_pos++] = line[line_pos++];
@@ -645,7 +644,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
           break;
         }
       }
-      
+
       if(parse_error == 0) {
         line_pos++;  /* skip the closing '}' */
         type = CONF_TYPE_STRINGLIST;
@@ -682,7 +681,7 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     }
 
     line_pos = SkipWhitespace(line, line_pos, &line_num);
-    
+
     if(line_pos >= fs.st_size) {
       break;
     }
@@ -692,4 +691,3 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 
   return (parse_error == 1) ? -1 : 0;
 }
-
