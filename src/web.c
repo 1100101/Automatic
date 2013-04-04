@@ -111,7 +111,7 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       }
       am_free(tmp);
     }
-  } else if(line_len >= 19 && !memcmp(line, "Content-Disposition", 19)) {
+  } else if(line_len >= 19 && !strncasecmp(line, "Content-Disposition:", 20)) {
     /* parse header for Content-Disposition to get correct filename */
     filename = getRegExMatch(content_pattern, line, 2);
 
