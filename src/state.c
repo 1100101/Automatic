@@ -60,6 +60,7 @@ int save_state(const char* state_file, const simple_list const downloads) {
 	FILE *fp;
 	char tmp[MAX_LINE_LEN + 1];
 	NODE *current = NULL;
+	int result;
 
 	if(state_file) {
 		current = downloads;
@@ -68,13 +69,25 @@ int save_state(const char* state_file, const simple_list const downloads) {
 			dbg_printf(P_ERROR, "Error: Unable to open statefile '%s' for writing: %s", state_file, strerror(errno));
 			return -1;
 		}
+
 		while (current != NULL && current->data != NULL) {
-			sprintf(tmp, "%s\n", (char*)current->data);
-			if(!fwrite(tmp, strlen(tmp), 1, fp)){
+#if 0
+			snprintf(tmp, "%s\n", sizeof(tmp), (char*)current->data);
+			if(!fwrite(tmp, strlen(tmp), 1, fp))
+#else
+         result = fputs((const char*)current->data, fp);
+         if(result != EOF) {
+            result = fputc('\n', fp);
+         }
+
+         if(result == EOF)
+#endif
+			{
 				dbg_printf(P_ERROR, "Error: Unable to write to statefile '%s': %s", state_file, strerror(errno));
 				fclose(fp);
 				return -1;
 			}
+
 			current = current->next;
 	   }
 
@@ -102,11 +115,13 @@ int load_state(const char* state_file, NODE **head) {
 		dbg_printf(P_ERROR, "[load_state] Error: Unable to open statefile '%s' for reading: %s", state_file, strerror(errno));
 		return -1;
 	}
+
 	while (fgets(line, MAX_LINE_LEN, fp)) {
 		len = strlen(line);
       data = am_strndup(line, len-1);  /* len-1 to get rid of the \n at the end of each line */
 		addToTail(data, head);
 	}
+
 	fclose(fp);
 	dbg_printf(P_MSG, "Restored %d old entries", listCount(*head));
 	return 0;
