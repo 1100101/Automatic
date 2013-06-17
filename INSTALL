@@ -11,7 +11,7 @@ Automatic makes use of the libcurl and libxml2 libraries, so make sure those are
 
 First autogenerate the configuration files by typing
 
-        ./autgen.sh
+        ./autogen.sh
 
 then configure the tool by typing
 
