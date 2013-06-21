@@ -5,6 +5,7 @@ Installation instructions
 ----------------
 
 Automatic makes use of the libcurl and libxml2 libraries, so make sure those are installed.
+You'll also need automake to run autgen.sh - on Debian-derived distros, `apt-get install automake`.
 
 2. Configuration
 ----------------
