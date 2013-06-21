@@ -12,7 +12,7 @@ You'll also need automake to run autgen.sh - on Debian-derived distros, `apt-get
 
 First autogenerate the configuration files by typing
 
-        ./autgen.sh
+        ./autogen.sh
 
 then configure the tool by typing
 
