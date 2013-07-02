@@ -64,9 +64,9 @@ typedef struct suboption suboption_t;
 
 PRIVATE void freeOptionItem(void* item) {
   if(item != NULL) {
-      suboption_t* obj = (suboption_t*)item;
-      am_free(obj->option);
-      am_free(obj->value);
+    suboption_t* obj = (suboption_t*)item;
+    am_free(obj->option);
+    am_free(obj->value);
     am_free(obj);
   }
 }
@@ -154,26 +154,33 @@ PRIVATE int parseUInt(const char *str) {
   return result;
 }
 
-PRIVATE int parseSubOption(char* line, char **option, char **param) {
+PRIVATE suboption_t* parseSubOption(char* line) {
   const char *subopt_delim = "=>";
   uint32_t i = 0;
 
-  *option = NULL;
-  *param  = NULL;
+  suboption_t* option_item = NULL;
+  char *option = NULL;
+  char *param  = NULL;
 
   assert(line && *line);
 
   while(line[i] != '\0') {
     if(line[i] == subopt_delim[0] && line[i+1] == subopt_delim[1]) {
-      *option = am_strndup(line, i-1);
-      *param  = trim(line + i + strlen(subopt_delim));
+      option = am_strndup(line, i-1);
+      param  = trim(line + i + strlen(subopt_delim));
       break;
     }
 
     i++;
   }
 
-  return (*option && *param) ? SUCCESS : FAILURE;
+  if(option && param) {
+    option_item = (suboption_t*)am_malloc(sizeof(suboption_t));
+    option_item->option = option;
+    option_item->value = param;
+  }
+
+  return option_item;
 }
 
 PRIVATE simple_list parseMultiOption(const char *str) {
@@ -248,14 +255,12 @@ PRIVATE simple_list parseMultiOption(const char *str) {
 
     /* store the line in our list */
     if(tmp_pos != 0) {
-      suboption_t* i = (suboption_t*)am_malloc(sizeof(suboption_t));
+      suboption_t* i = parseSubOption(tmp);
 
       if(i != NULL) {
-        if(parseSubOption(tmp, &i->option, &i->value) == SUCCESS) {
-          addItem(i, &options);
-        } else {
-          dbg_printf(P_ERROR, "Invalid suboption string: '%s'", tmp);
-        }
+        addItem(i, &options);
+      } else {
+        dbg_printf(P_ERROR, "Invalid suboption string: '%s'", tmp);
       }
     }
   }
