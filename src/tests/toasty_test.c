@@ -39,7 +39,7 @@ static int test = 0;
     }
 #endif
 
-const char* correct_key = "1880ccbd-2941-4164-9cea-fb7698a49562";
+const char* correct_key = "";
 const char* wrong_key = "132ieosdsd";
 
 static int
