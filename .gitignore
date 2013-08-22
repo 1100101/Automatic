@@ -34,3 +34,5 @@ src/tests/http_test
 src/tests/prowl_test
 src/tests/json_test
 src/tests/regex_test
+src/tests/toasty_test
+src/tests/*.trs
