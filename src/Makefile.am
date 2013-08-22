@@ -1,5 +1,5 @@
 SUBDIRS = . tests
-INCLUDES = -I$(top_srcdir)/include/
+AM_CPPFLAGS = -I$(top_srcdir)/include/
 
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
@@ -24,6 +24,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/regex.c          \
    $(top_srcdir)/src/rss_feed.c       \
    $(top_srcdir)/src/state.c          \
+   $(top_srcdir)/src/toasty.c         \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
    $(top_srcdir)/src/urlcode.c        \
@@ -46,6 +47,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/regex.h          \
    $(top_srcdir)/include/rss_feed.h       \
    $(top_srcdir)/include/state.h          \
+   $(top_srcdir)/include/toasty.h         \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
    $(top_srcdir)/include/urlcode.h        \
