@@ -1,6 +1,9 @@
 Makefile.in
 Makefile
 
+compile
+test-driver
+
 *.o
 *.log
 
@@ -25,6 +28,7 @@ src/automatic.state
 src/automatic-mw
 src/automatic.conf
 src/core
+src/.dirstamp
 
 src/tests/utils_test
 src/tests/parser_test
