@@ -50,6 +50,7 @@
 #include "file.h"
 #include "output.h"
 #include "prowl.h"
+#include "toasty.h"
 #include "regex.h"
 #include "state.h"
 #include "torrent.h"
@@ -245,6 +246,7 @@ auto_handle* session_init(void) {
   am_free(home);
   ses->statefile             = am_strdup(path);
   ses->prowl_key             = NULL;
+  ses->toasty_key            = NULL;
   ses->prowl_key_valid       = 0;
   ses->match_only            = 0;
   ses->transmission_external = NULL;
@@ -285,6 +287,10 @@ PRIVATE void printSessionSettings() {
 
   if(mySession->prowl_key) {
     dbg_printf(P_INFO, "Prowl API key: %s", mySession->prowl_key);
+  }
+
+  if(mySession->toasty_key) {
+    dbg_printf(P_INFO, "Toasty DeviceID: %s", mySession->toasty_key);
   }
 
   dbg_printf(P_MSG,  "%d feed URLs", listCount(mySession->feeds));
@@ -398,6 +404,8 @@ PRIVATE void session_free(auto_handle *as) {
     as->auth = NULL;
     am_free(as->prowl_key);
     as->prowl_key = NULL;
+    am_free(as->toasty_key);
+    as->toasty_key = NULL;
     am_free(as->transmission_external);
     as->transmission_external = NULL;
     freeList(&as->feeds, feed_free);
@@ -574,8 +582,14 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
 
             // process result
             if( result >= 0) {  //result == 0 -> duplicate torrent
-               if(result > 0 && session->prowl_key_valid) {  //torrent was added
-                  prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+               if(result > 0) { //torrent was added
+                  if(session->prowl_key_valid) {
+                     prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
+                  }
+
+                  if(session->toasty_key) {
+                     toasty_sendNotification(PROWL_NEW_DOWNLOAD, session->toasty_key, item->name);
+                  }
                }
 
                /* add url to bucket list */
@@ -587,6 +601,10 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
             } else {  //an error occurred
                if(session->prowl_key_valid) {
                   prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
+               }
+
+               if(session->toasty_key) {
+                  toasty_sendNotification(PROWL_DOWNLOAD_FAILED, session->toasty_key, item->name);
                }
             }
          }

@@ -44,7 +44,7 @@ static const char* getProwlErrorMessage(const uint16_t responseCode) {
       response = "Bad request";
       break;
     case 401:
-      response = "Invald API key";
+      response = "Invalid API key";
       break;
     case 405:
       response = "Method not allowed (non-SSL connection)";
@@ -142,13 +142,13 @@ int16_t verifyProwlAPIKey(const char* apikey) {
         dbg_printf(P_ERROR, "Error: Prowl API  key '%s' is invalid (%d)!", apikey, response->responseCode);
         result = -response->responseCode;
       }
-      
+
       HTTPResponse_free(response);
     }
-    
+
     closeCURLSession(curl_session);
   }
-  
+
   return result;
 }
 
@@ -179,5 +179,6 @@ int8_t prowl_sendNotification(enum prowl_event event, const char* apikey, const 
   } else {
     result = 0;
   }
+
   return result;
 }

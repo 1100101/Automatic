@@ -43,7 +43,7 @@ static const char* getToastyErrorMessage(const uint16_t responseCode) {
       response = "Bad request";
       break;
     case 401:
-      response = "Invald API key";
+      response = "Invalid API key";
       break;
     case 405:
       response = "Method not allowed (non-SSL connection)";

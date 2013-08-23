@@ -45,6 +45,7 @@ struct auto_handle {
 	char *auth;
 	char *host;
    char *prowl_key;
+   char *toasty_key;
  	char *transmission_external;
 	rss_feeds 	feeds;
 	am_filters  filters;
