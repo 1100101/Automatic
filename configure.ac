@@ -1,13 +1,13 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-m4_define([version_number],0.8.3)
+m4_define([version_number],0.8x)
 
 AC_INIT([Automatic],[version_number],[http://forum.dsmg600.info/t2291-%5BREL%5D-Automatic-funplug-0.5.html])
 AC_SUBST(VERSION_NUMBER,[version_number])
 
 AC_CONFIG_SRCDIR([src/automatic.c])
-AM_INIT_AUTOMAKE([1.10 foreign])
+AM_INIT_AUTOMAKE([1.10 foreign subdir-objects])
 
 # Checks for c compiler.
 AC_PROG_CC

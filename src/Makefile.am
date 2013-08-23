@@ -60,13 +60,9 @@ automatic_mw_SOURCES =  \
 	 $(top_srcdir)/src/memwatch.c
 
 if DBG_BUILD
-  automatic_mw_HEADERS =  \
-     $(noinst_HEADERS)    \
-     $(top_srcdir)/include/memwatch.h
-
   automatic_mwdir = .
 
-  automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
+  automatic_mw_CPPFLAGS = $(AM_CPPFLAGS) -DMEMWATCH -DDEBUG -O0 -ggdb3
 endif
 
 dist_sysconf_DATA = automatic.conf-sample
