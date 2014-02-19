@@ -412,6 +412,8 @@ PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, opti
     as->prowl_key = am_strdup(param);
   } else if(!strcmp(opt, "toasty-deviceid")) {
     as->toasty_key = am_strdup(param);
+  } else if(!strcmp(opt, "pushalot-token")) {
+    as->pushalot_key = am_strdup(param);
   } else if(!strcmp(opt, "transmission-version")) {
     if (!strcmp(param, "external")) {
       /* we should probably only set this when transmission-external is set */
