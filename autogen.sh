@@ -2,6 +2,6 @@
 
 aclocal
 autoconf
-automake --add-missing --copy
+automake --add-missing --copy --ignore-deps
 
 
