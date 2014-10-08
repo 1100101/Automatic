@@ -36,48 +36,54 @@
  * The packet can then be sent to Transmission via HTTP POST.
  */
 char* makeTorrentAddFilenameJSON(const char* torrent_name, uint8_t start, const char* folder, uint32_t *setme_size) {
-   char *buf = NULL;
-   char *folder_str = NULL;
-   int buf_size, json_size, folderstr_size = 0;   
-   const char *JSONstr =
-		"{\n"
-		"\"method\": \"torrent-add\",\n"
-		"\"arguments\": {\n"
-		"\"filename\": \"%s\",\n"
+  char *buf = NULL;
+  char *folder_str = NULL;
+  int buf_size, json_size, folderstr_size = 0;
+  const char *JSONstr =
+    "{\n"
+    "\"method\": \"torrent-add\",\n"
+    "\"arguments\": {\n"
+    "\"filename\": \"%s\",\n"
     "%s"
     "\"paused\": %d\n"
-		"}\n"
-		"}";
+    "}\n"
+    "}";
 
-   *setme_size = 0;
+  if(!setme_size) {
+    dbg_printf(P_ERROR, "setme_size == NULL");
+    return NULL;
+  }
 
-   if(folder && *folder) {
-     folderstr_size = strlen(folder) + 20;
-     folder_str = (char*)am_malloc(folderstr_size);
-     assert(folder_str && "am_malloc(folder_str) failed!");
-     snprintf(folder_str, folderstr_size, "\"download-dir\": \"%s\",\n", folder);
-     dbg_printf(P_INFO, "folder_str: %s", folder_str);
-   }
+  *setme_size = 0;
 
-   buf_size = strlen(torrent_name) + strlen(JSONstr) + folderstr_size + 10;
-   buf = (char*)am_malloc(buf_size);
-    memset(buf, 0, buf_size);
-   json_size = snprintf(buf, buf_size, JSONstr, torrent_name, folder_str ? folder_str : "", start ? 0 : 1);
-   if(json_size < 0 || json_size >= buf_size) {
-     dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
-     am_free(buf);
-     return NULL;
-   }
+  if(folder && *folder) {
+    folderstr_size = strlen(folder) + 20;
+    folder_str = (char*)am_malloc(folderstr_size);
+    assert(folder_str && "am_malloc(folder_str) failed!");
+    snprintf(folder_str, folderstr_size, "\"download-dir\": \"%s\",\n", folder);
+    dbg_printf(P_INFO, "folder_str: %s", folder_str);
+  }
 
-   buf[json_size] = '\0';
-   dbg_printf(P_INFO2, "JSON: %s", buf);
+  buf_size = strlen(torrent_name) + strlen(JSONstr) + folderstr_size + 10;
+  buf = (char*)am_malloc(buf_size);
+  memset(buf, 0, buf_size);
 
-   if(setme_size) {
-     *setme_size = json_size;
-   }
+  json_size = snprintf(buf, buf_size, JSONstr, torrent_name, folder_str ? folder_str : "", start ? 0 : 1);
 
-   am_free(folder_str);
-   return buf;
+  if(json_size < 0 || json_size >= buf_size) {
+    dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+    am_free(folder_str);
+    am_free(buf);
+    return NULL;
+  }
+
+  buf[json_size] = '\0';
+  dbg_printf(P_INFO2, "JSON: %s", buf);
+
+  *setme_size = json_size;
+
+  am_free(folder_str);
+  return buf;
 }
 
 /** \brief Create a Transmission-specific JSON packet in order to add a new download
@@ -95,21 +101,26 @@ char* makeTorrentAddFilenameJSON(const char* torrent_name, uint8_t start, const 
  */
 char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start, const char* folder, uint32_t *setme_size) {
 
-	char *encoded = NULL;
+  char *encoded = NULL;
 
-	char *buf = NULL;
+  char *buf = NULL;
    char *folder_str = NULL;
-	int buf_size, json_size, folderstr_size = 0;
-	uint32_t enc_size;
-	const char *JSONstr =
-		"{\n"
-		"\"method\": \"torrent-add\",\n"
-		"\"arguments\": {\n"
-		"\"metainfo\": \"%s\",\n"
+  int buf_size, json_size, folderstr_size = 0;
+  uint32_t enc_size;
+  const char *JSONstr =
+    "{\n"
+    "\"method\": \"torrent-add\",\n"
+    "\"arguments\": {\n"
+    "\"metainfo\": \"%s\",\n"
       "%s"
       "\"paused\": %d\n"
-		"}\n"
-		"}";
+    "}\n"
+    "}";
+
+  if(!setme_size) {
+    dbg_printf(P_ERROR, "setme_size == NULL");
+    return NULL;
+  }
 
   *setme_size = 0;
 
@@ -130,6 +141,7 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
     json_size = snprintf(buf, buf_size, JSONstr, encoded, folder_str ? folder_str : "", start ? 0 : 1);
     if(json_size < 0 || json_size >= buf_size) {
       dbg_printf(P_ERROR, "Error producing JSON string with Base64-encoded metadata: %s", strerror(errno));
+      am_free(folder_str);
       am_free(encoded);
       am_free(buf);
       return NULL;
@@ -137,13 +149,14 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 
     buf[json_size] = '\0';
     dbg_printf(P_INFO2, "JSON: %s", buf);
-    if(setme_size) {
-      *setme_size = json_size;
-    }
+
+    *setme_size = json_size;
+
     am_free(folder_str);
     am_free(encoded);
     return buf;
   }
+
   return NULL;
 }
 
@@ -159,6 +172,11 @@ char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersi
      "\"%s\": true\n"
      "}\n"
      "}";
+
+  if(!setme_size) {
+    dbg_printf(P_ERROR, "setme_size == NULL");
+    return NULL;
+  }
 
   *setme_size = 0;
 
@@ -198,9 +216,7 @@ char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersi
   }
   buf[json_size] = '\0';
 
-  if(setme_size) {
-    *setme_size = json_size;
-  }
+  *setme_size = json_size;
 
   return buf;
 }
@@ -215,8 +231,8 @@ char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersi
  */
 
 char* parseResponse(const char* response) {
-	const char* result_regex = "\"result\":\\s*\"(.+)\"";
-	return getRegExMatch(result_regex, response, 1);
+  const char* result_regex = "\"result\":\\s*\"(.+)\"";
+  return getRegExMatch(result_regex, response, 1);
 }
 
 torrent_id_t parseTorrentID(const char* response) {

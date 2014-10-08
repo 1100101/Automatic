@@ -82,6 +82,7 @@ changeUploadSpeed(const char* url, const char* auth, torrent_id_t id, uint16_t u
       res = sendHTTPData(url, auth, packet, packet_size);
       if(res != NULL && res->responseCode == 200) {
         response = parseResponse(res->data);
+
         if(response) {
           if(!strncmp(response, "success", 7)) {
             dbg_printf(P_MSG, "%d: upload limit successfully changed to %dkB/s!", id, upspeed);
@@ -89,12 +90,15 @@ changeUploadSpeed(const char* url, const char* auth, torrent_id_t id, uint16_t u
           } else {
             dbg_printf(P_ERROR, "Error changing upload speed for torrent #%d: %s", id, res);
           }
+
           am_free((void*)response);
         }
+
         HTTPResponse_free(res);
       }
-      am_free(packet);
     }
+
+    am_free(packet);
   }
   return result;
 }

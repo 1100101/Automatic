@@ -572,7 +572,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
             } else {
                // It's a torrent file
                // Rewrite torrent URL, if necessary
-               if(feed->url_pattern != NULL && feed->url_replace != NULL) {
+               if((feed != NULL) && (feed->url_pattern != NULL) && (feed->url_replace != NULL)) {
                   download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
                }
 

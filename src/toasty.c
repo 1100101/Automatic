@@ -61,9 +61,10 @@ static const char* getToastyErrorMessage(const uint16_t responseCode) {
 }
 
 static char* createToastyMessage(const char* event, const char* desc, int32_t *size) {
-  int32_t result, event_length, desc_length, total_size;
-
+  int32_t result, total_size;
   char *msg = NULL;
+
+  assert(size != NULL);
 
   *size = 0;
 
@@ -79,10 +80,7 @@ static char* createToastyMessage(const char* event, const char* desc, int32_t *s
     return NULL;
   }
 
-  event_length  = event ? strlen(event) : 0;
-  desc_length   = desc  ? strlen(desc)  : 0;
-
-  total_size = event_length + desc_length + 80;
+  total_size = strlen(event) + strlen(desc) + 80;
   msg = (char*)am_malloc(total_size);
 
   if(msg) {

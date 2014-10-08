@@ -168,6 +168,7 @@ char* resolve_path(const char *path) {
     if(path[0] == '~' && path[1] == '/') {
       homedir = get_home_folder();
       if(homedir) {
+        assert((strlen(homedir) + strlen(path)) < MAXPATHLEN);
         strcpy(new_dir, homedir);
         strcat(new_dir, ++path);
         am_free(homedir);
@@ -189,6 +190,7 @@ char* get_tr_folder() {
   char *home = NULL;
 
   if(!path) {
+    assert((strlen(homedir) + strlen(path)) < MAXPATHLEN);
     home = get_home_folder();
     strcpy(buf, home);
     strcat(buf, "/.config/transmission");
