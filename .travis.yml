@@ -1,7 +1,5 @@
 language: c
-compiler:
-  - gcc
-  - clang
+compiler: gcc
 
 env:
   global:
@@ -17,7 +15,7 @@ addons:
     notification_email: 1100101@gmail.com
     build_command_prepend: "./autogen.sh; ./configure; make clean"
     build_command: "make"
-    branch_pattern: master
+    branch_pattern: coverity_scan
 
 # Change this to your needs
 script: ./autogen.sh && ./configure && make
