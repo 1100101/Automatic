@@ -185,7 +185,7 @@ PRIVATE suboption_t* parseSubOption(char* line) {
     option_item->value = param;
   }
 
-  if(!opt_item) {
+  if(!option_item) {
     dbg_printf(P_ERROR, "Error parsing suboption from input string '%s')", line);
     am_free(option);
     am_free(param);

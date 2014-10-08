@@ -115,7 +115,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
             enclosure = getNodeAttributes(child);
 
             if(enclosure) {
-              if ((enclosure->url != NULL) && (enclosure->type != NULL) && (enclosure->type, "application/x-bittorrent") == 0 )
+              if ( (enclosure->url != NULL) && (enclosure->type != NULL) && (strcmp(enclosure->type, "application/x-bittorrent") == 0) )
               {
                 am_free(item->url);
                 item->url = am_strdup(enclosure->url);

@@ -35,6 +35,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <assert.h>
 
 #include "output.h"
 
@@ -190,8 +191,8 @@ char* get_tr_folder() {
   char *home = NULL;
 
   if(!path) {
-    assert((strlen(homedir) + strlen(path)) < MAXPATHLEN);
     home = get_home_folder();
+    assert((strlen(home) + strlen(path)) < MAXPATHLEN);
     strcpy(buf, home);
     strcat(buf, "/.config/transmission");
     path = am_strdup(buf);
