@@ -320,6 +320,7 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
     filter_add(filter, filters);
   } else {
     dbg_printf(P_ERROR, "Invalid filter: '%s'", filter_str);
+    filter_free(filter);
     result = FAILURE;
   }
 
@@ -386,6 +387,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", feedstr);
+    feed_free(feed);
     result = FAILURE;
   }
 
@@ -548,7 +550,8 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     return -1;
   }
 
-  if(stat(filename, &fs) == -1)  {
+  if(stat(filename, &fs) == -1) {
+    fclose(fp);
     return -1;
   }
 
