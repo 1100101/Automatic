@@ -74,7 +74,7 @@ PRIVATE bool seenHUP = false;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void usage(void) {
-  printf("usage: automatic [-fh] [-v level] [-l logfile] [-c file]\n"
+  printf("usage: automatic [-fh] [-v level] [-l logfile] [-c file] [-p pidfile]\n"
     "\n"
     "Automatic %s\n"
     "\n"
@@ -84,7 +84,8 @@ PRIVATE void usage(void) {
     "  -c --configfile <path>    Path to configuration file\n"
     "  -o --once                 Quit Automatic after first check of RSS feeds\n"
     "  -l --logfile <file>       Log messages to <file>\n"
-    "  -a --append-log           Don't overwrite logfile from a previous session"
+    "  -a --append-log           Don't overwrite logfile from a previous session\n"
+    "  -p --pidfile              create pidfile"
     "\n", LONG_VERSION_STRING );
   exit(0);
 }
@@ -92,10 +93,10 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char **xmlfile,
+PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char** pidfile, char **xmlfile,
                       bool * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
                       uint8_t * match_only) {
-  char optstr[] = "afhv:c:l:ox:m";
+  char optstr[] = "afhv:c:l:p:ox:m";
   struct option longopts[] = {
     { "verbose",    required_argument, NULL, 'v' },
     { "nodaemon",   no_argument,       NULL, 'f' },
@@ -103,6 +104,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
     { "configfile", required_argument, NULL, 'c' },
     { "once",       no_argument,       NULL, 'o' },
     { "logfile",    required_argument, NULL, 'l' },
+    { "pidfile",    required_argument, NULL, 'p' },
     { "append-log", no_argument,       NULL, 'a' },
     { "xml",        required_argument, NULL, 'x' },
     { "match-only", no_argument,       NULL, 'm' },
@@ -126,6 +128,9 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
       case 'l':
         *logfile = optarg;
         break;
+      case 'p':
+        *pidfile = optarg;
+        break;
       case 'x':
         *xmlfile = optarg;
         *nofork = true;
@@ -144,6 +149,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
   }
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -154,6 +160,7 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
   }
   session_free(as);
   SessionID_free();
+  pid_close();
   log_close();
   exit(EXIT_SUCCESS);
 }
@@ -161,7 +168,7 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE int daemonize(void) {
+PRIVATE int daemonize(const char* pidfile) {
   int fd;
 
   if (getppid() == 1) {
@@ -215,6 +222,11 @@ PRIVATE int daemonize(void) {
     dup2(fd, 2);
     close(fd);
   }
+
+  if (pidfile && *pidfile && getpid()) {
+    pid_create(pidfile, getpid());
+  }
+
   return 0;
 }
 
@@ -712,6 +724,7 @@ int main(int argc, char **argv) {
   auto_handle * ses = NULL;
   char *config_file = NULL;
   char *logfile = NULL;
+  char *pidfile = NULL;
   char *xmlfile = NULL;
   char erbuf[100];
   NODE *current = NULL;
@@ -728,7 +741,7 @@ int main(int argc, char **argv) {
   */
   log_init(NULL, verbose, 0);
 
-  readargs(argc, argv, &config_file, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log, &match_only);
+  readargs(argc, argv, &config_file, &logfile, &pidfile, &xmlfile, &nofork, &verbose, &once, &append_log, &match_only);
 
   /* reinitialize the logging with the values from the command line */
   log_init(logfile, verbose, append_log);
@@ -763,7 +776,7 @@ int main(int argc, char **argv) {
 
   if(!nofork) {
     /* start daemon */
-    if(daemonize() != 0) {
+    if(daemonize(pidfile) != 0) {
       dbg_printf(P_ERROR, "Error: Daemonize failed. Aborting...");
       shutdown_daemon(mySession);
     }

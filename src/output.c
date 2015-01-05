@@ -44,6 +44,8 @@
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
 
+static char *gPidfile = NULL;
+
 unsigned char log_init(const char *logfile, char msglevel, char append_log) {
   gMsglevel = msglevel;
   if(logfile && *logfile) {
@@ -68,6 +70,31 @@ void log_close(void) {
     gLogFP = NULL;
   }
 }
+
+unsigned char pid_create(const char *pidfile, int pid) {
+  FILE   *gPidFP;
+
+  dbg_printf(P_ERROR, "[pid_create] start %d - pid: %d", pidfile);
+  if(pidfile && *pidfile) {
+    if((gPidFP = fopen(pidfile, "w")) == NULL) {
+      dbg_printf(P_ERROR, "[pid_create] Opening '%s' for pidfile failed", pidfile);
+      return 1; //bad (well, not really)
+    } else {
+      dbg_printf(P_INFO2, "[pid_create] Opening '%s' for pidfile with pid OK: %d", pidfile, pid);
+      fprintf(gPidFP, "%d", pid);
+      fclose(gPidFP);
+    }
+  }
+  return 1; //all good
+}
+
+void pid_close() {
+  if(gPidfile && *gPidfile) {
+    remove(gPidfile);
+    gPidfile = NULL;
+  }
+}
+
 
 /** \brief Print log information to stdout.
  *
