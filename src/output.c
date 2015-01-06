@@ -44,7 +44,7 @@
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
 
-static char *gPidfile = NULL;
+static const char *gPidfile = NULL;
 
 unsigned char log_init(const char *logfile, char msglevel, char append_log) {
   gMsglevel = msglevel;
@@ -82,6 +82,7 @@ unsigned char pid_create(const char *pidfile, int pid) {
       dbg_printf(P_MSG, "[pid_create] Opening '%s' for pidfile (pid:%d)", pidfile, pid);
       fprintf(gPidFP, "%d\n", pid);
       fclose(gPidFP);
+      gPidfile = pidfile;
     }
   }
   return 1; //all good
