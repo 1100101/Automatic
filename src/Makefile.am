@@ -31,7 +31,8 @@ automatic_SOURCES = \
    $(top_srcdir)/src/urlcode.c        \
    $(top_srcdir)/src/utils.c          \
    $(top_srcdir)/src/web.c            \
-   $(top_srcdir)/src/xml_parser.c
+   $(top_srcdir)/src/xml_parser.c     \
+   $(top_srcdir)/src/monitor_conf.c
 
 noinst_HEADERS =    \
    $(top_srcdir)/include/automatic.h      \
@@ -55,7 +56,8 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/urlcode.h        \
    $(top_srcdir)/include/utils.h          \
    $(top_srcdir)/include/web.h            \
-   $(top_srcdir)/include/xml_parser.h
+   $(top_srcdir)/include/xml_parser.h     \
+   $(top_srcdir)/include/monitor_conf.h
 
 automatic_mw_SOURCES =  \
   $(automatic_SOURCES) \
