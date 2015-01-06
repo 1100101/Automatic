@@ -74,14 +74,13 @@ void log_close(void) {
 unsigned char pid_create(const char *pidfile, int pid) {
   FILE   *gPidFP;
 
-  dbg_printf(P_ERROR, "[pid_create] start %d - pid: %d", pidfile);
   if(pidfile && *pidfile) {
     if((gPidFP = fopen(pidfile, "w")) == NULL) {
       dbg_printf(P_ERROR, "[pid_create] Opening '%s' for pidfile failed", pidfile);
       return 1; //bad (well, not really)
     } else {
-      dbg_printf(P_INFO2, "[pid_create] Opening '%s' for pidfile with pid OK: %d", pidfile, pid);
-      fprintf(gPidFP, "%d", pid);
+      dbg_printf(P_MSG, "[pid_create] Opening '%s' for pidfile (pid:%d)", pidfile, pid);
+      fprintf(gPidFP, "%d\n", pid);
       fclose(gPidFP);
     }
   }
