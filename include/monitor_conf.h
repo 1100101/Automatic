@@ -22,7 +22,7 @@
 
 #include "stdbool.h"
 
-unsigned int monitorConf_init(void);
+unsigned int monitorConf_init(const char *config_file);
 void monitorConf_close(void);
 bool monitorConf_hasChanged(void);
 

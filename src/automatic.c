@@ -98,7 +98,7 @@ PRIVATE void usage(void) {
 PRIVATE void readargs(int argc, char ** argv, char **c_file, bool * monitorConf, char** logfile, char **xmlfile,
                       bool * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
                       uint8_t * match_only) {
-  char optstr[] = "afhvn:c:l:ox:m";
+  char optstr[] = "anfhv:c:l:ox:m";
   struct option longopts[] = {
     { "verbose",        required_argument, NULL, 'v' },
     { "nodaemon",       no_argument,       NULL, 'f' },
@@ -779,7 +779,9 @@ int main(int argc, char **argv) {
   }
 
   if (monitorConf) {
-    monitorConf_init();
+    if (monitorConf_init(config_file) != 0) {
+      monitorConf = false; /* avoid testing inotify of not able to initialize */
+    }
   }
 
   dbg_printf(P_INFO, "verbose level: %d", verbose);
