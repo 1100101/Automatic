@@ -60,6 +60,7 @@
 #include "version.h"
 #include "web.h"
 #include "xml_parser.h"
+#include "monitor_conf.h"
 
 PRIVATE char AutoConfigFile[MAXPATHLEN + 1];
 PRIVATE void session_free(auto_handle *as);
@@ -69,17 +70,19 @@ PRIVATE bool closing = false;
 PRIVATE bool nofork  = AM_DEFAULT_NOFORK;
 PRIVATE bool isRunning = false;
 PRIVATE bool seenHUP = false;
+PRIVATE bool monitorConf = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE void usage(void) {
-  printf("usage: automatic [-fh] [-v level] [-l logfile] [-c file]\n"
+  printf("usage: automatic [-fhn] [-v level] [-l logfile] [-c file]\n"
     "\n"
     "Automatic %s\n"
     "\n"
     "  -f --nodeamon             Run in the foreground and log to stderr\n"
     "  -h --help                 Display this message\n"
+    "  -n --config-monitor       Monitor config file changes\n"
     "  -v --verbose <level>      Set output level to <level> (default=1)\n"
     "  -c --configfile <path>    Path to configuration file\n"
     "  -o --once                 Quit Automatic after first check of RSS feeds\n"
@@ -92,20 +95,21 @@ PRIVATE void usage(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, char **xmlfile,
+PRIVATE void readargs(int argc, char ** argv, char **c_file, bool * monitorConf, char** logfile, char **xmlfile,
                       bool * nofork, uint8_t * verbose, uint8_t * once, uint8_t * append_log,
                       uint8_t * match_only) {
-  char optstr[] = "afhv:c:l:ox:m";
+  char optstr[] = "anfhv:c:l:ox:m";
   struct option longopts[] = {
-    { "verbose",    required_argument, NULL, 'v' },
-    { "nodaemon",   no_argument,       NULL, 'f' },
-    { "help",       no_argument,       NULL, 'h' },
-    { "configfile", required_argument, NULL, 'c' },
-    { "once",       no_argument,       NULL, 'o' },
-    { "logfile",    required_argument, NULL, 'l' },
-    { "append-log", no_argument,       NULL, 'a' },
-    { "xml",        required_argument, NULL, 'x' },
-    { "match-only", no_argument,       NULL, 'm' },
+    { "verbose",        required_argument, NULL, 'v' },
+    { "nodaemon",       no_argument,       NULL, 'f' },
+    { "help",           no_argument,       NULL, 'h' },
+    { "config-monitor", no_argument,       NULL, 'n' }, 
+    { "configfile",     required_argument, NULL, 'c' },
+    { "once",           no_argument,       NULL, 'o' },
+    { "logfile",        required_argument, NULL, 'l' },
+    { "append-log",     no_argument,       NULL, 'a' },
+    { "xml",            required_argument, NULL, 'x' },
+    { "match-only",     no_argument,       NULL, 'm' },
     { NULL, 0, NULL, 0 } };
   int opt;
 
@@ -119,6 +123,9 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
         break;
       case 'f':
         *nofork = true;
+        break;
+      case 'n':
+        *monitorConf = true;
         break;
       case 'c':
         *c_file = optarg;
@@ -154,6 +161,7 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
   }
   session_free(as);
   SessionID_free();
+  monitorConf_close();
   log_close();
   exit(EXIT_SUCCESS);
 }
@@ -728,7 +736,7 @@ int main(int argc, char **argv) {
   */
   log_init(NULL, verbose, 0);
 
-  readargs(argc, argv, &config_file, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log, &match_only);
+  readargs(argc, argv, &config_file, &monitorConf, &logfile, &xmlfile, &nofork, &verbose, &once, &append_log, &match_only);
 
   /* reinitialize the logging with the values from the command line */
   log_init(logfile, verbose, append_log);
@@ -770,6 +778,12 @@ int main(int argc, char **argv) {
     dbg_printft( P_MSG, "Daemon started");
   }
 
+  if (monitorConf) {
+    if (monitorConf_init(config_file) != 0) {
+      monitorConf = false; /* avoid testing inotify if not able to initialize */
+    }
+  }
+
   dbg_printf(P_INFO, "verbose level: %d", verbose);
   dbg_printf(P_INFO, "foreground mode: %s", nofork == true ? "yes" : "no");
 
@@ -799,6 +813,11 @@ int main(int argc, char **argv) {
     }
 
     isRunning = false;
+
+    if (monitorConf && monitorConf_hasChanged()) {
+      /* consider a config file change is a SIGHUP signal */
+      seenHUP = true;
+    }
 
     if(seenHUP) {
       signal_handler(SIGHUP);

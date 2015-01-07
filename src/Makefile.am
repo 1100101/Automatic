@@ -18,6 +18,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/file.c           \
    $(top_srcdir)/src/json.c           \
    $(top_srcdir)/src/list.c           \
+   $(top_srcdir)/src/monitor_conf.c   \
    $(top_srcdir)/src/output.c         \
    $(top_srcdir)/src/filters.c        \
    $(top_srcdir)/src/prowl.c          \
@@ -42,6 +43,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/file.h           \
    $(top_srcdir)/include/json.h           \
    $(top_srcdir)/include/list.h           \
+   $(top_srcdir)/include/monitor_conf.h   \
    $(top_srcdir)/include/output.h         \
    $(top_srcdir)/include/filters.h        \
    $(top_srcdir)/include/prowl.h          \
