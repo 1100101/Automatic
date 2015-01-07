@@ -780,7 +780,7 @@ int main(int argc, char **argv) {
 
   if (monitorConf) {
     if (monitorConf_init(config_file) != 0) {
-      monitorConf = false; /* avoid testing inotify of not able to initialize */
+      monitorConf = false; /* avoid testing inotify if not able to initialize */
     }
   }
 

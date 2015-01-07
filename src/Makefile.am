@@ -18,6 +18,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/file.c           \
    $(top_srcdir)/src/json.c           \
    $(top_srcdir)/src/list.c           \
+   $(top_srcdir)/src/monitor_conf.c   \
    $(top_srcdir)/src/output.c         \
    $(top_srcdir)/src/filters.c        \
    $(top_srcdir)/src/prowl.c          \
@@ -31,8 +32,7 @@ automatic_SOURCES = \
    $(top_srcdir)/src/urlcode.c        \
    $(top_srcdir)/src/utils.c          \
    $(top_srcdir)/src/web.c            \
-   $(top_srcdir)/src/xml_parser.c     \
-   $(top_srcdir)/src/monitor_conf.c
+   $(top_srcdir)/src/xml_parser.c
 
 noinst_HEADERS =    \
    $(top_srcdir)/include/automatic.h      \
@@ -43,6 +43,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/file.h           \
    $(top_srcdir)/include/json.h           \
    $(top_srcdir)/include/list.h           \
+   $(top_srcdir)/include/monitor_conf.h   \
    $(top_srcdir)/include/output.h         \
    $(top_srcdir)/include/filters.h        \
    $(top_srcdir)/include/prowl.h          \
@@ -56,8 +57,7 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/urlcode.h        \
    $(top_srcdir)/include/utils.h          \
    $(top_srcdir)/include/web.h            \
-   $(top_srcdir)/include/xml_parser.h     \
-   $(top_srcdir)/include/monitor_conf.h
+   $(top_srcdir)/include/xml_parser.h
 
 automatic_mw_SOURCES =  \
   $(automatic_SOURCES) \
