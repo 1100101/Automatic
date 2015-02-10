@@ -21,15 +21,15 @@
  */
 
 #ifdef MEMWATCH
-	#include "memwatch.h"
+    #include "memwatch.h"
 #endif
 #define AM_DEFAULT_RPC_VERSION  4
-#define AM_DEFAULT_INTERVAL			30
-#define AM_DEFAULT_HOST  				"localhost"
-#define AM_DEFAULT_RPCPORT 			9091
-#define AM_TRANSMISSION_1_2			2
-#define AM_TRANSMISSION_1_3			3
-#define AM_TRANSMISSION_EXTERNAL		1
+#define AM_DEFAULT_INTERVAL            30
+#define AM_DEFAULT_HOST                  "localhost"
+#define AM_DEFAULT_RPCPORT             9091
+#define AM_TRANSMISSION_1_2            2
+#define AM_TRANSMISSION_1_3            3
+#define AM_TRANSMISSION_EXTERNAL        1
 
 #include <stdint.h>
 
@@ -39,27 +39,29 @@
 
 /** \cond */
 struct auto_handle {
-	char *transmission_path;
-	char *statefile;
-	char *torrent_folder;
-	char *auth;
-	char *host;
-   char *prowl_key;
- 	char *transmission_external;
-	rss_feeds 	feeds;
-	am_filters  filters;
-	simple_list downloads;
-	int8_t      rpc_version;
-	uint16_t 	max_bucket_items;
-	uint8_t 		bucket_changed;
-	uint8_t 		check_interval;
-	uint8_t 		use_transmission;
-	uint8_t 		start_torrent;
-	uint16_t    rpc_port;
-	uint8_t 		transmission_version;
-	int16_t     upspeed;
-   uint8_t     prowl_key_valid;
-   uint8_t     match_only;
+    char *transmission_path;
+    char *statefile;
+    char *torrent_folder;
+    char *auth;
+    char *host;
+    char *prowl_key;
+    char *toasty_key;
+    char *pushalot_key;
+    char *transmission_external;
+    rss_feeds    feeds;
+    am_filters   filters;
+    simple_list  downloads;
+    int8_t       rpc_version;
+    uint16_t     max_bucket_items;
+    uint8_t      bucket_changed;
+    uint8_t      check_interval;
+    uint8_t      use_transmission;
+    uint8_t      start_torrent;
+    uint16_t     rpc_port;
+    uint8_t      transmission_version;
+    int16_t      upspeed;
+    uint8_t      prowl_key_valid;
+    uint8_t      match_only;
 };
 /** \endcond */
 

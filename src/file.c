@@ -75,7 +75,7 @@ char* readFile(const char *fname, uint32_t *setme_len) {
  * \return 0 if saving was successful, -1 otherwise.
  */
 int saveFile(const char *name, const void *data, uint32_t size) {
-  int fh, ret = -1;
+  int fh, ret = 0;
 
   if (!name || !data) {
     return -1;
@@ -88,15 +88,15 @@ int saveFile(const char *name, const void *data, uint32_t size) {
   } else {
     ret = write(fh, data, size);
     if ((uint32_t)ret != size) {
-      dbg_printf(P_ERROR, "[saveFile] Error writing torrent file: %s",
-          strerror(errno));
+      dbg_printf(P_ERROR, "[saveFile] Error writing torrent file: %s", (errno));
       ret = -1;
     } else {
       dbg_printf(P_INFO, "Saved torrent file '%s'", name);
     }
+
     fchmod(fh, 0644);
     close(fh);
-    ret = 0;
   }
+
   return ret;
 }

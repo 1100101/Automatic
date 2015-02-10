@@ -55,7 +55,7 @@ PUBLIC rss_feed* feed_new(void) {
   rss_feed* i = (rss_feed*)am_malloc(sizeof(struct rss_feed));
   if(i != NULL) {
     i->url  = NULL;
-    i->cookies = NULL;  
+    i->cookies = NULL;
     i->id = NULL;
     i->url_pattern = NULL;
     i->url_replace = NULL;
@@ -74,22 +74,22 @@ PUBLIC rss_feed* feed_new(void) {
  */
 void feed_printList(simple_list list) {
 #ifdef DEBUG
-	NODE *cur = list;
-	rss_feed* x;
+   NODE *cur = list;
+   rss_feed* x;
 
-	dbg_printf(P_INFO2, "------- start -------------\n");
-	while(cur != NULL && cur->data != NULL) {
-		dbg_printf(P_INFO2, "data: (%p)\n", (void*)cur->data);
-		x = (rss_feed*)cur->data;
-		if(x->url != NULL) {
-			dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
-		}
-		dbg_printf(P_INFO2, "  ttl: %d\n", x->ttl);
-		/*dbg_printf(P_INFO2, "  count: %d\n", x->count);*/
-		dbg_printf(P_INFO2, "  next: (%p)\n", (void*)cur->next);
-		cur = cur->next;
-	}
-	dbg_printf(P_INFO2, "------- end  -------------\n");
+   dbg_printf(P_INFO2, "------- start -------------\n");
+   while(cur != NULL && cur->data != NULL) {
+      dbg_printf(P_INFO2, "data: (%p)\n", (void*)cur->data);
+      x = (rss_feed*)cur->data;
+      if(x->url != NULL) {
+         dbg_printf(P_INFO2, "  url: %s (%p)\n", x->url, (void*)x->url);
+      }
+      dbg_printf(P_INFO2, "  ttl: %d\n", x->ttl);
+      /*dbg_printf(P_INFO2, "  count: %d\n", x->count);*/
+      dbg_printf(P_INFO2, "  next: (%p)\n", (void*)cur->next);
+      cur = cur->next;
+   }
+   dbg_printf(P_INFO2, "------- end  -------------\n");
 #endif
 }
 
@@ -112,14 +112,14 @@ PUBLIC void feed_add(rss_feed* p, NODE **head) {
  * removeLast() as the 2nd parameter to ensure proper memory deallocation.
  */
 void feed_free(void* listItem) {
-	rss_feed* x = (rss_feed*)listItem;
+   rss_feed* x = (rss_feed*)listItem;
 
-	if(x != NULL) {
-		am_free(x->url);
-		am_free(x->cookies);
-		am_free(x->id);
-    am_free(x->url_pattern);
-    am_free(x->url_replace);
-		am_free(x);
-	}
+   if(x != NULL) {
+      am_free(x->url);
+      am_free(x->cookies);
+      am_free(x->id);
+      am_free(x->url_pattern);
+      am_free(x->url_replace);
+      am_free(x);
+   }
 }

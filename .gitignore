@@ -1,6 +1,9 @@
 Makefile.in
 Makefile
 
+compile
+test-driver
+
 *.o
 *.log
 
@@ -25,6 +28,7 @@ src/automatic.state
 src/automatic-mw
 src/automatic.conf
 src/core
+src/.dirstamp
 
 src/tests/utils_test
 src/tests/parser_test
@@ -34,3 +38,6 @@ src/tests/http_test
 src/tests/prowl_test
 src/tests/json_test
 src/tests/regex_test
+src/tests/toasty_test
+src/tests/pushalot_test
+src/tests/*.trs

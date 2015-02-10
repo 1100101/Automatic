@@ -1,5 +1,5 @@
 SUBDIRS = . tests
-INCLUDES = -I$(top_srcdir)/include/
+AM_CPPFLAGS = -I$(top_srcdir)/include/
 
 AM_CFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
@@ -21,9 +21,11 @@ automatic_SOURCES = \
    $(top_srcdir)/src/output.c         \
    $(top_srcdir)/src/filters.c        \
    $(top_srcdir)/src/prowl.c          \
+   $(top_srcdir)/src/pushalot.c       \
    $(top_srcdir)/src/regex.c          \
    $(top_srcdir)/src/rss_feed.c       \
    $(top_srcdir)/src/state.c          \
+   $(top_srcdir)/src/toasty.c         \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
    $(top_srcdir)/src/urlcode.c        \
@@ -43,9 +45,11 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/output.h         \
    $(top_srcdir)/include/filters.h        \
    $(top_srcdir)/include/prowl.h          \
+   $(top_srcdir)/include/pushalot.h       \
    $(top_srcdir)/include/regex.h          \
    $(top_srcdir)/include/rss_feed.h       \
    $(top_srcdir)/include/state.h          \
+   $(top_srcdir)/include/toasty.h         \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
    $(top_srcdir)/include/urlcode.h        \
@@ -54,17 +58,13 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/xml_parser.h
 
 automatic_mw_SOURCES =  \
-   $(automatic_SOURCES) \
-	 $(top_srcdir)/src/memwatch.c
+  $(automatic_SOURCES) \
+	$(top_srcdir)/src/memwatch.c
 
 if DBG_BUILD
-  automatic_mw_HEADERS =  \
-     $(noinst_HEADERS)    \
-     $(top_srcdir)/include/memwatch.h
-
   automatic_mwdir = .
 
-  automatic_mw_CPPFLAGS = -DMEMWATCH -DDEBUG -O0 -ggdb3
+  automatic_mw_CPPFLAGS = $(AM_CPPFLAGS) -DMEMWATCH -DDEBUG -O0 -ggdb3
 endif
 
 dist_sysconf_DATA = automatic.conf-sample

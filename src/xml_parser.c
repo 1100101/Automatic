@@ -56,7 +56,7 @@ static int getNodeText(xmlNodePtr child, char **dest) {
   textNode = xmlNodeGetContent(child);
   *dest = am_strdup((char*) textNode);
   xmlFree(textNode);
-	if (*dest) {
+  if (*dest) {
     result = 1;
   }
   return result;
@@ -103,25 +103,28 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
         item = newFeedItem();
 
         while (child) {
-          if ((strcmp((char*) child->name, "title") == 0)) {
+          if (!name_set && (strcmp((char*) child->name, "title") == 0)) {
             name_set = getNodeText(child->children, &item->name);
           } else if ((strcmp((char*) child->name, "link") == 0)) {
             if (url_set == 0) { /* if "enclosure" was scanned before "link", use the former */
               url_set = getNodeText(child->children, &item->url);
             }
-          } else if ((strcmp((char*) child->name, "category") == 0)) {
+          } else if ((strcmp((char*) child->name, "category") == 0) && !item->category) {
               getNodeText(child->children, &item->category);
           } else if ((strcmp((char*) child->name, "enclosure") == 0)) {
             enclosure = getNodeAttributes(child);
 
-            if ( enclosure->url != NULL && enclosure->type != NULL &&
-                 strcmp(enclosure->type, "application/x-bittorrent") == 0 ) {
-              am_free(item->url);
-              item->url = am_strdup(enclosure->url);
-              url_set = 1;
+            if(enclosure) {
+              if ( (enclosure->url != NULL) && (enclosure->type != NULL) && (strcmp(enclosure->type, "application/x-bittorrent") == 0) )
+              {
+                am_free(item->url);
+                item->url = am_strdup(enclosure->url);
+                url_set = 1;
+              }
+
               freeNode(enclosure);
             }
-          } else if((strcmp((char*)child->name, "guid") == 0)) {
+          } else if((strcmp((char*)child->name, "guid") == 0) && !item->guid) {
             getNodeText(child->children, &item->guid);
           }
 
@@ -132,6 +135,7 @@ static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
           addItem(item, &itemList);
         } else {
           dbg_printf(P_ERROR, "Node without name or URL! Processing skipped.");
+          freeFeedItem(item);
         }
 
         child = cur = NULL;
@@ -179,10 +183,10 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count,
   }
 
   /* Load XML document */
-	if((doc = xmlParseMemory(data, size)) == NULL) {
+  if((doc = xmlParseMemory(data, size)) == NULL) {
     doc = xmlRecoverMemory(data, size);
   }
-  
+
   if (doc == NULL) {
     dbg_printf(P_ERROR, "Error: Unable to parse input data!");
     return NULL;
@@ -198,7 +202,7 @@ simple_list parse_xmldata(const char* data, uint32_t size, uint32_t* item_count,
   }
 
   /* check for time-to-live element in RSS feed */
-  if (ttl == 0) {
+  if (ttl != 0) {
     xpathObj = xmlXPathEvalExpression(ttlExpr, xpathCtx);
     if (xpathObj != NULL) {
       ttlNode = xpathObj->nodesetval;

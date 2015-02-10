@@ -35,6 +35,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <assert.h>
 
 #include "output.h"
 
@@ -168,6 +169,7 @@ char* resolve_path(const char *path) {
     if(path[0] == '~' && path[1] == '/') {
       homedir = get_home_folder();
       if(homedir) {
+        assert((strlen(homedir) + strlen(path)) < MAXPATHLEN);
         strcpy(new_dir, homedir);
         strcat(new_dir, ++path);
         am_free(homedir);
@@ -188,13 +190,15 @@ char* get_tr_folder() {
   char buf[MAXPATHLEN];
   char *home = NULL;
 
-  if(!path) {
-    home = get_home_folder();
-    strcpy(buf, home);
-    strcat(buf, "/.config/transmission");
-    path = am_strdup(buf);
-    am_free(home);
-  }
+  home = get_home_folder();
+
+  assert(home && *home && ((strlen(home) + 20) < MAXPATHLEN));
+
+  strcpy(buf, home);
+  strcat(buf, "/.config/transmission");
+  path = am_strdup(buf);
+  am_free(home);
+
   return path;
 }
 

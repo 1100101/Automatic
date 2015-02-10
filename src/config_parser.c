@@ -166,8 +166,13 @@ PRIVATE suboption_t* parseSubOption(char* line) {
 
   while(line[i] != '\0') {
     if(line[i] == subopt_delim[0] && line[i+1] == subopt_delim[1]) {
-      option = am_strndup(line, i-1);
-      param  = trim(line + i + strlen(subopt_delim));
+      if(i >1) {
+        option = am_strndup(line, i-1);
+        param  = trim(line + i + strlen(subopt_delim));
+      } else {
+        dbg_printf(P_ERROR, "Error: Suboption '%s' is malformed!", line);
+      }
+
       break;
     }
 
@@ -178,6 +183,12 @@ PRIVATE suboption_t* parseSubOption(char* line) {
     option_item = (suboption_t*)am_malloc(sizeof(suboption_t));
     option_item->option = option;
     option_item->value = param;
+  }
+
+  if(!option_item) {
+    dbg_printf(P_ERROR, "Error parsing suboption from input string '%s')", line);
+    am_free(option);
+    am_free(param);
   }
 
   return option_item;
@@ -191,7 +202,7 @@ PRIVATE simple_list parseMultiOption(const char *str) {
   char tmp[MAX_PARAM_LEN];
   int last_dbl_quote_pos;
   int8_t parse_error = 0;
-  int32_t current_line_pos = -1;
+  int32_t current_line_pos = 0;
 
   if(len == 0) {
     dbg_printf(P_ERROR, "[parseMultiOption] empty input string!");
@@ -309,6 +320,7 @@ PRIVATE int parseFilter(am_filters *filters, const char* filter_str) {
     filter_add(filter, filters);
   } else {
     dbg_printf(P_ERROR, "Invalid filter: '%s'", filter_str);
+    filter_free(filter);
     result = FAILURE;
   }
 
@@ -375,6 +387,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
     feed_add(feed, feeds);
   } else {
     dbg_printf(P_ERROR, "Invalid feed: '%s'", feedstr);
+    feed_free(feed);
     result = FAILURE;
   }
 
@@ -410,6 +423,10 @@ PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, opti
     set_path(param, &as->transmission_path);
   } else if(!strcmp(opt, "prowl-apikey")) {
     as->prowl_key = am_strdup(param);
+  } else if(!strcmp(opt, "toasty-deviceid")) {
+    as->toasty_key = am_strdup(param);
+  } else if(!strcmp(opt, "pushalot-token")) {
+    as->pushalot_key = am_strdup(param);
   } else if(!strcmp(opt, "transmission-version")) {
     if (!strcmp(param, "external")) {
       /* we should probably only set this when transmission-external is set */
@@ -528,17 +545,19 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
   struct stat fs;
   option_type type;
 
-  if(stat(filename, &fs) == -1)  {
-    return -1;
-  }
-
   if ((fp = fopen(filename, "rb")) == NULL) {
     perror("fopen");
     return -1;
   }
 
+  if(stat(filename, &fs) == -1) {
+    fclose(fp);
+    return -1;
+  }
+
   if ((line = am_malloc(fs.st_size + 1)) == NULL) {
     dbg_printf(P_ERROR, "Can't allocate memory for 'line': %s (%ldb)", strerror(errno), fs.st_size + 1);
+    fclose(fp);
     return -1;
   }
 
@@ -549,12 +568,20 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     return -1;
   }
 
+  /* NULL-terminate the result */
+  line[fs.st_size] = '\0';
+
   if(fp) {
     fclose(fp);
   }
 
   while(line_pos != fs.st_size) {
     line_pos = SkipWhitespace(line, line_pos, &line_num);
+
+    if(line_pos < 0) {
+      parse_error = 1;
+      break;
+    }
 
     if(line_pos >= fs.st_size) {
       break;
@@ -592,6 +619,11 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 
     line_pos = SkipWhitespace(line, line_pos, &line_num);
 
+    if(line_pos < 0) {
+      parse_error = 1;
+      break;
+    }
+
     if(line_pos >= fs.st_size) {
       break;
     }
@@ -605,6 +637,11 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
 
     line_pos = SkipWhitespace(line, line_pos, &line_num);
 
+    if(line_pos < 0) {
+      parse_error = 1;
+      break;
+    }
+
     if(line_pos >= fs.st_size) {
       break;
     }
@@ -615,38 +652,35 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     if (line[line_pos] == '"' || line[line_pos] == '\'') {
       c = line[line_pos]; /* single or double quote */
       ++line_pos;  /* skip quote */
-      parse_error = 0;
-      for (param_pos = 0; line[line_pos] != c; /* NOTHING */) {
-        if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN && line[line_pos] != '\n') {
-          param[param_pos++] = line[line_pos++];
-        } else {
-               dbg_printf(P_ERROR, "Option %s has a too long parameter (line %d)",opt, line_num);
-          parse_error = 1;
+      parse_error = 1;
+      for (param_pos = 0; (param_pos < MAX_PARAM_LEN) && (line_pos < fs.st_size) && (line[line_pos] != '\n'); /* NOTHING */) {
+        if( line[line_pos] == c) {
+          parse_error = 0;
           break;
         }
+        param[param_pos++] = line[line_pos++];
       }
 
       if(parse_error == 0) {
-        line_pos++;  /* skip the closing " or ' */
+        line_pos++;  /* skip the closing single or double quote */
         type = CONF_TYPE_STRING;
       } else {
+        dbg_printf(P_ERROR, "Option '%s' has a too long parameter (line %d). Closing quote missing?", opt, line_num);
         break;
       }
     } else if (line[line_pos] == '{') { /* case 2: multiple items, linebreaks allowed */
       dbg_printf(P_DBG, "reading multiline param", line_num);
       ++line_pos;
-      parse_error = 0;
+      parse_error = 1;
 
-      for (param_pos = 0; line[line_pos] != '}'; /* NOTHING */) {
-        if(line_pos < fs.st_size && param_pos < MAX_PARAM_LEN) {
-          param[param_pos++] = line[line_pos++];
-          if(line[line_pos] == '\n') {
-            line_num++;
-          }
-        } else {
-          dbg_printf(P_ERROR, "Option %s has a too long parameter (line %d). Closing bracket missing?", opt, line_num);
-          parse_error = 1;
+      for (param_pos = 0; (line_pos < fs.st_size) && (param_pos < MAX_PARAM_LEN); /* NOTHING */) {
+        if(line[line_pos] == '}') {
+          parse_error = 0;
           break;
+        }
+        param[param_pos++] = line[line_pos++];
+        if(line[line_pos] == '\n') {
+          line_num++;
         }
       }
 
@@ -654,12 +688,13 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
         line_pos++;  /* skip the closing '}' */
         type = CONF_TYPE_STRINGLIST;
       } else {
+        dbg_printf(P_ERROR, "Option %s has a too long parameter (line %d). Closing bracket missing?", opt, line_num);
+        parse_error = 1;
         break;
       }
     } else { /* Case 3: integers */
       parse_error = 0;
-      for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos])
-        && line[line_pos] != '#'; /* NOTHING */) {
+      for (param_pos = 0; isprint(line[line_pos]) && !isspace(line[line_pos]) && line[line_pos] != '#'; /* NOTHING */) {
           param[param_pos++] = line[line_pos++];
           if (param_pos >= MAX_PARAM_LEN) {
             dbg_printf(P_ERROR, "Option %s has a too long parameter (line %d)", opt, line_num);
@@ -686,6 +721,11 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
     }
 
     line_pos = SkipWhitespace(line, line_pos, &line_num);
+
+    if(line_pos < 0) {
+      parse_error = 1;
+      break;
+    }
 
     if(line_pos >= fs.st_size) {
       break;
