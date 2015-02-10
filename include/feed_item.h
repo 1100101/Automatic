@@ -42,6 +42,6 @@ struct feed_item {
 
 void freeFeedItem(void *item);
 feed_item newFeedItem(void);
-uint8_t isMatch(const simple_list filters, const char * string, const char * feedID, char **folder);
+uint8_t isMatch(const simple_list filters, const char * string, const char * feedID, char **folder,char** filter_pattern);
 
 #endif

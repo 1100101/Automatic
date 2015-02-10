@@ -528,7 +528,9 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
-  char *download_folder = NULL;
+  char *download_folder =NULL;
+  char *filter_pattern =NULL;
+  char *download_folder_reg =NULL;
   char *feedID = NULL;
   char *download_url = NULL;
 
@@ -544,7 +546,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
 
-    if(isMatch(session->filters, item->name, feedID, &download_folder)) {
+    if(isMatch(session->filters, item->name, feedID, &download_folder, &filter_pattern)) {/*Fill forder from filter*/
       if(!session->match_only) {
          if(has_been_downloaded(session->downloads, item)) {
             dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
@@ -557,19 +559,23 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                // It's a torrent file
                // Rewrite torrent URL, if necessary
                if(feed->url_pattern != NULL && feed->url_replace != NULL) {
-                  download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
+                  download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);/*Aqui se reescribe la url*/
                }
-
+               if(download_folder != NULL && filter_pattern != NULL) {
+                  download_folder_reg = rewriteURL(item->name, filter_pattern, download_folder);/*Aqui se reescribe la url*/
+                  dbg_printft(P_MSG, "New Folder: [%s]->(%s)",download_folder , download_folder_reg );
+               }
                torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
                if(torrent) {
                   get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
 
                   /* add torrent to Transmission */
-                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);/*Here We are*/
                   HTTPResponse_free(torrent);
                }
 
                am_free(download_url);
+               am_free(download_folder_reg);
             }
 
             // process result
