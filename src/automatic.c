@@ -540,6 +540,15 @@ PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, cons
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+PRIVATE void createDIR(const char* directory) {
+  struct stat s;
+  if (stat(directory, &s) == -1) {
+    return mkdir(directory, 0700);
+  }
+  return 0;/*No error*/
+}
+
+
 PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simple_list items, const rss_feed * feed) {
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
@@ -575,18 +584,19 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                // It's a torrent file
                // Rewrite torrent URL, if necessary
                if(feed->url_pattern != NULL && feed->url_replace != NULL) {
-                  download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);/*Aqui se reescribe la url*/
+                  download_url = rewriteURL(item->url, feed->url_pattern, feed->url_replace);
                }
                if(download_folder != NULL && filter_pattern != NULL) {
-                  download_folder_reg = rewriteURL(item->name, filter_pattern, download_folder);/*Aqui se reescribe la url*/
+                  download_folder_reg = rewriteURL(item->name, filter_pattern, download_folder);
                   dbg_printft(P_MSG, "New Folder: [%s]->(%s)",download_folder , download_folder_reg );
+                  createDIR(download_folder_reg);
                }
                torrent = downloadTorrent(curl_session, download_url != NULL ? download_url : item->url);
                if(torrent) {
                   get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
 
                   /* add torrent to Transmission */
-                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);/*Here We are*/
+                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
                   HTTPResponse_free(torrent);
                }
 
