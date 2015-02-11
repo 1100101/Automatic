@@ -596,7 +596,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                   get_filename(fname, torrent->content_filename, item->url, session->torrent_folder);
 
                   /* add torrent to Transmission */
-                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder);
+                  result = addTorrentToTM(session, torrent->data, torrent->size, fname, download_folder_reg ? download_folder_reg : download_folder);
                   HTTPResponse_free(torrent);
                }
 
