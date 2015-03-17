@@ -553,9 +553,9 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   simple_list current_item = items;
   HTTPResponse *torrent = NULL;
   char fname[MAXPATHLEN];
-  char *download_folder =NULL;
-  char *filter_pattern =NULL;
-  char *download_folder_reg =NULL;
+  char *download_folder = NULL;
+  char *filter_pattern = NULL;
+  char *download_folder_reg = NULL;
   char *feedID = NULL;
   char *download_url = NULL;
 
@@ -571,7 +571,7 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
   while(current_item && current_item->data) {
     feed_item item = (feed_item)current_item->data;
 
-    if(isMatch(session->filters, item->name, feedID, &download_folder, &filter_pattern)) {/*Fill forder from filter*/
+    if(isMatch(session->filters, item->name, feedID, &download_folder, &filter_pattern)) {
       if(!session->match_only) {
          if(has_been_downloaded(session->downloads, item)) {
             dbg_printf(P_INFO, "Duplicate torrent: %s", item->name);
