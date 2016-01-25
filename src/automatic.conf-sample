@@ -88,6 +88,10 @@ statefile = "~/.config/automatic.state"
 # Prowl API key. You can use this to send push notifications to an iPhone or an iPad. See http://prowl.weks.net for more information
 #prowl-apikey = ""
 
+# Pushover API key. Pushover is a service to receive instant push notifications on your phone or tablet from a variety of sources.
+# Concatenate API token and user/group key: token_key&user=user_key, ex. "KzGDORePKggZaC0QOYAMyEEuzJnjUi&user=c8a1495ee75825de5983cd1abc8031"
+#pushover-apikey = ""
+
 # patterns contains a number of regular expressions which are matched against the RSS feed entries
 # please don't use curly brackets within a regular expression, it'll horribly break the configuration parser :)
 # letter-casing does not matter

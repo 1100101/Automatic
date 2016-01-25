@@ -52,6 +52,7 @@
 #include "prowl.h"
 #include "pushalot.h"
 #include "toasty.h"
+#include "pushover.h"
 #include "regex.h"
 #include "state.h"
 #include "torrent.h"
@@ -261,6 +262,7 @@ auto_handle* session_init(void) {
   ses->prowl_key             = NULL;
   ses->toasty_key            = NULL;
   ses->pushalot_key          = NULL;
+  ses->pushover_key          = NULL;
   ses->prowl_key_valid       = 0;
   ses->match_only            = 0;
   ses->transmission_external = NULL;
@@ -309,6 +311,10 @@ PRIVATE void printSessionSettings() {
 
   if(mySession->pushalot_key) {
     dbg_printf(P_INFO, "Pushalot Token: %s", mySession->pushalot_key);
+  }
+
+  if(mySession->pushover_key) {
+    dbg_printf(P_INFO, "Pushover Token+User: %s", mySession->pushover_key);
   }
 
   dbg_printf(P_MSG,  "%d feed URLs", listCount(mySession->feeds));
@@ -426,6 +432,8 @@ PRIVATE void session_free(auto_handle *as) {
     as->toasty_key = NULL;
     am_free(as->pushalot_key);
     as->pushalot_key = NULL;
+    am_free(as->pushover_key);
+    as->pushover_key = NULL;
     am_free(as->transmission_external);
     as->transmission_external = NULL;
     freeList(&as->feeds, feed_free);
@@ -614,6 +622,10 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                   if(session->pushalot_key) {
                      pushalot_sendNotification(PUSHALOT_NEW_DOWNLOAD, session->pushalot_key, item->name);
                   }
+                  
+                  if(session->pushover_key) {
+                     pushover_sendNotification(PUSHOVER_NEW_DOWNLOAD, session->pushover_key, item->name);
+                  }
                }
 
                /* add url to bucket list */
@@ -633,6 +645,10 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
 
                if(session->pushalot_key) {
                   pushalot_sendNotification(PUSHALOT_DOWNLOAD_FAILED, session->pushalot_key, item->name);
+               }
+               
+               if(session->pushover_key) {
+                  pushover_sendNotification(PUSHOVER_DOWNLOAD_FAILED, session->pushover_key, item->name);
                }
             }
          }
