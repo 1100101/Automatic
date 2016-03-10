@@ -47,6 +47,7 @@ struct auto_handle {
     char *prowl_key;
     char *toasty_key;
     char *pushalot_key;
+    char *pushover_key;
     char *transmission_external;
     rss_feeds    feeds;
     am_filters   filters;
