@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include/
 
-check_PROGRAMS = list_test base64_test regex_test http_test json_test prowl_test parser_test utils_test toasty_test pushalot_test pushover_test
+check_PROGRAMS = list_test base64_test regex_test http_test json_test prowl_test parser_test utils_test pushover_test
 
 TESTS = $(check_PROGRAMS)
 
@@ -44,20 +44,6 @@ prowl_test_SOURCES = $(GLOBAL_SOURCES) \
    $(top_srcdir)/src/web.c             \
    prowl_test.c
 
-pushalot_test_SOURCES = $(GLOBAL_SOURCES) \
-   $(top_srcdir)/src/pushalot.c           \
-   $(top_srcdir)/src/regex.c              \
-   $(top_srcdir)/src/urlcode.c            \
-   $(top_srcdir)/src/web.c                \
-   pushalot_test.c
-
-toasty_test_SOURCES = $(GLOBAL_SOURCES) \
-   $(top_srcdir)/src/toasty.c           \
-   $(top_srcdir)/src/regex.c            \
-   $(top_srcdir)/src/urlcode.c          \
-   $(top_srcdir)/src/web.c              \
-   toasty_test.c
-
 pushover_test_SOURCES = $(GLOBAL_SOURCES) \
    $(top_srcdir)/src/pushover.c           \
    $(top_srcdir)/src/regex.c              \
@@ -92,12 +78,6 @@ http_test_CFLAGS = $(LIBCURL_CFLAGS) $(PCRE_CFLAGS)
 
 prowl_test_LDADD  = $(LIBCURL_LIBS) $(LIBXML_LIBS)  $(PCRE_LIBS)
 prowl_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS) $(PCRE_CFLAGS)
-
-toasty_test_LDADD  = $(LIBCURL_LIBS) $(LIBXML_LIBS)  $(PCRE_LIBS)
-toasty_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS) $(PCRE_CFLAGS)
-
-pushalot_test_LDADD  = $(LIBCURL_LIBS) $(LIBXML_LIBS)  $(PCRE_LIBS)
-pushalot_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS) $(PCRE_CFLAGS)
 
 pushover_test_LDADD  = $(LIBCURL_LIBS) $(LIBXML_LIBS)  $(PCRE_LIBS)
 pushover_test_CFLAGS = $(LIBCURL_CFLAGS) $(LIBXML_CFLAGS) $(PCRE_CFLAGS)

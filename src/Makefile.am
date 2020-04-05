@@ -21,12 +21,10 @@ automatic_SOURCES = \
    $(top_srcdir)/src/output.c         \
    $(top_srcdir)/src/filters.c        \
    $(top_srcdir)/src/prowl.c          \
-   $(top_srcdir)/src/pushalot.c       \
    $(top_srcdir)/src/pushover.c       \
    $(top_srcdir)/src/regex.c          \
    $(top_srcdir)/src/rss_feed.c       \
    $(top_srcdir)/src/state.c          \
-   $(top_srcdir)/src/toasty.c         \
    $(top_srcdir)/src/torrent.c        \
    $(top_srcdir)/src/transmission.c   \
    $(top_srcdir)/src/urlcode.c        \
@@ -46,12 +44,10 @@ noinst_HEADERS =    \
    $(top_srcdir)/include/output.h         \
    $(top_srcdir)/include/filters.h        \
    $(top_srcdir)/include/prowl.h          \
-   $(top_srcdir)/include/pushalot.h       \
    $(top_srcdir)/include/pushover.h       \
    $(top_srcdir)/include/regex.h          \
    $(top_srcdir)/include/rss_feed.h       \
    $(top_srcdir)/include/state.h          \
-   $(top_srcdir)/include/toasty.h         \
    $(top_srcdir)/include/torrent.h        \
    $(top_srcdir)/include/transmission.h   \
    $(top_srcdir)/include/urlcode.h        \

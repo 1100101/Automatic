@@ -50,8 +50,6 @@
 #include "file.h"
 #include "output.h"
 #include "prowl.h"
-#include "pushalot.h"
-#include "toasty.h"
 #include "pushover.h"
 #include "regex.h"
 #include "state.h"
@@ -260,8 +258,6 @@ auto_handle* session_init(void) {
   am_free(home);
   ses->statefile             = am_strdup(path);
   ses->prowl_key             = NULL;
-  ses->toasty_key            = NULL;
-  ses->pushalot_key          = NULL;
   ses->pushover_key          = NULL;
   ses->prowl_key_valid       = 0;
   ses->match_only            = 0;
@@ -303,14 +299,6 @@ PRIVATE void printSessionSettings() {
 
   if(mySession->prowl_key) {
     dbg_printf(P_INFO, "Prowl API key: %s", mySession->prowl_key);
-  }
-
-  if(mySession->toasty_key) {
-    dbg_printf(P_INFO, "Toasty DeviceID: %s", mySession->toasty_key);
-  }
-
-  if(mySession->pushalot_key) {
-    dbg_printf(P_INFO, "Pushalot Token: %s", mySession->pushalot_key);
   }
 
   if(mySession->pushover_key) {
@@ -428,10 +416,6 @@ PRIVATE void session_free(auto_handle *as) {
     as->auth = NULL;
     am_free(as->prowl_key);
     as->prowl_key = NULL;
-    am_free(as->toasty_key);
-    as->toasty_key = NULL;
-    am_free(as->pushalot_key);
-    as->pushalot_key = NULL;
     am_free(as->pushover_key);
     as->pushover_key = NULL;
     am_free(as->transmission_external);
@@ -615,14 +599,6 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                      prowl_sendNotification(PROWL_NEW_DOWNLOAD, session->prowl_key, item->name);
                   }
 
-                  if(session->toasty_key) {
-                     toasty_sendNotification(PROWL_NEW_DOWNLOAD, session->toasty_key, item->name);
-                  }
-
-                  if(session->pushalot_key) {
-                     pushalot_sendNotification(PUSHALOT_NEW_DOWNLOAD, session->pushalot_key, item->name);
-                  }
-                  
                   if(session->pushover_key) {
                      pushover_sendNotification(PUSHOVER_NEW_DOWNLOAD, session->pushover_key, item->name);
                   }
@@ -639,14 +615,6 @@ PRIVATE void processRSSList(auto_handle *session, CURL *curl_session, const simp
                   prowl_sendNotification(PROWL_DOWNLOAD_FAILED, session->prowl_key, item->name);
                }
 
-               if(session->toasty_key) {
-                  toasty_sendNotification(PROWL_DOWNLOAD_FAILED, session->toasty_key, item->name);
-               }
-
-               if(session->pushalot_key) {
-                  pushalot_sendNotification(PUSHALOT_DOWNLOAD_FAILED, session->pushalot_key, item->name);
-               }
-               
                if(session->pushover_key) {
                   pushover_sendNotification(PUSHOVER_DOWNLOAD_FAILED, session->pushover_key, item->name);
                }

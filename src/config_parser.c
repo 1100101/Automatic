@@ -423,10 +423,6 @@ PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, opti
     set_path(param, &as->transmission_path);
   } else if(!strcmp(opt, "prowl-apikey")) {
     as->prowl_key = am_strdup(param);
-  } else if(!strcmp(opt, "toasty-deviceid")) {
-    as->toasty_key = am_strdup(param);
-  } else if(!strcmp(opt, "pushalot-token")) {
-    as->pushalot_key = am_strdup(param);
   } else if(!strcmp(opt, "pushover-apikey")) {
     as->pushover_key = am_strdup(param);
   } else if(!strcmp(opt, "transmission-version")) {
