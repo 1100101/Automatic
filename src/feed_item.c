@@ -54,7 +54,7 @@
  * \return 1 if a filter matched, 0 otherwise.
  *
  */
-uint8_t isMatch(const am_filters filters, const char * string, const char * feedID, char **folder) {
+uint8_t isMatch(const am_filters filters, const char * string, const char * feedID, char **folder, char** filter_pattern) {
   am_filters current_regex = NULL;
   am_filter filter;
 
@@ -73,6 +73,7 @@ uint8_t isMatch(const am_filters filters, const char * string, const char * feed
     if( !(filter->feedID && *filter->feedID) || (feedID && *feedID && strcasecmp(feedID, filter->feedID) == 0)) {
       if(isRegExMatch(filter->pattern, string) == 1) {
         *folder = filter->folder;
+        *filter_pattern = filter->pattern;
         return 1;
       }
     }
