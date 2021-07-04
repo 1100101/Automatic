@@ -56,7 +56,7 @@
  * save_state() stores the content of the torrent bucket list on disk so Automatic won't
  * download old torrents after a restart.
  */
-int save_state(const char* state_file, const simple_list const downloads) {
+int save_state(const char* state_file, const simple_list downloads) {
    FILE *fp;
    NODE *current = NULL;
    int result;
