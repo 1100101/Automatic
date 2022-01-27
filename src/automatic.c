@@ -170,17 +170,12 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
 PRIVATE int daemonize(const char* pidfile) {
   int fd;
 
-  if (getppid() == 1) {
-    return -1;
-  }
-
   switch (fork()) {
     case 0:
       break;
     case -1:
-      fprintf(stderr, "Error daemonizing (fork)! %d - %s", errno, strerror(
-          errno));
-      return -1;
+      dbg_printf(P_ERROR, "Error daemonizing (fork)! %d - %s", errno, strerror(errno));
+      return errno;
     default:
       _exit(0);
   }
@@ -188,18 +183,16 @@ PRIVATE int daemonize(const char* pidfile) {
   umask(0); /* change the file mode mask */
 
   if (setsid() < 0) {
-    fprintf(stderr, "Error daemonizing (setsid)! %d - %s", errno, strerror(
-        errno));
-    return -1;
+    dbg_printf(P_ERROR, "Error daemonizing (setsid)! %d - %s", errno, strerror(errno));
+    return errno;
   }
 
   switch (fork()) {
     case 0:
       break;
     case -1:
-      fprintf(stderr, "Error daemonizing (fork2)! %d - %s\n", errno, strerror(
-          errno));
-      return -1;
+      dbg_printf(P_ERROR, "Error daemonizing (fork2)! %d - %s\n", errno, strerror(errno));
+      return errno;
     default:
       _exit(0);
   }
@@ -760,8 +753,9 @@ int main(int argc, char **argv) {
 
   if(!nofork) {
     /* start daemon */
-    if(daemonize(pidfile) != 0) {
-      dbg_printf(P_ERROR, "Error: Daemonize failed. Aborting...");
+    int result = daemonize(pidfile);
+    if(result != 0) {
+      dbg_printf(P_ERROR, "Error: Daemonize failed (%d). Aborting...", result);
       shutdown_daemon(mySession);
     }
     dbg_printft( P_MSG, "Daemon started");

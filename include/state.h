@@ -19,5 +19,5 @@
 
 
 
-int save_state(const char* state_file, const simple_list const list);
+int save_state(const char* state_file, const simple_list list);
 int load_state(const char* state_file, simple_list *list);
