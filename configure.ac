@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-m4_define([version_number],0.8x)
+m4_define([version_number],0.9)
 
 AC_INIT([Automatic],[version_number],[https://github.com/1100101/Automatic])
 AC_SUBST(VERSION_NUMBER,[version_number])
