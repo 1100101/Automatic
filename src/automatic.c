@@ -170,12 +170,6 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
 PRIVATE int daemonize(const char* pidfile) {
   int fd;
 
-//  if (getppid() == 1)
-//  {
-//    dbg_printf(P_ERROR, "Error daemonizing (fork)! %d - %s", errno, strerror(errno));
-//    return -3;
-//  }
-
   switch (fork()) {
     case 0:
       break;
