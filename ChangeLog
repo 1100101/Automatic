@@ -1,33 +1,36 @@
+2022-01-27 v0.9.0:
+     Fixed:    The app fails to daemonize properly in some situations
+
 2013-04-04 v0.8.3
       Fixed:   Don't expect HTTP headers to be of the correct case (Content-Disposition vs. Content-disposition)
                Fixes issue with torrent filenames.
-      
+
 2012-01-17 v0.8.2
       Fixed:   Segfault because of some really long magnet URIs
       Fixed:   Prevent crash when an invalid RSS feed is used
-      
+
 2012-11-12 v0.8.1
       Fixed:   The previous state wasn't always properly restored after a restart
       Fixed:   If the config file contains 'folder' suboptions with escaped whitespace ("My\ Download\ Folder")
                the escaping backlash is now filtered out.
                Fixes issue where Transmission doesn't properly recognize a JSON packet sent by Automatic.
-               
+
 2012-06-14 v0.8.0
       Added:   URL Rewrite for torrent download URLs
       Added:   Reload configuration when SIGHUP is received
       Added:   Configuration text can be split over multiple lines now. 
                Use '\' or '+' at the end of a line to signal a linebreak.
       Fixed:   Configure curl to accept encoded data. (HTTP header "Accept-Encoding")
-      
+
 2012-03-14 v0.7.3
       Added:   Support Magnet URIs in torrent feeds
-      
+
 2012-02-10 v0.7.2
       Fixed:   Downloading a torrent from a feed caused a crash in some rare situations.
-      
+
 2012-01-09 v0.7.1
       Fixed:   Problems with assigning a feed ID.
-      
+
 2011-12-08 v.0.7.0
       Added:   Assign each feed an ID, and bind filters to a certain feed using the ID.
     Changed:   Store RSS GUID in history file instead of item URL.
@@ -48,7 +51,7 @@
 2010-10-17 v0.6.4
       Added:   New commandline option "--append-log|-a" to not overwrite the log from a previous session
 	   Fixed:   Wrong regular expression for "Content-Disposition" still included a stray double-quote sometimes	
-	
+
 2010-05-11 v0.6.2
       Fixed:   The config parser choked on multiple newlines at the end of a config file
 
