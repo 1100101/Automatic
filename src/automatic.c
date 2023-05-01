@@ -729,7 +729,7 @@ int main(int argc, char **argv) {
     config_file = am_strdup(AM_DEFAULT_CONFIGFILE);
   }
 
-  strncpy(AutoConfigFile, config_file, strlen(config_file));
+  strcpy(AutoConfigFile, config_file);
 
   ses = session_init();
   ses->match_only = match_only;

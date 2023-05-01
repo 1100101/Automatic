@@ -53,7 +53,7 @@ get_filename(char *path, const char *content_filename, const char* url, const ch
 
   if (content_filename) {
     dbg_printf(P_INFO, "Content-Filename: %s", content_filename);
-    strncpy(buf, content_filename, strlen(content_filename) + 1);
+    strcpy(buf, content_filename);
   } else {
     strcpy(tmp, url);
     p = strtok(tmp, "/");

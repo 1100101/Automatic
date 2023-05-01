@@ -85,6 +85,8 @@ PUBLIC void filter_printList(simple_list list) {
 		cur = cur->next;
 	}
 	dbg_printf(P_INFO2, "------- end  -------------\n");
+#else
+	(void)list;
 #endif
 }
 
