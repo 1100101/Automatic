@@ -86,9 +86,9 @@ uint8_t has_been_downloaded(const simple_list bucket, const feed_item item) {
  * The size of the provided bucket list is kept to maxBucketItems.
  * If it gets larger than the specified value, the oldest element is removed from the list.
  */
-int addToBucket(const char* guid, NODE **head, const int maxBucketItems) {
+int addToBucket(const char* guid, NODE **head, const uint16_t maxBucketItems) {
 	addToHead(am_strdup(guid), head);
-	if(maxBucketItems > 0 && listCount(*head) > (uint32_t)maxBucketItems) {
+	if(maxBucketItems > 0 && listCount(*head) > maxBucketItems) {
 		dbg_printf(P_INFO2, "[add_to_bucket] bucket gets too large, deleting last item...\n");
 		removeLast(*head, NULL);
 	}
