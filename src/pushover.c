@@ -76,8 +76,8 @@ static char* createMessage(const char* apikey, const char* event, const char* de
     return NULL;
   }
 
-  if((!event && !desc)) {
-    dbg_printf(P_ERROR, "[createMessage] event == NULL && desc == NULL");
+  if(!desc) {
+    dbg_printf(P_ERROR, "[createMessage] desc == NULL");
     *size = 0;
     return NULL;
   }

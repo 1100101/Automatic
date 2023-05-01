@@ -1,0 +1,17 @@
+[Unit]
+Description=Automatic RSS Downloader
+
+[Service]
+PermissionsStartOnly=True
+Type=forking
+PIDFile=/run/automatic/automatic.pid
+RuntimeDirectory=automatic
+CacheDirectory=automatic
+LogsDirectory=automatic
+LogsDirectoryMode=0755
+
+ExecStart=@CMAKE_INSTALL_PREFIX@/automatic -c /etc/automatic.conf --logfile /var/log/automatic/automatic.log -p /run/automatic/automatic.pid
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

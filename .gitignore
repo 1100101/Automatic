@@ -9,6 +9,7 @@ test-driver
 
 # http://www.gnu.org/software/autoconf
 
+/build
 /depcomp
 /install-sh
 /missing

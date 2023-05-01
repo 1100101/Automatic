@@ -51,7 +51,7 @@ testSendNotification(void) {
    ret = sendPushoverNotification(wrong_key, NULL, NULL);
    check(ret == -1);
    ret = sendPushoverNotification(wrong_key, "Event", NULL);
-   check(ret == -400);
+   check(ret == -1);
    ret = sendPushoverNotification(wrong_key, NULL, "Desc");
    check(ret == -400);
    ret = sendPushoverNotification(wrong_key, "Event", "Desc");
@@ -59,7 +59,7 @@ testSendNotification(void) {
    ret = sendPushoverNotification(correct_key, NULL, NULL);
    check(ret == -1);
    ret = sendPushoverNotification(correct_key, "Event", NULL);
-   check(ret == 1);
+   check(ret == -1);
    ret = sendPushoverNotification(correct_key, NULL, "Desc");
    check(ret == 1);
    ret = sendPushoverNotification(correct_key, "Event", "Desc");
