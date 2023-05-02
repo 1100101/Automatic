@@ -14,6 +14,18 @@ project (Automatic
 
 include(CTest)
 include(GNUInstallDirs)
+if(EXISTS ${CMAKE_SOURCE_DIR}/.git)
+    find_package(Git)
+endif()
+
+if(GIT_FOUND)
+  execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-list --max-count=1 --abbrev-commit HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+  configure_file(include/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
+endif()
 
 # include custom Modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -51,7 +63,7 @@ find_package(LibXml2 2.6.31 REQUIRED)
 find_package(PCRE 7.4 REQUIRED)
 
 add_executable(automatic ${automatic_srcs})
-target_include_directories(automatic PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(automatic PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(automatic PRIVATE CURL::libcurl LibXml2::LibXml2 PCRE::PCRE)
 
 # installation
