@@ -834,7 +834,8 @@ static int mwARI( const char *estr ) {
     int c;
     fprintf(mwSTDERR, "\n%s\nMEMWATCH: Abort, Retry or Ignore? ", estr);
     (void) fgets(inbuf,sizeof(inbuf),stdin);
-	for( c=0; inbuf[c] && inbuf[c] <= ' '; c++ ) ;
+    for( c=0; inbuf[c] && inbuf[c] <= ' '; c++ )
+	;
     c = inbuf[c];
     if( c == 'R' || c == 'r' ) {
         mwBreakOut( estr );
