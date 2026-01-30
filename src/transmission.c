@@ -35,27 +35,29 @@
  * was not in place yet.
  * It remains for compatibility reasons.
  */
-int8_t call_transmission(const char* tm_path, const char *filename) {
-	char buf[PATH_MAX];
-	int8_t status;
+int8_t call_transmission(const char* tm_path, const char *filename)
+{
+  char buf[PATH_MAX];
+  int8_t status = 0;
 
-	if(filename && strlen(filename) > 1) {
-		snprintf(buf, PATH_MAX, "transmission-remote -g \"%s\" -a \"%s\"", tm_path, filename);
-		dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
-		dbg_printf(P_INFO2, "[call_transmission] call: %s", buf);
-		status = system(buf);
-		dbg_printf(P_DBG, "[call_transmission] WEXITSTATUS(status): %d", WEXITSTATUS(status));
-		if(status == -1) {
-			dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s", strerror(errno));
-			return -1;
-		} else {
-			dbg_printf(P_INFO, "[call_transmission] Success");
-			return 0;
-		}
-	} else {
-		dbg_printf(P_ERROR, "[call_transmission] Error: invalid filename (addr: %p)", (void*)filename);
-		return -1;
-	}
+  if(filename && strlen(filename) > 1)
+  {
+    snprintf(buf, PATH_MAX, "transmission-remote -g \"%s\" -a \"%s\"", tm_path, filename);
+    dbg_printf(P_INFO, "[call_transmission] calling transmission-remote...");
+    dbg_printf(P_INFO2, "[call_transmission] call: %s", buf);
+    status = system(buf);
+    dbg_printf(P_DBG, "[call_transmission] WEXITSTATUS(status): %d", WEXITSTATUS(status));
+    if(status == -1) {
+      dbg_printf(P_ERROR, "\n[call_transmission] Error calling sytem(): %s", strerror(errno));
+      return -1;
+    }
+
+      dbg_printf(P_INFO, "[call_transmission] Success");
+      return 0;
+  }
+
+  dbg_printf(P_ERROR, "[call_transmission] Error: invalid filename (addr: %p)", (void*)filename);
+  return -1;
 }
 
 /** \brief Call external program via system() call to add a torrent
@@ -73,7 +75,7 @@ int8_t call_transmission(const char* tm_path, const char *filename) {
  */
 int8_t call_external(const char *external_name, const char *filename) {
   char buf[PATH_MAX];
-  int8_t status;
+  int8_t status = 0;
 
   if ( (external_name == NULL) || (filename == NULL) || (strlen(filename) < 1) )
   {
@@ -93,48 +95,48 @@ int8_t call_external(const char *external_name, const char *filename) {
     /* could call setup_signals() from automatic.c here */
     signal(SIGCHLD, SIG_IGN);
     return -1;
-  } else {
-    dbg_printf(WEXITSTATUS(status) != 0 ? P_ERROR : P_INFO2,
-               "[call_external] External exit status %d",
-               WEXITSTATUS(status));
+  }
+  dbg_printf(WEXITSTATUS(status) != 0 ? P_ERROR : P_INFO2,
+             "[call_external] External exit status %d",
+             WEXITSTATUS(status));
     /* could call setup_signals() from automatic.c here */
     signal(SIGCHLD, SIG_IGN);
     return WEXITSTATUS(status);
-  }
+
   /*NOTREACHED*/
 }
 
 int8_t getRPCVersion(const char* host, uint16_t port, const char* auth) {
-	char url[MAX_URL_LEN];
-	int8_t result = 0;
-	char *response = NULL;
-	HTTPResponse *res = NULL;
-	const char *JSONstr =
-	 "{\n"
-	 "\"method\": \"session-get\",\n"
-	 "\"arguments\": {}\n"
-	 "}";
+  char url[MAX_URL_LEN];
+  int8_t result = 0;
+  char *response = NULL;
+  HTTPResponse *res = NULL;
+  const char *JSONstr =
+   "{\n"
+   "\"method\": \"session-get\",\n"
+   "\"arguments\": {}\n"
+   "}";
 
-	if(!host) {
-		return 0;
-	}
+  if(!host) {
+    return 0;
+  }
 
-	snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
+  snprintf( url, MAX_URL_LEN, "http://%s:%d/transmission/rpc", host, port);
 
    res = sendHTTPData(url, auth, JSONstr, strlen(JSONstr));
-	if(res != NULL && res->responseCode == 200) {
-	  dbg_printf(P_DBG, "[getRPCVersion] got response!");
-		response = parseResponse(res->data);
-		if(response) {
-			if(!strncmp(response, "success", 7)) {
-				result = parseRPCVersion(res->data);
+  if(res != NULL && res->responseCode == 200) {
+    dbg_printf(P_DBG, "[getRPCVersion] got response!");
+    response = parseResponse(res->data);
+    if(response) {
+      if(!strncmp(response, "success", 7)) {
+        result = parseRPCVersion(res->data);
         dbg_printf(P_DBG, "[getRPCVersion] RPC version: %d", result);
-			}
-			am_free((void*)response);
-		}
-		HTTPResponse_free(res);
-	}
-	return result;
+      }
+      am_free((void*)response);
+    }
+    HTTPResponse_free(res);
+  }
+  return result;
 }
 
 

@@ -40,10 +40,12 @@ static torrent_id_t sendTransmissionRPC(const char* rpc_packet, uint32_t packet_
  * to create a filename. The ".torrent" extension is appended if necessary.
  * The resulting filename is then appended to the torrent folder path (specified in automatic.conf)
  */
-void 
+void
 get_filename(char *path, const char *content_filename, const char* url, const char *t_folder) {
-  char *p, tmp[PATH_MAX], buf[PATH_MAX];
-  int len;
+  char *p = NULL;
+  char tmp[PATH_MAX];
+  char buf[PATH_MAX];
+  int len = 0;
 
 
 #ifdef DEBUG
@@ -59,8 +61,9 @@ get_filename(char *path, const char *content_filename, const char* url, const ch
     p = strtok(tmp, "/");
     while (p) {
       len = strlen(p);
-      if (len < PATH_MAX)
+      if (len < PATH_MAX) {
         strcpy(buf, p);
+      }
       p = strtok(NULL, "/");
     }
   }
@@ -70,7 +73,7 @@ get_filename(char *path, const char *content_filename, const char* url, const ch
 int8_t
 changeUploadSpeed(const char* url, const char* auth, torrent_id_t id, uint16_t upspeed, uint8_t rpcVersion) {
 
-  uint32_t packet_size;
+  uint32_t packet_size = 0;
   char *packet = NULL;
   HTTPResponse *res = NULL;
   const char *response = NULL;

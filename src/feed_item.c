@@ -56,30 +56,30 @@
  */
 uint8_t isMatch(const am_filters filters, const char * string, const char * feedID, char **folder) {
   am_filters current_regex = NULL;
-  am_filter filter;
+  am_filter filter = NULL;
 
   assert(folder != NULL);
 
   current_regex = filters;
   while (current_regex != NULL && current_regex->data != NULL) {
     filter = (am_filter) current_regex->data;
-    
+
     /* The isRegExMatch method is only called in two cases:
     ** A) The given filter has no ID. We assume this filter matches items from all feeds.
     ** B) Both filter and feed have matching IDs.
     **
     ** In all other cases, the item is ignored.
-    */     
+    */
     if( !(filter->feedID && *filter->feedID) || (feedID && *feedID && strcasecmp(feedID, filter->feedID) == 0)) {
       if(isRegExMatch(filter->pattern, string) == 1) {
         *folder = filter->folder;
         return 1;
       }
     }
-    
+
     current_regex = current_regex->next;
   }
-  
+
   return 0;
 }
 
@@ -95,16 +95,16 @@ feed_item newFeedItem(void) {
       i->category = NULL;
       i->guid     = NULL;
     }
-    
+
     return i;
 }
 
 /** \brief Free all allocated memory associated with the given feed item
  *
- * \param[in] data Pointer to a feed item
+ * \param[in] list_item Pointer to a feed item
  */
-void freeFeedItem(void *data) {
-  feed_item item = (feed_item)data;
+void freeFeedItem(void *list_item) {
+  feed_item item = (feed_item)list_item;
   if(item != NULL) {
     if(item->name != NULL) {
       am_free(item->name);
@@ -120,12 +120,12 @@ void freeFeedItem(void *data) {
       am_free(item->category);
       item->category = NULL;
     }
-    
+
     if(item->guid != NULL) {
       am_free(item->guid);
       item->guid = NULL;
     }
-    
+
     am_free(item);
     item = NULL;
   }

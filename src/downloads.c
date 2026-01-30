@@ -47,7 +47,7 @@
 
 static uint8_t bucket_hasGUID(const char * guid, NODE *head) {
 	NODE *p = head;
-	char *x;
+	char *x = NULL;
 
   if(guid && *guid) {
     while (p != NULL) {

@@ -49,7 +49,7 @@ typedef void (*listFuncPtr)(void *);
 int addItem(void *elem, NODE **head);
 int addToHead(void *elem, NODE **head);
 int addToTail(void *elem, NODE **head);
-void printList(const simple_list list);
+void printList(const simple_list head);
 
 void freeList( NODE **head, listFuncPtr freeFunc );
 void removeFirst(NODE  **head, listFuncPtr freeFunc);

@@ -51,7 +51,7 @@
 
 
 /** \cond */
-#define MAX_OPT_LEN  50
+#define MAX_OPT_LEN    50
 #define MAX_PARAM_LEN  20000
 
 struct suboption {
@@ -72,7 +72,7 @@ PRIVATE void freeOptionItem(void* item) {
 }
 
 PRIVATE void set_path(const char *src, char **dst) {
-  char *tmp;
+  char *tmp = NULL;
 
   if(src && strlen(src) < MAXPATHLEN) {
     tmp = resolve_path(src);
@@ -94,7 +94,7 @@ PRIVATE void set_path(const char *src, char **dst) {
 
 /* http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way */
 PRIVATE char* trim(const char *str) {
-  const char *end;
+  const char *end = NULL;
 
   if(!str || !*str) {
     return NULL;
@@ -135,7 +135,7 @@ PRIVATE char* trim(const char *str) {
 
 PRIVATE int parseUInt(const char *str) {
   int is_num = 1;
-  uint32_t i;
+  uint32_t i = 0;
   uint32_t result = -1;
 
   char * trimmed = trim(str);
@@ -195,12 +195,12 @@ PRIVATE suboption_t* parseSubOption(char* line) {
 }
 
 PRIVATE simple_list parseMultiOption(const char *str) {
-  int tmp_pos;
+  int tmp_pos = 0;
   uint32_t line_pos = 0;
   uint32_t len = strlen(str);
   simple_list options = NULL;
   char tmp[MAX_PARAM_LEN];
-  int last_dbl_quote_pos;
+  int last_dbl_quote_pos = 0;
   int8_t parse_error = 0;
   int32_t current_line_pos = 0;
 
@@ -408,7 +408,7 @@ PRIVATE int parseFeed(rss_feeds *feeds, const char* feedstr) {
 * always returns 0
 */
 PRIVATE int set_option(auto_handle *as, const char *opt, const char *param, option_type type) {
-  int32_t numval;
+  int32_t numval = 0;
   int32_t result = SUCCESS;
 
   dbg_printf(P_INFO2, "[config] %s=%s (type: %d)", opt, param, type);
@@ -534,11 +534,11 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
   char *line = NULL;
   char opt[MAX_OPT_LEN + 1];
   char param[MAX_PARAM_LEN + 1];
-  char c; /* for the "" and '' check */
+  char c = 0; /* for the "" and '' check */
   int line_num = 0;
   int line_pos = 0;
-  int opt_pos;
-  int param_pos;
+  int opt_pos = 0;
+  int param_pos = 0;
   int parse_error = 0;
   struct stat fs;
   option_type type;
@@ -611,10 +611,9 @@ int parse_config_file(struct auto_handle *as, const char *filename) {
       dbg_printf(P_ERROR, "parse error at line %d (pos: %d)", line_num, line_pos);
       parse_error = 1;
       break;
-    } else {
-      opt[opt_pos] = '\0';
     }
 
+    opt[opt_pos] = '\0';
     line_pos = SkipWhitespace(line, line_pos, &line_num);
 
     if(line_pos < 0) {

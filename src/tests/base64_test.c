@@ -46,8 +46,10 @@ int main(void) {
 	const char *dec_str = "The quick brown fox jumps over the lazy dog.";
 	const char *enc_str = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=";
 
-	char *encode = NULL, *decode = NULL;
-	uint32_t enc_len, dec_len;
+	char *encode = NULL;
+	char *decode = NULL;
+	uint32_t enc_len = 0;
+	uint32_t dec_len = 0;
 
 	encode = base64_encode(NULL, 47, &enc_len);
 	check(encode == NULL && enc_len == 0);

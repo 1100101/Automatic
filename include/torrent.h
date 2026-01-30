@@ -10,7 +10,7 @@
 
 typedef int32_t torrent_id_t;
 
-void get_filename(char *filename, const char *content_filename, const char *url, const char *tm_path);
+void get_filename(char *path, const char *content_filename, const char *url, const char *t_folder);
 torrent_id_t uploadTorrent(const void *t_data, int t_size,
                            const char *url, const char* auth, uint8_t start,
                            const char* folder);

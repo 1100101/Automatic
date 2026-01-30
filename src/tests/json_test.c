@@ -20,7 +20,7 @@ int main(void) {
 
 	const char *str = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=";
 
-  uint32_t size;
+  uint32_t size = 0;
   dbg_printf(P_INFO, "makeTorrentAddMetaInfoJSON(NULL, 0 , ...)");
   char* json = makeTorrentAddMetaInfoJSON(NULL, 0, 0, NULL, &size);
   assert(json == NULL && size == 0);

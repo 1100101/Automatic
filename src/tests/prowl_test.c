@@ -122,17 +122,17 @@ testSendNotification2(void) {
 
 
 int main(void) {
-  int i;
-  
+  int i = 0;
+
   i = testVerifyAPIKey();
-  
-  if(!i) { 
+
+  if(!i) {
     i = testSendNotification();
   }
-  
+
   if(!i) {
     i = testSendNotification2();
   }
-  
+
   return i;
 }

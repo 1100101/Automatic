@@ -3,6 +3,7 @@ Makefile
 
 compile
 test-driver
+clang-findings.yaml
 
 *.o
 *.log

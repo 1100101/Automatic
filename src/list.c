@@ -83,7 +83,8 @@ static void deleteFirst(NODE **ptr_to_head) {
 }
 
 static void deleteLast(NODE **ptr_to_head) {
-	NODE *p = *ptr_to_head, *prev = NULL;
+	NODE *p = *ptr_to_head;
+	NODE *prev = NULL;
 
 	while(p && p->next != NULL) {
 		prev = p;

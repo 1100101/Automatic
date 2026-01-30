@@ -151,7 +151,7 @@ int testRegexReplace() {
 }
 
 int main(void) {
-  int i;
+  int i = 0;
   i = testIsRegexMatch();
   
   if(!i) {

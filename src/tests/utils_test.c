@@ -100,7 +100,7 @@ testStringReplace(void) {
 
 
 int main(void) {
-  int i;
+  int i = 0;
   
   i = testStringReplace();
   

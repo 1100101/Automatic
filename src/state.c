@@ -57,9 +57,9 @@
  * download old torrents after a restart.
  */
 int save_state(const char* state_file, const simple_list downloads) {
-   FILE *fp;
+   FILE *fp = NULL;
    NODE *current = NULL;
-   int result;
+   int result = 0;
 
    if(state_file) {
       current = downloads;
@@ -100,10 +100,10 @@ int save_state(const char* state_file, const simple_list downloads) {
  * This way Automatic won't download old torrents again after, e.g. a restart.
  */
 int load_state(const char* state_file, NODE **head) {
-   FILE *fp;
-   int len;
+   FILE *fp = NULL;
+   int len = 0;
    char line[MAX_LINE_LEN];
-   char *data;
+   char *data = NULL;
 
    if((fp = fopen(state_file, "r")) == NULL) {
       dbg_printf(P_ERROR, "[load_state] Error: Unable to open statefile '%s' for reading: %s", state_file, strerror(errno));

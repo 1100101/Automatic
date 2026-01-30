@@ -38,7 +38,9 @@
 char* makeTorrentAddFilenameJSON(const char* torrent_name, uint8_t start, const char* folder, uint32_t *setme_size) {
   char *buf = NULL;
   char *folder_str = NULL;
-  int buf_size, json_size, folderstr_size = 0;
+  int buf_size = 0;
+  int json_size = 0;
+  int folderstr_size = 0;
   const char *JSONstr =
     "{\n"
     "\"method\": \"torrent-add\",\n"
@@ -105,8 +107,10 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 
   char *buf = NULL;
    char *folder_str = NULL;
-  int buf_size, json_size, folderstr_size = 0;
-  uint32_t enc_size;
+  int buf_size = 0;
+  int json_size = 0;
+  int folderstr_size = 0;
+  uint32_t enc_size = 0;
   const char *JSONstr =
     "{\n"
     "\"method\": \"torrent-add\",\n"
@@ -162,7 +166,8 @@ char* makeTorrentAddMetaInfoJSON(const void *data, uint32_t tsize, uint8_t start
 
 char* makeChangeUpSpeedJSON(torrent_id_t tID, uint32_t upspeed, uint8_t rpcVersion, uint32_t *setme_size) {
   char *buf = NULL;
-  int buf_size, json_size = 0;
+  int buf_size = 0;
+  int json_size = 0;
   const char *JSONstr =
      "{\n"
      "\"method\": \"torrent-set\",\n"

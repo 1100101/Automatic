@@ -1,5 +1,5 @@
 # Minimal version of CMake
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.20)
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -11,6 +11,8 @@ endif ()
 project (Automatic
    LANGUAGES C
    VERSION 0.9)
+
+set(CMAKE_C_STANDARD 11)
 
 include(CTest)
 include(GNUInstallDirs)

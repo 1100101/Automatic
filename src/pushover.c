@@ -36,7 +36,7 @@
 #define PUSHOVER_ADD "/1/messages.json"
 
 static const char* getErrorMessage(const uint16_t responseCode) {
-  const char* response;
+  const char* response = NULL;
 
   switch(responseCode) {
     case 400:
@@ -64,7 +64,11 @@ static const char* getErrorMessage(const uint16_t responseCode) {
 }
 
 static char* createMessage(const char* apikey, const char* event, const char* desc, int32_t *size) {
-  int32_t result, apikey_length, event_length, desc_length, total_size;
+  int32_t result = 0;
+  int32_t apikey_length = 0;
+  int32_t event_length = 0;
+  int32_t desc_length = 0;
+  int32_t total_size = 0;
 
   char *msg = NULL;
 
@@ -98,7 +102,7 @@ static char* createMessage(const char* apikey, const char* event, const char* de
 
 int16_t sendPushoverNotification(const char* apikey, const char* event, const char* desc) {
   int16_t        result = -1;
-  int32_t       data_size;
+  int32_t       data_size = 0;
   char          url[128];
   HTTPResponse *response = NULL;
   char         *data = NULL;
@@ -126,17 +130,17 @@ int16_t sendPushoverNotification(const char* apikey, const char* event, const ch
 }
 
 int8_t pushover_sendNotification(enum pushover_event event, const char* apikey, const char *filename) {
-  int8_t result;
+  int8_t result = 0;
   char desc[500];
   char *event_str = NULL;
 
   switch(event) {
     case PUSHOVER_NEW_DOWNLOAD:
-      event_str = "Torrent File Auto-Added";
+      event_str = "New episode added";
       snprintf(desc, sizeof(desc), "%s", filename);
       break;
     case PUSHOVER_DOWNLOAD_FAILED:
-      event_str = "Auto-Add Failed";
+      event_str = "Episode Add Failed";
       snprintf(desc, sizeof(desc), "%s", filename);
       break;
     default:

@@ -48,7 +48,7 @@ static void freeNode(rssNode *rss) {
 }
 
 static int getNodeText(xmlNodePtr child, char **dest) {
-  xmlChar * textNode;
+  xmlChar * textNode = NULL;
   int result = 0;
 
   assert(dest && *dest == NULL);
@@ -82,10 +82,13 @@ static rssNode* getNodeAttributes(xmlNodePtr child) {
 }
 
 static simple_list extract_feed_items(xmlNodeSetPtr nodes) {
-  xmlNodePtr cur = NULL, child = NULL;
-  uint32_t size, i;
+  xmlNodePtr cur = NULL;
+  xmlNodePtr child = NULL;
+  uint32_t size = 0;
+  uint32_t i = 0;
   feed_item item = NULL;
-  uint8_t name_set, url_set;
+  uint8_t name_set = 0;
+  uint8_t url_set = 0;
   rssNode *enclosure = NULL;
   simple_list itemList = NULL;
 

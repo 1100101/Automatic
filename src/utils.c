@@ -134,7 +134,7 @@ char* am_strdup(const char *str) {
  *
  * \return Path to the users home folder.
  */
-char* get_home_folder() {
+char* get_home_folder(void) {
   char * dir = NULL;
   struct passwd * pw = NULL;
 
@@ -185,7 +185,7 @@ char* resolve_path(const char *path) {
  *
  * \return Path to Transmissions default config folder.
  */
-char* get_tr_folder() {
+char* get_tr_folder(void) {
   char *path = NULL;
   char buf[MAXPATHLEN];
   char *home = NULL;
@@ -228,7 +228,7 @@ char* get_temp_folder(void) {
 char* am_strstrip( char * str ) {
   if( str && *str )
   {
-    size_t pos;
+    size_t pos = 0;
     size_t len = strlen( str );
 
     while( len && isspace( str[len - 1] ) ) {
@@ -248,31 +248,33 @@ char* am_strstrip( char * str ) {
 }
 
 char* am_stringToLower(char *string) {
-   int i;
+   int i = 0;
    int len = strlen(string);
-   
+
    for(i=0; i<len; i++) {
      if(string[i] >= 'A' && string[i] <= 'Z') {
        string[i] += 32;
      }
    }
-   
+
    return string;
 }
 
 char *am_replace_str(const char *s, const char *pattern, const char *subst)
 {
-  char *ret;
-  int i, count = 0;
-  size_t substlen, patternlen;
-  
+  char *ret = NULL;
+  int i = 0;
+  int count = 0;
+  size_t substlen = 0;
+  size_t patternlen = 0;
+
   // No replacement possible if either the original string or the pattern is empty
   if(s == NULL || *s == '\0' || pattern == NULL || *pattern == '\0' || subst == NULL ) {
     return NULL;
-  }  
-   
+  }
+
   substlen = strlen(subst);
-  patternlen = strlen(pattern);  
+  patternlen = strlen(pattern);
 
   // No replacement possible if the pattern is longer than the string.
   if(patternlen > strlen(s)) {
@@ -291,7 +293,7 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
     }
   }
 
-  ret = am_malloc(i + 1 + count * (substlen - patternlen));
+  ret = am_malloc(i + 1 + (count * (substlen - patternlen)));
 
   if (ret == NULL) {
     return NULL;
@@ -307,7 +309,7 @@ char *am_replace_str(const char *s, const char *pattern, const char *subst)
       ret[i++] = *s++;
     }
   }
-  
+
   ret[i] = '\0';
 
   return ret;

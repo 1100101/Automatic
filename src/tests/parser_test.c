@@ -13,15 +13,16 @@
 #define MAX_OPT_LEN	50
 #define MAX_PARAM_LEN	20000
 
-static const char *delim = "²";
+static const char *delim = "ï¿½";
 
 static char* l_shorten(const char *str) {
 
-    int tmp_pos;
-    char c;
-    char *retStr;
+    int tmp_pos = 0;
+    char c = 0;
+    char *retStr = NULL;
     char *tmp = (char*)am_malloc(MAX_PARAM_LEN+1);
-    uint32_t line_pos = 0, i;
+    uint32_t line_pos = 0;
+    uint32_t i = 0;
     uint32_t len = strlen(str);
 
     if(!tmp) {
@@ -38,8 +39,9 @@ static char* l_shorten(const char *str) {
     while(line_pos < len) {
       /* case 1: quoted strings */
       if(tmp_pos != 0) {
-        for(i = 0; i < strlen(delim); ++i)
+        for(i = 0; i < strlen(delim); ++i) {
           tmp[tmp_pos++] = delim[i];
+        }
       }
       if (str[line_pos] == '"' || str[line_pos] == '\'') {
         c = str[line_pos];

@@ -45,7 +45,7 @@
 #include "version.h"
 
 /** \cond */
-#define DATA_BUFFER_SIZE 1024 * 100
+#define DATA_BUFFER_SIZE (1024 * 100)
 #define HEADER_BUFFER 500
 /** \endcond */
 
@@ -54,16 +54,18 @@ PRIVATE char *gSessionID = NULL;
 PRIVATE uint8_t gbGlobalInitDone = FALSE;
 
 /** Generic struct storing data and the size of the contained data */
-typedef struct HTTPData {
+typedef struct HTTPData
+{
   /** \{ */
- char   *data;  /**< Stored data */
- size_t  buffer_size;
- size_t  buffer_pos;  /**< Size of the stored data */
- /** \{ */
+  char   *data;  /**< Stored data */
+  size_t  buffer_size;
+  size_t  buffer_pos;  /**< Size of the stored data */
+  /** \{ */
 } HTTPData;
 
 /** Struct storing information about data downloaded from the web */
-typedef struct WebData {
+typedef struct WebData
+{
   /** \{ */
   char      *url;              /**< URL of the WebData object */
   long       responseCode;     /**< HTTP response code        */
@@ -75,11 +77,12 @@ typedef struct WebData {
 
 
 PUBLIC void SessionID_free(void) {
-   am_free(gSessionID);
-   gSessionID = NULL;
+  am_free(gSessionID);
+  gSessionID = NULL;
 }
 
-PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data) {
+PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
   size_t       line_len = size * nmemb;
   WebData     *mem  = (WebData*)data;
   const char  *line = (const char*)ptr;
@@ -90,7 +93,8 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
   static uint8_t isMoveHeader = 0;
 
   /* check the header if it is a redirection header */
-  if(line_len >= 9 && !memcmp(line, "Location:", 9)) {
+  if(line_len >= 9 && !memcmp(line, "Location:", 9))
+  {
     isMoveHeader = 1;
     if(mem->response->data != NULL) {
       am_free(mem->response->data);
@@ -98,7 +102,9 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       mem->response->buffer_size = 0;
       mem->content_length = 0;
     }
-  } else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
+  }
+  else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15))
+  {
     /* parse header for Content-Length to allocate correct size for data->response->data */
     tmp = getRegExMatch("Content-Length:\\s(\\d+)", line, 1);
     if(tmp != NULL) {
@@ -111,7 +117,9 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       }
       am_free(tmp);
     }
-  } else if(line_len >= 19 && !strncasecmp(line, "Content-Disposition:", 20)) {
+  }
+  else if(line_len >= 19 && !strncasecmp(line, "Content-Disposition:", 20))
+  {
     /* parse header for Content-Disposition to get correct filename */
     filename = getRegExMatch(content_pattern, line, 2);
 
@@ -119,7 +127,9 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
       mem->content_filename = filename;
       dbg_printf(P_INFO2, "[write_header_callback] Found filename: %s", mem->content_filename);
     }
-  } else if(line_len >= 2 && !memcmp(line, "\r\n", 2)) {
+  }
+  else if(line_len >= 2 && !memcmp(line, "\r\n", 2))
+  {
     /* We're at the end of a header, reaset the relocation flag */
     isMoveHeader = 0;
   }
@@ -130,7 +140,8 @@ PRIVATE size_t write_header_callback(void *ptr, size_t size, size_t nmemb, void 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb, void *data) {
+PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb, void *data)
+{
   size_t        line_len = size * nmemb;
   const char   *line = ptr;
   WebData      *mem = data;
@@ -139,7 +150,8 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
   char         *tmp = NULL;
   int           content_length = 0;
 
-  if( (line_len >= key_len) && !memcmp(line, session_key, key_len) ) {
+  if ((line_len >= key_len) && !memcmp(line, session_key, key_len))
+  {
       const char * begin = line + key_len;
       const char * end = begin;
       while( !isspace( *end ) ) {
@@ -149,8 +161,10 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
       am_free( gSessionID );
       gSessionID = NULL;
       gSessionID = am_strndup( begin, end-begin );
+  }
   /* parse header for Content-Length to allocate correct size for data->response->data */
-  } else if(line_len >= 15 && !memcmp(line, "Content-Length:", 15)) {
+  else if ((line_len >= 15) && !memcmp(line, "Content-Length:", 15))
+  {
     tmp = getRegExMatch("Content-Length:\\s(\\d+)", line, 1);
     if(tmp != NULL) {
       dbg_printf(P_INFO2, "Content-Length: %s", tmp);
@@ -171,7 +185,8 @@ PRIVATE size_t parse_Transmission_response(void *ptr, size_t size, size_t nmemb,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *data) {
+PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
   size_t line_len = size * nmemb;
   WebData *mem = data;
 
@@ -179,21 +194,25 @@ PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *d
    * if content-length detection in write_header_callback was not successful, mem->response->data will be NULL
    * as a fallback, allocate a predefined size of memory and realloc if necessary
   **/
-  if(!mem->response->data) {
-    mem->response->buffer_size = DATA_BUFFER_SIZE;
+  if (!mem->response->data)
+  {
+    mem->response->buffer_size = (size_t)(DATA_BUFFER_SIZE);
     mem->response->data = (char*)am_malloc(mem->response->buffer_size);
     dbg_printf(P_INFO2, "[write_data_callback] allocated %d bytes for mem->response->data", mem->response->buffer_size);
   }
 
-  if(mem->response->buffer_pos + line_len + 1 > mem->response->buffer_size) {
-   do {
+  if ((mem->response->buffer_pos + line_len + 1) > mem->response->buffer_size)
+  {
+    do
+    {
       mem->response->buffer_size *= 2;
-   }while(mem->response->buffer_size < mem->response->buffer_pos + line_len + 1);
+    } while (mem->response->buffer_size < mem->response->buffer_pos + line_len + 1);
 
    mem->response->data = (char *)am_realloc(mem->response->data, mem->response->buffer_size);
   }
 
-  if(mem->response->data) {
+  if (mem->response->data)
+  {
     memcpy(&(mem->response->data[mem->response->buffer_pos]), ptr, line_len);
     mem->response->buffer_pos += line_len;
     mem->response->data[mem->response->buffer_pos] = 0;
@@ -205,11 +224,13 @@ PRIVATE size_t write_data_callback(void *ptr, size_t size, size_t nmemb, void *d
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE struct HTTPData* HTTPData_new(void) {
+PRIVATE struct HTTPData* HTTPData_new(void)
+{
   HTTPData* data = NULL;
 
   data = am_malloc(sizeof(struct HTTPData));
-  if(!data) {
+  if (!data)
+  {
     return NULL;
   }
 
@@ -222,9 +243,10 @@ PRIVATE struct HTTPData* HTTPData_new(void) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void HTTPData_free(HTTPData* data) {
-
-  if(data) {
+PRIVATE void HTTPData_free(HTTPData* data)
+{
+  if(data)
+  {
     am_free(data->data);
     data->buffer_size = 0;
     data->buffer_pos = 0;
@@ -240,9 +262,10 @@ PRIVATE void HTTPData_free(HTTPData* data) {
 *
 * \param[in] data Pointer to a WebData object
 */
-PRIVATE void WebData_free(struct WebData *data) {
-
-  if(data) {
+PRIVATE void WebData_free(struct WebData *data)
+{
+  if(data)
+  {
     am_free(data->url);
     am_free(data->content_filename);
     HTTPData_free(data->response);
@@ -260,24 +283,29 @@ PRIVATE void WebData_free(struct WebData *data) {
 *
 * The parameter \a url is optional. You may provide \c NULL if no URL is required or not known yet.
 */
-PRIVATE struct WebData* WebData_new(const char *url) {
+PRIVATE struct WebData* WebData_new(const char *url)
+{
   WebData *data = NULL;
 
   data = am_malloc(sizeof(WebData));
-  if(!data)
+  if (!data)
+  {
     return NULL;
+  }
 
   data->url = NULL;
   data->content_filename = NULL;
   data->content_length = -1;
   data->response = NULL;
 
-  if(url) {
+  if (url)
+  {
     data->url = am_strdup((char*)url);
   }
 
   data->response = HTTPData_new();
-  if(!data->response) {
+  if (!data->response)
+  {
     WebData_free(data);
     return NULL;
   }
@@ -287,13 +315,15 @@ PRIVATE struct WebData* WebData_new(const char *url) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void WebData_clear(struct WebData *data) {
-
-  if(data) {
+PRIVATE void WebData_clear(struct WebData *data)
+{
+  if (data)
+  {
     am_free(data->content_filename);
     data->content_filename = NULL;
 
-    if(data->response) {
+    if (data->response)
+    {
       am_free(data->response->data);
       data->response->data = NULL;
       data->response->buffer_size = 0;
@@ -305,9 +335,11 @@ PRIVATE void WebData_clear(struct WebData *data) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE HTTPResponse* HTTPResponse_new(void) {
+PRIVATE HTTPResponse* HTTPResponse_new(void)
+{
   HTTPResponse* resp = (HTTPResponse*)am_malloc(sizeof(struct HTTPResponse));
-  if(resp) {
+  if (resp)
+  {
     resp->size = 0;
     resp->responseCode = 0;
     resp->data = NULL;
@@ -319,8 +351,10 @@ PRIVATE HTTPResponse* HTTPResponse_new(void) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PUBLIC void HTTPResponse_free(struct HTTPResponse *response) {
-  if(response) {
+PUBLIC void HTTPResponse_free(struct HTTPResponse *response)
+{
+  if (response)
+  {
     am_free(response->data);
     am_free(response->content_filename);
     am_free(response);
@@ -330,7 +364,8 @@ PUBLIC void HTTPResponse_free(struct HTTPResponse *response) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
+PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost)
+{
   CURL * curl = curl_easy_init();
 
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L );
@@ -355,7 +390,8 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
   curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "" );
 #endif
 
-  if(auth && *auth) {
+  if (auth && *auth)
+  {
     dbg_printf(P_INFO2, "auth: %s", auth);
     curl_easy_setopt(curl, CURLOPT_USERPWD, auth);
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY );
@@ -378,7 +414,8 @@ PRIVATE CURL* am_curl_init(const char* auth, uint8_t isPost) {
 * The function returns \c NULL if the download failed.
 */
 
-PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** curl_session) {
+PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** curl_session)
+{
   CURLcode      res;
   CURL         *curl_handle = NULL;
   CURL         *session = *curl_session;
@@ -387,19 +424,23 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
   HTTPResponse *resp = NULL;
   long          responseCode = -1;
 
-  if(!url) {
+  if (!url)
+  {
     return NULL;
   }
 
   data = WebData_new(url);
 
-  if(!data) {
+  if (!data)
+  {
     return NULL;
   }
 
   dbg_printf(P_INFO2, "[getHTTPData] url=%s, curl_session=%p", url, (void*)session);
-  if(session == NULL) {
-    if(gbGlobalInitDone == FALSE) {
+  if (session == NULL)
+  {
+    if (gbGlobalInitDone == FALSE)
+    {
       curl_global_init(CURL_GLOBAL_ALL);
       gbGlobalInitDone = TRUE;
     }
@@ -409,17 +450,21 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
 
   curl_handle = session;
 
-  if(curl_handle) {
+  if (curl_handle)
+  {
     escaped_url = url_encode_whitespace(url);
     assert(escaped_url);
     curl_easy_setopt(curl_handle, CURLOPT_URL, escaped_url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, data);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, data);
 
-    if(cookies && *cookies) {
+    if (cookies && *cookies)
+    {
       /* if there's an explicit cookie string, use it */
       curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookies);
-    } else {
+    }
+    else
+    {
       /* otherwise, enable cookie-handling since there might be cookies defined within the URL */
       curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
     }
@@ -428,29 +473,38 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
     /* curl_easy_cleanup(curl_handle); */
     curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &responseCode);
     dbg_printf(P_INFO2, "[getHTTPData] response code: %d", responseCode);
-    if(res != 0) {
-        dbg_printf(P_ERROR, "[getHTTPData] '%s': %s (retval: %d)", url, curl_easy_strerror(res), res);
-    } else {
+
+    if (res != 0)
+    {
+      dbg_printf(P_ERROR, "[getHTTPData] '%s': %s (retval: %d)", url, curl_easy_strerror(res), res);
+    }
+    else
+    {
       /* Only the very first connection attempt (where curl_session == NULL) should store the session,
       ** and only the last one should close the session.
       */
       resp = HTTPResponse_new();
       resp->responseCode = responseCode;
       //copy data if present
-      if(data->response->data) {
+      if (data->response->data)
+      {
         resp->size = data->response->buffer_pos;
         resp->data = am_strndup(data->response->data, resp->size);
       }
       //copy filename if present
-      if(data->content_filename) {
+      if (data->content_filename)
+      {
         resp->content_filename = am_strdup(data->content_filename);
       }
     }
     am_free(escaped_url);
-  } else {
+  }
+  else
+  {
     dbg_printf(P_ERROR, "curl_handle is uninitialized!");
     resp = NULL;
   }
+
   WebData_free(data);
   return resp;
 }
@@ -468,41 +522,53 @@ PUBLIC HTTPResponse* getHTTPData(const char *url, const char *cookies, CURL ** c
 * \param data_size size of the data
 * \return Web server response
 */
-PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size) {
+PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void *data, uint32_t data_size)
+{
   CURL *curl_handle = NULL;
   CURLcode res;
-  long rc, tries = 2, len;
+  long rc = 0;
+  long tries = 2;
+  long len = 0;
   WebData* response_data = NULL;
   HTTPResponse* resp = NULL;
   char sessionKey[MAXLEN];
 
   struct curl_slist * headers = NULL;
 
-  if( !url || !data ) {
+  if ( !url || !data )
+  {
     return NULL;
   }
 
   response_data = WebData_new(url);
 
-  do {
+  do
+  {
     --tries;
     WebData_clear(response_data);
 
-    if( curl_handle == NULL) {
-      if(gbGlobalInitDone == FALSE) {
+    if (curl_handle == NULL)
+    {
+      if(gbGlobalInitDone == FALSE)
+      {
         curl_global_init(CURL_GLOBAL_ALL);
         gbGlobalInitDone = TRUE;
       }
-      if( ( curl_handle = am_curl_init(auth, TRUE) ) ) {
+
+      if ((curl_handle = am_curl_init(auth, TRUE)))
+      {
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, response_data);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, response_data);
         //Transmission-specific options for HTTP POST
-        if(strstr(response_data->url, "transmission") != NULL) {
+        if (strstr(response_data->url, "transmission") != NULL)
+        {
           curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parse_Transmission_response );
           headers = curl_slist_append(headers, "Content-Type: application/json");
 
-          if( gSessionID ) {
-            if((len = snprintf(sessionKey, MAXLEN, "X-Transmission-Session-Id: %s", gSessionID)) > 0) {
+          if (gSessionID)
+          {
+            if ((len = snprintf(sessionKey, MAXLEN, "X-Transmission-Session-Id: %s", gSessionID)) > 0)
+            {
               sessionKey[len] = '\0';
             }
 
@@ -511,7 +577,9 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
           curl_easy_setopt( curl_handle, CURLOPT_HTTPHEADER, headers );
         }
         curl_easy_setopt(curl_handle, CURLOPT_URL, response_data->url);
-      } else {
+      }
+      else
+      {
         dbg_printf(P_ERROR, "am_curl_init() failed");
         break;
       }
@@ -520,45 +588,56 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
     curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
     curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, data_size);
 
-    if( ( res = curl_easy_perform(curl_handle) ) ) {
+    if ((res = curl_easy_perform(curl_handle)))
+    {
       dbg_printf(P_ERROR, "Upload to '%s' failed: %s", url, curl_easy_strerror(res));
       break;
-    } else {
-      curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
-      dbg_printf(P_INFO2, "response code: %ld", rc);
-      if(rc == 409) {
-        if(gSessionID) {
-          dbg_printf(P_DBG, "Error code 409, session ID: %s", gSessionID);
-        } else {
-          dbg_printf(P_ERROR, "Error code 409, no session ID");
-        }
+    }
 
-        closeCURLSession( curl_handle );
-        curl_slist_free_all( headers );
-        headers = NULL;
-        curl_handle = NULL;
-      } else {
-        resp = HTTPResponse_new();
-        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
-
-        //copy data if present
-        if(response_data->response->data) {
-          resp->size = response_data->response->buffer_pos;
-          resp->data = am_strndup(response_data->response->data, resp->size);
-        }
-        //copy filename if present
-        if(response_data->content_filename) {
-          resp->content_filename = am_strdup(response_data->content_filename);
-        }
-        break;
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &rc);
+    dbg_printf(P_INFO2, "response code: %ld", rc);
+    if (rc == 409)
+    {
+      if (gSessionID)
+      {
+        dbg_printf(P_DBG, "Error code 409, session ID: %s", gSessionID);
       }
+      else
+      {
+        dbg_printf(P_ERROR, "Error code 409, no session ID");
+      }
+
+      closeCURLSession(curl_handle);
+      curl_slist_free_all(headers);
+      headers = NULL;
+      curl_handle = NULL;
+    }
+    else
+    {
+      resp = HTTPResponse_new();
+      curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &resp->responseCode);
+
+      // copy data if present
+      if (response_data->response->data)
+      {
+        resp->size = response_data->response->buffer_pos;
+        resp->data = am_strndup(response_data->response->data, resp->size);
+      }
+
+      // copy filename if present
+      if (response_data->content_filename)
+      {
+        resp->content_filename = am_strdup(response_data->content_filename);
+      }
+      break;
     }
   } while(tries > 0);
 
   /* cleanup */
   closeCURLSession(curl_handle);
 
-  if(headers) {
+  if (headers)
+  {
     curl_slist_free_all(headers);
   }
 
@@ -567,14 +646,17 @@ PUBLIC HTTPResponse* sendHTTPData(const char *url, const char* auth, const void 
   return resp;
 }
 
-PUBLIC void closeCURLSession(CURL* curl_handle) {
-  if(curl_handle) {
+PUBLIC void closeCURLSession(CURL* curl_handle)
+{
+  if(curl_handle)
+  {
     dbg_printf(P_INFO2, "[closeCURLSession] Closing curl session %p", (void*)curl_handle);
     curl_easy_cleanup(curl_handle);
     curl_handle = NULL;
   }
 }
 
-PUBLIC char * rewriteURL(const char * url, const char * pattern, const char * substitute) {
+PUBLIC char * rewriteURL(const char * url, const char * pattern, const char * substitute)
+{
   return performRegexReplace(url, pattern, substitute);
 }

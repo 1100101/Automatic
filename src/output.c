@@ -39,7 +39,7 @@
 
 #include "output.h"
 
-#define MSGSIZE_MAX     5000
+#define MSGSIZE_MAX 5000
 
 static FILE   *gLogFP = NULL;
 static int8_t  gMsglevel;
@@ -48,12 +48,16 @@ static const char *gPidfile = NULL;
 
 unsigned char log_init(const char *logfile, char msglevel, char append_log) {
   gMsglevel = msglevel;
-  if(logfile && *logfile) {
+  if(logfile && *logfile)
+  {
     /* Just in case someone decides to call this function twice, make sure the previous log is closed. */
-    if(gLogFP) {
+    if (gLogFP)
+    {
       log_close();
     }
-    if((gLogFP = fopen(logfile, append_log ? "a" : "w")) == NULL) {
+
+    if ((gLogFP = fopen(logfile, append_log ? "a" : "w")) == NULL)
+    {
       /* this should work just fine: the message level has been set above, and if gLogFP is NULL,
       ** logging goes to stderr.
       */
@@ -61,35 +65,41 @@ unsigned char log_init(const char *logfile, char msglevel, char append_log) {
       return 1; //bad (well, not really)
     }
   }
+
   return 1; //all good
 }
 
 void log_close(void) {
-  if(gLogFP) {
+  if(gLogFP)
+  {
     fclose(gLogFP);
     gLogFP = NULL;
   }
 }
 
 unsigned char pid_create(const char *pidfile, int pid) {
-  FILE   *gPidFP;
+  FILE   *gPidFP = NULL;
 
-  if(pidfile && *pidfile) {
-    if((gPidFP = fopen(pidfile, "w")) == NULL) {
+  if (pidfile && *pidfile)
+  {
+    if ((gPidFP = fopen(pidfile, "w")) == NULL)
+    {
       dbg_printf(P_ERROR, "[pid_create] Opening '%s' for pidfile failed", pidfile);
       return 1; //bad (well, not really)
-    } else {
-      dbg_printf(P_MSG, "[pid_create] Opening '%s' for pidfile (pid:%d)", pidfile, pid);
-      fprintf(gPidFP, "%d\n", pid);
-      fclose(gPidFP);
-      gPidfile = pidfile;
     }
+    dbg_printf(P_MSG, "[pid_create] Opening '%s' for pidfile (pid:%d)", pidfile, pid);
+    fprintf(gPidFP, "%d\n", pid);
+    fclose(gPidFP);
+    gPidfile = pidfile;
+
   }
   return 1; //all good
 }
 
-void pid_close() {
-  if(gPidfile && *gPidfile) {
+void pid_close(void)
+{
+  if (gPidfile && *gPidfile)
+  {
     remove(gPidfile);
     gPidfile = NULL;
   }
@@ -106,26 +116,32 @@ void pid_close() {
  * statement is defined by the given type. The end-user provides a verbosity level (e.g.
  * on the command-line) which dictates what kind of messages are printed and which not.
  */
-void am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... ) {
+void am_printf( const char * file, int line, debug_type type, int withTime, const char * format, ... )
+{
   va_list va;
   char tmp[MSGSIZE_MAX];
   char timeStr[TIME_STR_SIZE];
   FILE *fp = NULL;
 
-  if(gMsglevel >= type) {
+  if (gMsglevel >= type)
+  {
     va_start(va, format);
     vsnprintf(tmp, MSGSIZE_MAX, format, va);
     va_end(va);
     tmp[MSGSIZE_MAX-1] = '\0';
 
     fp = gLogFP ? gLogFP : stderr; /* log to stderr in case no logfile has been specified */
-    if(withTime) {
+    if(withTime)
+    {
       fprintf(fp, "[%s] ", getlogtime_str(timeStr));
     }
 
-    if(P_INFO2 >= type || P_ERROR == type) {
+    if(P_INFO2 >= type || P_ERROR == type)
+    {
       fprintf(fp, "%s, %d: %s\n", file, line, tmp);
-    } else {
+    }
+    else
+    {
       fprintf(fp,"%s\n", tmp);
     }
     fflush(fp);
@@ -139,9 +155,10 @@ void am_printf( const char * file, int line, debug_type type, int withTime, cons
  *
  * This function is useful for logging purposes.
  */
-char* getlogtime_str(char *buf) {
+char* getlogtime_str(char *buf)
+{
 	char tmp[TIME_STR_SIZE];
-	time_t now;
+	time_t now = 0;
 	struct tm now_tm;
 	struct timeval tv;
 

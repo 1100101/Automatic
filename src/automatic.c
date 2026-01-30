@@ -25,8 +25,8 @@
 #define AM_DEFAULT_USETRANSMISSION 1
 #define AM_DEFAULT_STARTTORRENTS   1
 
-#define FROM_XML_FILE 0
-#define TESTING 0
+#define FROM_XML_FILE  0
+#define TESTING        0
 
 #include <assert.h>
 #include <stdlib.h>
@@ -108,7 +108,7 @@ PRIVATE void readargs(int argc, char ** argv, char **c_file, char** logfile, cha
     { "xml",        required_argument, NULL, 'x' },
     { "match-only", no_argument,       NULL, 'm' },
     { NULL, 0, NULL, 0 } };
-  int opt;
+  int opt = 0;
 
   while (0 <= (opt = getopt_long(argc, argv, optstr, longopts, NULL ))) {
     switch (opt) {
@@ -168,7 +168,7 @@ PRIVATE void shutdown_daemon(auto_handle *as) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PRIVATE int daemonize(const char* pidfile) {
-  int fd;
+  int fd = 0;
 
   switch (fork()) {
     case 0:
@@ -227,7 +227,7 @@ PRIVATE int daemonize(const char* pidfile) {
 
 auto_handle* session_init(void) {
   char path[MAXPATHLEN];
-  char *home;
+  char *home = NULL;
 
   am_session_t *ses = am_malloc(sizeof(am_session_t));
 
@@ -268,7 +268,7 @@ auto_handle* session_init(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PRIVATE void printSessionSettings() {
+PRIVATE void printSessionSettings(void) {
   dbg_printf(P_INFO, "Transmission version: 1.%d", mySession->transmission_version);
   dbg_printf(P_INFO, "RPC host: %s", mySession->host != NULL ? mySession->host : AM_DEFAULT_HOST);
   dbg_printf(P_INFO, "RPC port: %d", mySession->rpc_port);
@@ -453,7 +453,7 @@ PRIVATE HTTPResponse* downloadTorrent(CURL* curl_session, const char* url) {
 PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
                            uint32_t t_size, const char *fname, const char *folder) {
   int8_t success = -1;
-  torrent_id_t tid;
+  torrent_id_t tid = 0;
   char url[MAX_URL_LEN];
 
   if (!ah->use_transmission) {
@@ -507,7 +507,7 @@ PRIVATE int8_t addTorrentToTM(const auto_handle *ah, const void* t_data,
 
 PRIVATE int8_t addMagnetToTM(const auto_handle *ah, const char* magnet_uri, const char *folder) {
    int8_t success = -1;
-   torrent_id_t tid;
+   torrent_id_t tid = 0;
    char url[MAX_URL_LEN];
 
    if (ah->use_transmission) {
@@ -674,8 +674,8 @@ PRIVATE uint16_t processFile(auto_handle *session, const char* xmlfile) {
   uint32_t item_count = 0;
   char *xmldata = NULL;
   uint32_t fileLen = 0;
-  uint32_t dummy_ttl;
-  simple_list items;
+  uint32_t dummy_ttl = 0;
+  simple_list items = NULL;
 
   assert(xmlfile && *xmlfile);
   dbg_printf(P_INFO, "Reading RSS feed file: %s", xmlfile);

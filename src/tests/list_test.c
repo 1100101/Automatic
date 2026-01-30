@@ -21,7 +21,8 @@ int8_t verbose = P_NONE;
 
 static char *rand_str(uint8_t size) {
    static const char text[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-   int i, len = rand() % (size - 1);
+   int i = 0;
+   int len = rand() % (size - 1);
    char *dst = am_malloc(len + 1);
    for ( i = 0; i < len; ++i ) {
      dst[i] = text[rand() % (sizeof text - 1)];
@@ -31,10 +32,14 @@ static char *rand_str(uint8_t size) {
 }
 
 static int testIntegerList(void){
-	uint32_t i;
+	uint32_t i = 0;
 
-	int *number, *number2;
-	simple_list list = NULL, list2 = NULL, tmp1 = NULL, tmp2 = NULL;
+	int *number = NULL;
+	int *number2 = NULL;
+	simple_list list = NULL;
+	simple_list list2 = NULL;
+	simple_list tmp1 = NULL;
+	simple_list tmp2 = NULL;
 
 	assert(listCount(list) == 0);
 
@@ -82,7 +87,7 @@ static int testIntegerList(void){
 }
 
 static int testStringList(void){
-	uint32_t i;
+	uint32_t i = 0;
 	char *str = NULL;
 	simple_list list = NULL;
 

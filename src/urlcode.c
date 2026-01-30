@@ -20,16 +20,17 @@ char to_hex(char code) {
 /* IMPORTANT: be sure to free() the returned string after use */
 char *url_encode(const char *str) {
   const char *pstr = str;
-  char *buf = am_malloc(strlen(str) * 3 + 1);
+  char *buf = am_malloc((strlen(str) * 3) + 1);
   char *pbuf = buf;
 
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~')
+    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') {
       *pbuf++ = *pstr;
-    else if (*pstr == ' ')
+    } else if (*pstr == ' ') {
       *pbuf++ = '+';
-    else
+    } else {
       *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
+    }
     pstr++;
   }
   *pbuf = '\0';
@@ -38,14 +39,15 @@ char *url_encode(const char *str) {
 
 char *url_encode_whitespace(const char *str) {
   const char *pstr = str;
-  char *buf = am_malloc(strlen(str) * 3 + 1);
+  char *buf = am_malloc((strlen(str) * 3) + 1);
   char *pbuf = buf;
 
   while (*pstr) {
-    if (*pstr == ' ')
+    if (*pstr == ' ') {
       *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
-    else 
+    } else {
       *pbuf++ = *pstr;
+    }
     pstr++;
   }
   *pbuf = '\0';

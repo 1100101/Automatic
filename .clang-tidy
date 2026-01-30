@@ -1,0 +1,9 @@
+Checks:   '-*,
+           cppcoreguidelines-*,
+           modernize-*,
+           bugprone-*,
+           readability-*,
+           -cppcoreguidelines-macro-to-enum,
+           -modernize-macro-to-enum
+           '
+FormatStyle: 'mozilla'

@@ -33,9 +33,9 @@
  * The function returns NULL if the specified file could not be properly read.
  */
 char* readFile(const char *fname, uint32_t *setme_len) {
-  FILE *file;
+  FILE *file = NULL;
   char *buffer = NULL;
-  uint32_t fileLen;
+  uint32_t fileLen = 0;
 
 /*  if(!fname || !setme_len) {
   	return NULL;
@@ -75,7 +75,8 @@ char* readFile(const char *fname, uint32_t *setme_len) {
  * \return 0 if saving was successful, -1 otherwise.
  */
 int saveFile(const char *name, const void *data, uint32_t size) {
-  int fh, ret = 0;
+  int fh = 0;
+  int ret = 0;
 
   if (!name || !data) {
     return -1;
